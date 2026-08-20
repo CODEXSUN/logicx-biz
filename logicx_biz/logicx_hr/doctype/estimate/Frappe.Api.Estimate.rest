@@ -1,0 +1,60 @@
+
+### Read List
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "Estimate",
+	"filters": [ ],
+	"order_by": "creation desc",
+	"fields": [
+		"name",
+		"enquiry",
+		"date",
+		"creation",
+		"item_name",
+		"supplier.supplier_name",
+		"price"
+	]
+}
+
+
+
+### Read by ID
+
+GET {{baseUrl}}/api/v2/document/Estimate/ESTIMATE1
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+
+
+
+### Create
+POST {{baseUrl}}/api/v2/document/Estimate
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+    "enquiry": "ENQ1",
+    "date": "2026-07-28",
+    "item_name": "Laptop RAM 8 gb",
+    "supplier": "S1227",
+    "price": "3850"
+}
+
+
+
+### Update
+PUT {{baseUrl}}/api/v2/document/Estimate/ESTIMATE1
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+    "enquiry": "ENQ1",
+    "date": "2026-07-28",
+    "item_name": "Laptop RAM 8 gb",
+    "supplier": "S1227",
+    "price": "3850"
+}
+
+
+###

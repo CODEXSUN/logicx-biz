@@ -1,0 +1,47 @@
+/* LogicX Item View 1 (template rows).
+   Uses frappe desk CSS variables so light/dark themes both work. */
+
+.logicx-list-meta {
+	padding: var(--padding-xs) 0;
+	text-align: right;
+	font-size: var(--text-sm);
+}
+
+.logicx-list-row {
+	background: var(--fg-color);
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-md);
+	padding: var(--padding-md);
+	margin-bottom: var(--margin-sm);
+}
+
+.logicx-list-subject {
+	display: flex;
+	flex-direction: column;
+}
+
+.logicx-list-title {
+	font-weight: 600;
+	color: var(--text-color);
+}
+
+.logicx-list-fields {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: var(--margin-sm) var(--margin-lg);
+	margin-top: var(--margin-sm);
+}
+
+.logicx-list-field {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.logicx-field-label {
+	font-size: var(--text-sm);
+}
+
+.logicx-field-value {
+	overflow-wrap: anywhere;
+}

@@ -1,0 +1,62 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ item.item_name or item.item_code }}{% endblock %}
+
+{% block page_content %}
+<div class="product-page py-5">
+	<div class="row">
+		<div class="col-md-5 mb-4">
+			{% if item.image %}
+			<img
+				src="{{ item.image }}"
+				alt="{{ item.item_name or item.item_code }}"
+				class="img-fluid rounded border product-image"
+			>
+			{% else %}
+			<div class="product-image-placeholder rounded border text-muted">
+				{{ _("No Image") }}
+			</div>
+			{% endif %}
+		</div>
+		<div class="col-md-7">
+			<h1 class="h3 mb-1">{{ item.item_name or item.item_code }}</h1>
+			<p class="text-muted mb-4">{{ item.item_code }}</p>
+
+			<dl class="row">
+				<dt class="col-sm-4">{{ _("Item Group") }}</dt>
+				<dd class="col-sm-8">{{ item.item_group or "-" }}</dd>
+
+				{% if item.brand %}
+				<dt class="col-sm-4">{{ _("Brand") }}</dt>
+				<dd class="col-sm-8">{{ item.brand }}</dd>
+				{% endif %}
+
+				<dt class="col-sm-4">{{ _("Unit of Measure") }}</dt>
+				<dd class="col-sm-8">{{ item.stock_uom or "-" }}</dd>
+			</dl>
+
+			{% if item.description %}
+			<h2 class="h6 text-uppercase text-muted mt-4">{{ _("Description") }}</h2>
+			<div class="product-description">{{ item.description | safe }}</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
+
+<style>
+	.product-image {
+		width: 100%;
+		max-height: 420px;
+		object-fit: contain;
+		background-color: var(--gray-50, #f8f9fa);
+	}
+
+	.product-image-placeholder {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 280px;
+		background-color: var(--gray-50, #f8f9fa);
+	}
+</style>
+{% endblock %}

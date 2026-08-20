@@ -1,0 +1,131 @@
+{
+	"doctype": "Workspace",
+	"type": "Workspace",
+	"app": "logicx_biz",
+	"module": "LogicX HR",
+	"name": "LogicX HR Home",
+	"title": "Home",
+	"label": "Home",
+	"icon": "home",
+	"content": "[{\"id\":\"tL_X5-IWzC\",\"type\":\"header\",\"data\":{\"text\":\"\\u003cspan class=\\\"h4\\\"\\u003eHome\\u003c/span\\u003e\",\"col\":12}},{\"id\":\"sc_Enquiry\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Enquiry\",\"col\":4}},{\"id\":\"sc_Scheme\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Scheme\",\"col\":4}},{\"id\":\"sc_renewal_entry\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Renewal Entry\",\"col\":4}},{\"id\":\"sc_renewal_remainder\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Renewal Remainder\",\"col\":4}},{\"id\":\"sc_notice\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Notice\",\"col\":4}},{\"id\":\"sc_staff_request\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Staff Request\",\"col\":4}},{\"id\":\"sc_sop_reporting\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"SOP Reporting\",\"col\":4}},{\"id\":\"sc_sop_assigned\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"SOP Assigned\",\"col\":4}},{\"id\":\"sc_sop_item\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"SOP Item\",\"col\":4}},{\"id\":\"sc_job_execution\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Execution\",\"col\":4}},{\"id\":\"sc_estimate\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Estimate\",\"col\":4}},{\"id\":\"sc_reports_header\",\"type\":\"header\",\"data\":{\"text\":\"\\u003cspan class=\\\"h4\\\"\\u003eReports\\u003c/span\\u003e\",\"col\":12}},{\"id\":\"sc_enquiry_list_in_wise_status\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Enquiry List-In wise Status\",\"col\":4}},{\"id\":\"sc_enquiry_owner_wise_status\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Enquiry Owner wise Status\",\"col\":4}}]",
+	"indicator_color": "green",
+	"for_user": "",
+	"hide_custom": 0,
+	"is_hidden": 0,
+	"parent_page": "",
+	"public": 1,
+	"sequence_id": 1.0,
+	"charts": [],
+	"custom_blocks": [],
+	"links": [],
+	"number_cards": [],
+	"quick_lists": [],
+	"roles": [],
+	"shortcuts_label": "Quick Access",
+	"shortcuts": [
+		{
+			"label": "Enquiry",
+			"link_to": "Enquiry",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Estimate",
+			"link_to": "Estimate",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Scheme",
+			"link_to": "Scheme",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Renewal Entry",
+			"link_to": "Renewal Entry",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Renewal Remainder",
+			"link_to": "Renewal Remainder",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Notice",
+			"link_to": "Notice",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Staff Request",
+			"link_to": "Staff Request",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "SOP Reporting",
+			"link_to": "SOP Reporting",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "SOP Assigned",
+			"link_to": "SOP Assigned",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "SOP Item",
+			"link_to": "SOP Item",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Job Execution",
+			"link_to": "Job Execution",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Enquiry List-In wise Status",
+			"link_to": "Enquiry List-In wise Status",
+			"type": "Report",
+			"report_ref_doctype": "Enquiry",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Enquiry Owner wise Status",
+			"link_to": "Enquiry Owner wise Status",
+			"type": "Report",
+			"report_ref_doctype": "Enquiry",
+			"color": "Grey",
+			"stats_filter": "[]"
+		}
+	]
+}

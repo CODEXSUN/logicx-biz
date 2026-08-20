@@ -1,0 +1,24 @@
+[
+	{
+		"doctype": "Custom Field",
+		"name": "Employee-cost_per_hour",
+		"dt": "Employee",
+		"fieldname": "cost_per_hour",
+		"label": "Cost Per Hour",
+		"fieldtype": "Currency",
+		"options": "salary_currency",
+		"insert_after": "salary_information"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Item-crate",
+		"dt": "Item",
+		"fieldname": "crate",
+		"label": "Crate",
+		"fieldtype": "Link",
+		"options": "Crate",
+		"insert_after": "stock_uom",
+		"reqd": 0,
+		"in_standard_filter": 1
+	}
+]

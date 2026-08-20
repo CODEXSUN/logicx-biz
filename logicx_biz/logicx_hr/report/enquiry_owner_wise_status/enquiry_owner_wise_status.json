@@ -1,0 +1,25 @@
+{
+	"doctype": "Report",
+	"name": "Enquiry Owner wise Status",
+	"report_name": "Enquiry Owner wise Status",
+	"report_type": "Script Report",
+	"module": "LogicX HR",
+	"ref_doctype": "Enquiry",
+	"is_standard": "Yes",
+	"add_total_row": 1,
+	"prepared_report": 0,
+	"letter_head": null,
+	"columns": [],
+	"filters": [],
+	"roles": [
+		{
+			"role": "System Manager"
+		},
+		{
+			"role": "TM Admin"
+		},
+		{
+			"role": "TM User"
+		}
+	]
+}

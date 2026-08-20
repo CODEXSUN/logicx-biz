@@ -1,0 +1,204 @@
+{
+	"doctype": "DocType",
+	"name": "Enquiry",
+	"module": "LogicX HR",
+	"autoname": "ENQ.#",
+	"track_changes": 1,
+	"track_views": 1,
+	"is_submittable": 0,
+	"allow_rename": 1,
+	"allow_import": 1,
+	"title_field": "enquiry_details",
+	"sort_field": "creation",
+	"sort_order": "DESC",
+	"index_web_pages_for_search": 1,
+	"grid_page_length": 50,
+	"fields": [
+		{
+			"fieldname": "section1",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Mobile",
+			"fieldname": "mobile",
+			"fieldtype": "Data",
+			"options": "Phone",
+			"reqd": 1,
+			"in_list_view": 0,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "WhatsApp",
+			"fieldname": "btn_whatsapp",
+			"fieldtype": "Button",
+			"depends_on": "eval:doc.__islocal != 1",
+			"in_list_view": 0
+		},
+		{
+			"label": "Customer",
+			"fieldname": "customer",
+			"fieldtype": "Link",
+			"options": "Customer",
+			"reqd": 0,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Title",
+			"fieldname": "title",
+			"fieldtype": "Data",
+			"reqd": 0
+		},
+		{
+			"label": "Enquiry Details",
+			"fieldname": "enquiry_details",
+			"fieldtype": "Text Editor",
+			"reqd": 1
+		},
+		{
+			"label": "List in",
+			"fieldname": "group",
+			"fieldtype": "Select",
+			"options": "\nStores\nDELL\nASUS\nSpares\nMBO\nService\nOn-site\nRemote - AnyDesk\nFollow\nLogicX\nAdmin",
+			"default": "",
+			"reqd": 0,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Due Date",
+			"fieldname": "due_date",
+			"fieldtype": "Date",
+			"reqd": 0
+		},
+		{
+			"label": "Priority",
+			"fieldname": "priority",
+			"fieldtype": "Select",
+			"options": "Low\nNormal\nHigh\nUrgent",
+			"default": "Normal",
+			"reqd": 0,
+			"in_list_view": 0,
+			"in_standard_filter": 0,
+			"in_filter": 1
+		},
+		{
+			"fieldname": "section1_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "User",
+			"fieldname": "user_employee",
+			"fieldtype": "Link",
+			"read_only": 1,
+			"options": "Employee",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Date",
+			"fieldname": "date",
+			"fieldtype": "Date",
+			"read_only": 1,
+			"default": "Today",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Assigned To",
+			"fieldname": "assigned_to_employee",
+			"fieldtype": "Link",
+			"read_only": 0,
+			"options": "Employee",
+			"reqd": 0,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Status",
+			"fieldname": "status",
+			"fieldtype": "Select",
+			"options": "New\nOpen\nHold for Approval\nHold for Spares\nHold for Job-Out\nLong Hold\nEscalation\nWon\nLost\nRe-open",
+			"default": "New",
+			"reqd": 0,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Status Details",
+			"fieldname": "status_details",
+			"fieldtype": "Text Editor",
+			"reqd": 0
+		},
+		{
+			"fieldname": "section2",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Messages",
+			"fieldname": "enquiry_messages",
+			"fieldtype": "Table",
+			"options": "Enquiry Message",
+			"reqd": 0
+		}
+	],
+	"permissions": [
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM User",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Admin",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 1,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 1,
+			"mask": 1,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 1,
+			"role": "TM Admin",
+			"read": 1,
+			"write": 1,
+			"mask": 1
+		}
+	]
+}

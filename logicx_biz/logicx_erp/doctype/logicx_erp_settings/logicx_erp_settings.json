@@ -1,0 +1,67 @@
+{
+	"doctype": "DocType",
+	"name": "LogicX ERP Settings",
+	"module": "LogicX ERP",
+	"issingle": 1,
+	"track_changes": 1,
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"fields": [
+		{
+			"label": "Enabled",
+			"fieldname": "enabled",
+			"fieldtype": "Check",
+			"default": "1"
+		}
+	],
+	"permissions": [
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM User",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Admin",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 1,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 1,
+			"mask": 1,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 1,
+			"role": "TM Admin",
+			"read": 1,
+			"write": 1,
+			"mask": 1
+		}
+	]
+}

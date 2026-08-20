@@ -1,0 +1,149 @@
+{
+	"doctype": "DocType",
+	"name": "Job Execution",
+	"module": "LogicX HR",
+	"autoname": "JOBEXE.#",
+	"track_changes": 1,
+	"track_views": 1,
+	"is_submittable": 0,
+	"allow_rename": 1,
+	"allow_import": 1,
+	"title_field": "enquiry",
+	"show_title_field_in_link": 1,
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"index_web_pages_for_search": 1,
+	"grid_page_length": 50,
+	"fields": [
+		{
+			"label": "Date",
+			"fieldname": "date",
+			"fieldtype": "Date",
+			"default": "Today",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"label": "Enquiry",
+			"fieldname": "enquiry",
+			"fieldtype": "Link",
+			"options": "Enquiry",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Employee",
+			"fieldname": "employee",
+			"fieldtype": "Link",
+			"options": "Employee",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Start Time",
+			"fieldname": "start_time",
+			"fieldtype": "Time",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"label": "Stop Time",
+			"fieldname": "stop_time",
+			"fieldtype": "Time",
+			"reqd": 0,
+			"in_list_view": 1
+		},
+		{
+			"label": "Hours",
+			"fieldname": "hours",
+			"fieldtype": "Float",
+			"precision": "2",
+			"read_only": 1,
+			"reqd": 0,
+			"default": "0.0",
+			"in_list_view": 1
+		},
+		{
+			"label": "Employee Cost Per Hour",
+			"fieldname": "employee_cost_per_hour",
+			"fieldtype": "Currency",
+			"fetch_from": "employee.cost_per_hour",
+			"fetch_if_empty": 1,
+			"read_only": 1,
+			"reqd": 0
+		},
+		{
+			"label": "Total Cost",
+			"fieldname": "total_cost",
+			"fieldtype": "Float",
+			"precision": "2",
+			"read_only": 1,
+			"reqd": 0
+		},
+		{
+			"label": "Status",
+			"fieldname": "status",
+			"fieldtype": "Select",
+			"options": "Running\nCompleted\nCancelled",
+			"default": "Running",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		}
+	],
+	"permissions": [
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM User",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Admin",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 1,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 1,
+			"mask": 1,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 1,
+			"role": "TM Admin",
+			"read": 1,
+			"write": 1,
+			"mask": 1
+		}
+	]
+}

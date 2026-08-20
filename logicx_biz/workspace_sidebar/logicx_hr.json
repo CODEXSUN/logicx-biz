@@ -1,0 +1,88 @@
+{
+	"doctype": "Workspace Sidebar",
+	"name": "LogicX HR",
+	"title": "LogicX HR",
+	"app": "logicx_biz",
+	"module": "LogicX HR",
+	"standard": 1,
+	"header_icon": "users",
+	"items": [
+		{
+			"idx": 1,
+			"label": "Home",
+			"type": "Link",
+			"link_type": "Workspace",
+			"link_to": "LogicX HR Home"
+		},
+		{
+			"idx": 2,
+			"label": "Enquiry",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Enquiry"
+		},
+		{
+			"idx": 3,
+			"label": "Estimate",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Estimate"
+		},
+		{
+			"idx": 4,
+			"label": "Scheme",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Scheme"
+		},
+		{
+			"idx": 5,
+			"label": "Renewal Remainder",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Renewal Remainder"
+		},
+		{
+			"idx": 6,
+			"label": "Renewal Entry",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Renewal Entry"
+		},
+		{
+			"idx": 7,
+			"label": "Notice",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Notice"
+		},
+		{
+			"idx": 8,
+			"label": "Staff Request",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Staff Request"
+		},
+		{
+			"idx": 9,
+			"label": "SOP Item",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "SOP Item"
+		},
+		{
+			"idx": 10,
+			"label": "SOP Assigned",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "SOP Assigned"
+		},
+		{
+			"idx": 11,
+			"label": "SOP Reporting",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "SOP Reporting"
+		}
+	]
+}

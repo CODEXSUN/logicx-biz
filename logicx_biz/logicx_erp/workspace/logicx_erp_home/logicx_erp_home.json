@@ -1,0 +1,149 @@
+{
+	"doctype": "Workspace",
+	"type": "Workspace",
+	"app": "logicx_biz",
+	"module": "LogicX ERP",
+	"name": "LogicX ERP Home",
+	"title": "Home",
+	"label": "Home",
+	"icon": "home",
+	"content": "[{\"id\":\"eRp_HdR-01\",\"type\":\"header\",\"data\":{\"text\":\"\\u003cspan class=\\\"h4\\\"\\u003eHome\\u003c/span\\u003e\",\"col\":12}},{\"id\":\"sc_stock_search\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Stock Search\",\"col\":4}},{\"id\":\"sc_stock_details_search\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Stock Details Search\",\"col\":4}},{\"id\":\"sc_daily_sales_report\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Daily Sales Report\",\"col\":4}},{\"id\":\"sc_vb_receipts_summary\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Virtual Bank Receipts Summary\",\"col\":4}},{\"id\":\"sc_vb_receipts_breakup\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Virtual Bank Receipts Breakup\",\"col\":4}},{\"id\":\"sc_party_statement\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Party Statement\",\"col\":4}},{\"id\":\"sc_party_outstanding\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Party Outstanding\",\"col\":4}},{\"id\":\"sc_negative_customer_outstanding\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Negative Customer Outstanding\",\"col\":4}},{\"id\":\"sc_negative_supplier_outstanding\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Negative Supplier Outstanding\",\"col\":4}},{\"id\":\"sc_sales_gp_gl_schemes\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales GP GL Schemes\",\"col\":4}},{\"id\":\"sc_sales_item_wise_gp_gl\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Item-wise GP GL Schemes\",\"col\":4}},{\"id\":\"eRp_HdR-02\",\"type\":\"header\",\"data\":{\"text\":\"\\u003cspan class=\\\"h4\\\"\\u003eDoc\\u003c/span\\u003e\",\"col\":12}},{\"id\":\"sc_item\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item\",\"col\":4}},{\"id\":\"sc_rack\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rack\",\"col\":4}},{\"id\":\"sc_crate\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Crate\",\"col\":4}}]",
+	"indicator_color": "green",
+	"for_user": "",
+	"hide_custom": 0,
+	"is_hidden": 0,
+	"parent_page": "",
+	"public": 1,
+	"sequence_id": 2.0,
+	"charts": [],
+	"custom_blocks": [],
+	"links": [],
+	"number_cards": [],
+	"quick_lists": [],
+	"roles": [
+		{
+			"role": "System Manager"
+		},
+		{
+			"role": "TM Admin"
+		},
+		{
+			"role": "TM Accounts"
+		},
+		{
+			"role": "TM User"
+		}
+	],
+	"shortcuts_label": "Quick Access",
+	"shortcuts": [
+		{
+			"label": "Stock Search",
+			"link_to": "Stock Search",
+			"type": "Report",
+			"report_ref_doctype": "Item",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Stock Details Search",
+			"link_to": "Stock Details Search",
+			"type": "Report",
+			"report_ref_doctype": "Item",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Daily Sales Report",
+			"link_to": "Daily Sales Report",
+			"type": "Report",
+			"report_ref_doctype": "Sales Invoice",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Virtual Bank Receipts Summary",
+			"link_to": "Virtual Bank Receipts Summary",
+			"type": "Report",
+			"report_ref_doctype": "Payment Entry",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Virtual Bank Receipts Breakup",
+			"link_to": "Virtual Bank Receipts Breakup",
+			"type": "Report",
+			"report_ref_doctype": "Payment Entry",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Party Statement",
+			"link_to": "Party Statement",
+			"type": "Report",
+			"report_ref_doctype": "GL Entry",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Party Outstanding",
+			"link_to": "Party Outstanding",
+			"type": "Report",
+			"report_ref_doctype": "GL Entry",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Negative Customer Outstanding",
+			"link_to": "Negative Customer Outstanding",
+			"type": "Report",
+			"report_ref_doctype": "GL Entry",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Negative Supplier Outstanding",
+			"link_to": "Negative Supplier Outstanding",
+			"type": "Report",
+			"report_ref_doctype": "GL Entry",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Sales GP GL Schemes",
+			"link_to": "Sales GP GL Schemes",
+			"type": "Report",
+			"report_ref_doctype": "Sales Invoice",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Sales Item-wise GP GL Schemes",
+			"link_to": "Sales Item-wise GP GL Schemes",
+			"type": "Report",
+			"report_ref_doctype": "Sales Invoice",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Item",
+			"link_to": "Item",
+			"type": "DocType",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Rack",
+			"link_to": "Rack",
+			"type": "DocType",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "Crate",
+			"link_to": "Crate",
+			"type": "DocType",
+			"color": "Grey",
+			"stats_filter": "[]"
+		}
+	]
+}

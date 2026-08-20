@@ -1,0 +1,17 @@
+[
+	{
+		"doctype": "Role",
+		"name": "TM Admin",
+		"role_name": "TM Admin"
+	},
+	{
+		"doctype": "Role",
+		"name": "TM User",
+		"role_name": "TM User"
+	},
+	{
+		"doctype": "Role",
+		"name": "TM Accounts",
+		"role_name": "TM Accounts"
+	}
+]

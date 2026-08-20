@@ -1,0 +1,76 @@
+### Job Execution: Read already started one, if any.
+	# If NO rows found, then show just a "Start" button
+	# If one row exists, then show the details with "Stop" & "Cancel" button
+	# If more than one row found, throw error.
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "Job Execution",
+	"filters": [
+		[ "enquiry", "=", "ENQ109" ],
+		[ "status", "=", "Running" ]
+	],
+	"order_by": "creation desc",
+	"fields": [
+		"name",
+		"creation",
+		"enquiry",
+		"employee",
+		"start_time",
+		"stop_time",
+		"status",
+		"employee_cost_per_hour",
+		"hours",
+		"total_cost"
+	]
+}
+
+
+
+
+### Read Job Execution by ID.
+
+GET {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+
+
+
+### On Start Button Click
+POST {{baseUrl}}/api/v2/document/Job Execution
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+  "enquiry": "ENQ109",
+  "employee": "HR-EMP-00003",
+  "start_time": "16:06:00"
+}
+
+
+
+### On Stop Button Click
+PUT {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+  "stop_time": "17:12:00",
+  "status": "Completed"
+}
+
+
+
+### On Cancel Button Click
+PUT {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+  "stop_time": null,
+  "status": "Cancelled"
+}
+
+
+###

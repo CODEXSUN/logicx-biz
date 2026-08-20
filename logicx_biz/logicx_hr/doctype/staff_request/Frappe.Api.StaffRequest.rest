@@ -1,0 +1,37 @@
+### Read List
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "Staff Request",
+	"filters": [],
+	"order_by": "creation desc",
+	"fields": [
+		"*"
+	]
+}
+
+
+### Read Staff Request by ID.
+
+GET {{baseUrl}}/api/v2/document/Staff Request/REQUEST5
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+
+
+### Create
+POST {{baseUrl}}/api/v2/document/Staff Request
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+    "employee": "HR-EMP-00004",
+    "request_type": "Late In",
+    "date": "2026-05-19",
+    "days": 0,
+    "minutes": 50,
+    "details": "1st half permission personal work\nwill come 1.30PM"
+}
+
+
+###

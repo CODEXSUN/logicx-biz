@@ -1,0 +1,66 @@
+/* LogicX Item View 2 (card grid).
+   Uses frappe desk CSS variables so light/dark themes both work. */
+
+.logicx-item-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: var(--margin-md);
+	padding: var(--padding-sm) 0;
+}
+
+.logicx-item-card {
+	background: var(--fg-color);
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-md);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.logicx-item-image {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 140px;
+	background: var(--control-bg);
+}
+
+.logicx-item-image img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.logicx-item-placeholder {
+	font-size: var(--text-3xl);
+	color: var(--text-muted);
+}
+
+.logicx-item-body {
+	padding: var(--padding-sm) var(--padding-md) var(--padding-md);
+	display: flex;
+	flex-direction: column;
+	gap: var(--margin-xs);
+	min-width: 0;
+}
+
+.logicx-item-title {
+	font-weight: 600;
+	color: var(--text-color);
+}
+
+.logicx-item-code {
+	font-size: var(--text-sm);
+}
+
+.logicx-item-detail {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--margin-sm);
+	font-size: var(--text-sm);
+}
+
+.logicx-item-description {
+	font-size: var(--text-sm);
+	margin-top: var(--margin-xs);
+}

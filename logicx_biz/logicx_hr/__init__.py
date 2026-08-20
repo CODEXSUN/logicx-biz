@@ -1,0 +1,1 @@
+"""LogicX HR module."""

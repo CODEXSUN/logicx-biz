@@ -1,0 +1,129 @@
+{
+	"doctype": "Workspace Sidebar",
+	"name": "LogicX ERP",
+	"title": "LogicX ERP",
+	"app": "logicx_biz",
+	"module": "LogicX ERP",
+	"standard": 1,
+	"header_icon": "sell",
+	"items": [
+		{
+			"idx": 1,
+			"label": "Home",
+			"type": "Link",
+			"link_type": "Workspace",
+			"link_to": "LogicX ERP Home"
+		},
+		{
+			"idx": 2,
+			"label": "Stock Search",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Stock Search"
+		},
+		{
+			"idx": 3,
+			"label": "Stock Details Search",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Stock Details Search"
+		},
+		{
+			"idx": 4,
+			"label": "Daily Sales Report",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Daily Sales Report"
+		},
+		{
+			"idx": 5,
+			"label": "Virtual Bank Receipts Summary",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Virtual Bank Receipts Summary"
+		},
+		{
+			"idx": 6,
+			"label": "Virtual Bank Receipts Breakup",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Virtual Bank Receipts Breakup"
+		},
+		{
+			"idx": 7,
+			"label": "Party Statement",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Party Statement"
+		},
+		{
+			"idx": 8,
+			"label": "Party Outstanding",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Party Outstanding"
+		},
+		{
+			"idx": 9,
+			"label": "Negative Customer Outstanding",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Negative Customer Outstanding"
+		},
+		{
+			"idx": 10,
+			"label": "Negative Supplier Outstanding",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Negative Supplier Outstanding"
+		},
+		{
+			"idx": 11,
+			"label": "Sales GP GL Schemes",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Sales GP GL Schemes"
+		},
+		{
+			"idx": 12,
+			"label": "Sales Item-wise GP GL Schemes",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Sales Item-wise GP GL Schemes"
+		},
+		{
+			"idx": 13,
+			"label": "Doc",
+			"type": "Section Break",
+			"icon": "file-text",
+			"indent": 1,
+			"collapsible": 1,
+			"keep_closed": 0,
+			"child": 0
+		},
+		{
+			"idx": 14,
+			"label": "Item",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Item",
+			"child": 1
+		},
+		{
+			"idx": 15,
+			"label": "Rack",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Rack",
+			"child": 1
+		},
+		{
+			"idx": 16,
+			"label": "Crate",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Crate",
+			"child": 1
+		}
+	]
+}

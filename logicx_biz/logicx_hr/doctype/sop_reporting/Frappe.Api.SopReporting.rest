@@ -1,0 +1,40 @@
+### Read List
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "SOP Reporting",
+	"filters": [],
+	"order_by": "creation desc",
+	"fields": [
+		"*"
+	]
+}
+
+
+### Read SOP Reporting by ID.
+
+GET {{baseUrl}}/api/v2/document/SOP Reporting/REPORTING222
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+
+
+### Create
+POST {{baseUrl}}/api/v2/document/SOP Reporting
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+    "sop_item": "SOP-9",
+    "user": "HR-EMP-00014",
+    "date": "HR-EMP-00014",
+    "date": "2026-07-11",
+    "sop_name": "A03   Accounts ",
+    "department": "Accounts - TMR",
+    "frequency": "Daily",
+    "actions": "<div class=\"ql-editor read-mode\"><p><span style=\"background-color:rgb(248, 248, 248);font-size:14px;color:rgb(56, 56, 56)\">Share Credit Invoice Copy through Mail</span></p><p><span style=\"background-color:rgb(248, 248, 248);font-size:14px;color:rgb(56, 56, 56)\">Along with total outstanding -done</span></p><p><span style=\"background-color:rgb(248, 248, 248);font-size:14px;color:rgb(56, 56, 56)\"><br></span></p><p><span style=\"background-color:rgb(248, 248, 248);font-size:14px;color:rgb(56, 56, 56)\">Update Notice</span></p><p><span style=\"background-color:rgb(248, 248, 248);font-size:14px;color:rgb(56, 56, 56)\"> Any Errors in Settlement -no</span></p><p><span style=\"background-color:rgb(248, 248, 248);font-size:14px;color:rgb(56, 56, 56)\"> Delay in settlemt -no</span></p><p><span style=\"background-color:rgb(248, 248, 248);font-size:14px;color:rgb(56, 56, 56)\"> </span></p><p><span style=\"background-color:rgb(248, 248, 248);font-size:14px;color:rgb(56, 56, 56)\">&gt; Payment Remainder Message -nil</span></p><p><span style=\"background-color:rgb(248, 248, 248);font-size:14px;color:rgb(56, 56, 56)\">&gt; Check Montly Commitment Sheet. -nil</span></p><p><br></p></div>",
+    "steps": "<div class=\"ql-editor read-mode\"><p>Share Credit Invoice Copy through Mail</p><p>\tAlong with total outstanding</p><p><br></p><p>Update Notice </p><p> &nbsp;Any Errors in Settlement </p><p> &nbsp;Delay in settlemt</p><p> &nbsp;</p><p>&gt; Payment Remainder Message</p><p>&gt; Check Montly Commitment Sheet.</p><p><br></p><p><br></p><p><br></p><p>\t</p></div>"
+}
+
+
+###

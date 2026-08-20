@@ -1,0 +1,245 @@
+
+### get user-id by api-token
+GET {{baseUrl}}/api/v2/method/frappe.auth.get_logged_user
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+
+# {
+#   "message": "karthik@techmedia.in"
+# }
+
+
+
+
+### get user-id & name by user-id.
+POST {{baseUrl}}/api/v2/method/frappe.client.get_value
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "User",
+	"filters": {"name": "karthik@techmedia.in"},
+	"fieldname": "name, email, username, full_name, user_type, restrict_ip, simultaneous_sessions, login_after, login_before, last_ip, last_login, last_active"
+}
+
+# {
+#   "data": {
+#     "name": "karthik@techmedia.in",
+#     "email": "karthik@techmedia.in",
+#     "username": "karthik",
+#     "full_name": "Karthik D",
+#     "user_type": "System User",
+#     "restrict_ip": null,
+#     "simultaneous_sessions": 1,
+#     "login_after": 8,
+#     "login_before": 22,
+#     "last_ip": "192.168.20.72",
+#     "last_login": "2026-07-22 09:57:06.029568",
+#     "last_active": "2026-07-22 12:12:08.704438"
+#   }
+# }
+
+
+
+### get employee-id & name by user-id.
+POST {{baseUrl}}/api/v2/method/frappe.client.get_value
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "Employee",
+	"filters": {"user_id": "karthik@techmedia.in"},
+	"fieldname": "name, employee_name"
+}
+
+# {
+#   "data": {
+#     "name": "HR-EMP-00006",
+#     "employee_name": "Karthik D"
+#   }
+# }
+
+
+
+### Enquiry: Assigned to Me
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "Enquiry",
+	"filters": [
+		[ "assigned_to_employee", "=", "HR-EMP-00006" ],
+		[ "status", "not in", ["Won","Lost"] ]
+	],
+	"order_by": "creation desc",
+	"fields": [
+		"name",
+		"date",
+		"creation",
+		"status",
+		"group",
+		"customer.customer_name",
+		"user_employee.employee_name as user_employee_name",
+		"enquiry_details"
+	]
+}
+
+
+
+### Enquiry: Created by Me
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "Enquiry",
+	"filters": [
+		[ "user_employee", "=", "HR-EMP-00006" ],
+		[ "status", "not in", ["Won","Lost"] ]
+	],
+	"order_by": "creation desc",
+	"fields": [
+		"name",
+		"date",
+		"creation",
+		"status",
+		"group",
+		"customer.customer_name",
+		"assigned_to_employee.employee_name as assigned_to_employee_name",
+		"enquiry_details"
+	]
+}
+
+
+
+### Enquiry: Open / Un-assigned
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "Enquiry",
+	"filters": [
+		[ "assigned_to_employee", "is", "not set" ],
+		[ "status", "not in", ["Won","Lost"] ]
+	],
+	"order_by": "creation desc",
+	"fields": [
+		"name",
+		"date",
+		"creation",
+		"status",
+		"group",
+		"customer.customer_name",
+		"user_employee.employee_name as user_employee_name",
+		"enquiry_details"
+	]
+}
+
+
+
+
+### Group(List-In) aggregates
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+	"doctype": "Enquiry",
+	"fields": [
+			"group",
+			{"COUNT": "name", "as": "group_count"}
+		],
+	"filters": [
+			[ "assigned_to_employee", "=", "HR-EMP-00006" ],
+			[ "status", "not in", ["Won","Lost"] ]
+		],
+	"group_by": "group",
+	"order_by": "group asc"
+}
+
+# {
+#   "data": [
+#     {
+#       "group": "",  // replace EMPTY with "No-List"
+#       "group_count": 1
+#     },
+#     {
+#       "group": "Stores",
+#       "group_count": 16
+#     }
+#   ]
+# }
+
+# -- Sidebar looks like -------
+# 		Assigned to Me
+# 		Created by Me
+# 		Open Enquiries
+# 		LiSTED IN
+#			No-List - 1
+#			Stores - 16
+#			.... - n
+
+
+
+
+### Read Enquiry with Messages(Comment) for viewing or editing.
+
+GET {{baseUrl}}/api/v2/document/Enquiry/ENQ796
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+
+
+
+### Create Enquiry
+POST {{baseUrl}}/api/v2/document/Enquiry
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+    "mobile": "0000000000",
+    "enquiry_details": "TEST API 1",
+    "group": "Stores",
+    "user_employee": "HR-EMP-00003",
+    "assigned_to_employee": "HR-EMP-00003",
+    "date": "2026-07-24",
+    "status": "Open",
+    "status_details": ""
+}
+
+
+
+### Update Enquiry
+PUT {{baseUrl}}/api/v2/document/Enquiry/ENQ699
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+    "mobile": "9500586624",
+    "enquiry_details": "TEST API 2222 \n line2",
+    "group": "DELL",
+    "user_employee": "HR-EMP-00003",
+    "assigned_to_employee": "HR-EMP-00003",
+    "date": "2026-07-22",
+    "status": "Lost",
+    "status_details": "????????"
+}
+
+
+
+### Add Messages(Comment) "with existing ones"
+PUT {{baseUrl}}/api/v2/document/Enquiry/ENQ699
+Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Content-Type: application/json
+
+{
+    "enquiry_messages": [
+	# < add existing messages here >
+	# ,
+      {
+        "comment": "Comment-2"
+      }
+    ]
+}
+
+
+###

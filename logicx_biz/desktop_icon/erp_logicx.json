@@ -1,0 +1,26 @@
+{
+	"doctype": "Desktop Icon",
+	"name": "ERP LogicX",
+	"label": "ERP LogicX",
+	"app": "logicx_biz",
+	"standard": 1,
+	"icon": "sell",
+	"icon_type": "App",
+	"logo_url": "/assets/logicx_biz/logo.png",
+	"link_type": "External",
+	"link": "/desk/logicx-erp-home",
+	"roles": [
+		{
+			"role": "System Manager"
+		},
+		{
+			"role": "TM Admin"
+		},
+		{
+			"role": "TM Accounts"
+		},
+		{
+			"role": "TM User"
+		}
+	]
+}

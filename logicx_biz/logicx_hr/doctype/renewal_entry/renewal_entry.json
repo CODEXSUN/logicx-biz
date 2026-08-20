@@ -1,0 +1,158 @@
+{
+	"doctype": "DocType",
+	"name": "Renewal Entry",
+	"module": "LogicX HR",
+	"autoname": "RENEWAL.#",
+	"track_changes": 1,
+	"track_views": 1,
+	"is_submittable": 0,
+	"allow_rename": 1,
+	"allow_import": 1,
+	"title_field": "service_description",
+	"show_title_field_in_link": 1,
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"index_web_pages_for_search": 1,
+	"grid_page_length": 50,
+	"fields": [
+		{
+			"fieldname": "section1",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Service ID",
+			"fieldname": "renewal_remainder",
+			"fieldtype": "Link",
+			"options": "Renewal Remainder",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"label": "Date",
+			"fieldname": "date",
+			"fieldtype": "Date",
+			"default": "Today",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"label": "Quantity",
+			"fieldname": "quantity",
+			"fieldtype": "Int",
+			"default": "1",
+			"reqd": 1
+		},
+		{
+			"label": "Rate",
+			"fieldname": "rate",
+			"fieldtype": "Int",
+			"reqd": 1
+		},
+		{
+			"label": "Renewal Value",
+			"fieldname": "renewal_value",
+			"fieldtype": "Int",
+			"read_only": 1,
+			"fetch_if_empty": 1,
+			"default": "0",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"label": "Next Due Date",
+			"fieldname": "next_due_date",
+			"fieldtype": "Date",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "section1_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Customer",
+			"fieldname": "customer",
+			"fieldtype": "Read Only",
+			"fetch_from": "renewal_remainder.customer",
+			"in_list_view": 1
+		},
+		{
+			"label": "Service Description",
+			"fieldname": "service_description",
+			"fieldtype": "Read Only",
+			"fetch_from": "renewal_remainder.service_description",
+			"in_list_view": 1
+		},
+		{
+			"label": "Vendor",
+			"fieldname": "vendor",
+			"fieldtype": "Read Only",
+			"fetch_from": "renewal_remainder.vendor",
+			"in_list_view": 1
+		},
+		{
+			"label": "Period Type",
+			"fieldname": "period_type",
+			"fieldtype": "Read Only",
+			"fetch_from": "renewal_remainder.period_type",
+			"in_list_view": 1
+		},
+		{
+			"label": "Period",
+			"fieldname": "period",
+			"fieldtype": "Read Only",
+			"fetch_from": "renewal_remainder.period",
+			"in_list_view": 1
+		}
+	],
+	"permissions": [
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM User",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Admin",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 1,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 1,
+			"mask": 1,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 1,
+			"role": "TM Admin",
+			"read": 1,
+			"write": 1,
+			"mask": 1
+		}
+	]
+}

@@ -1,0 +1,41 @@
+{
+	"doctype": "DocType",
+	"name": "Enquiry Message",
+	"module": "LogicX HR",
+	"istable": 1,
+	"editable_grid": 0,
+	"track_changes": 1,
+	"track_views": 1,
+	"fields": [
+		{
+			"label": "Comment",
+			"fieldname": "comment",
+			"fieldtype": "Text Editor",
+			"in_list_view": 1,
+			"columns": 10
+		},
+		{
+			"label": "WhatsApp",
+			"fieldname": "btn_whatsapp",
+			"fieldtype": "Button",
+			"depends_on": "eval:doc.__islocal != 1",
+			"in_list_view": 0
+		},
+		{
+			"label": "Mode",
+			"fieldname": "mode",
+			"fieldtype": "Select",
+			"options": "Comment\nReply",
+			"default": "Comment"
+		},
+		{
+			"label": "Parent Message",
+			"fieldname": "parent_message",
+			"fieldtype": "Link",
+			"options": "Enquiry Message",
+			"in_list_view": 0,
+			"hidden": 1
+		}
+	],
+	"permissions": []
+}
