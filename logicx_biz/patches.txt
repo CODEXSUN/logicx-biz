@@ -6,3 +6,4 @@
 # Patches added in this section will be executed after doctypes are migrated
 logicx_biz.patches.delete_stock_details_report
 logicx_biz.patches.create_enquiry_groups
+logicx_biz.patches.create_enquiry_statuses

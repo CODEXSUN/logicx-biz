@@ -101,6 +101,14 @@
 			"link_type": "DocType",
 			"link_to": "Enquiry Group",
 			"child": 1
+		},
+		{
+			"idx": 14,
+			"label": "Enquiry Status",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Enquiry Status",
+			"child": 1
 		}
 	]
 }

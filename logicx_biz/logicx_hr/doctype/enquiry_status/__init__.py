@@ -1,0 +1,1 @@
+"""Enquiry Status DocType."""

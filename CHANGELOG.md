@@ -5,6 +5,35 @@ All notable changes to **logicx-biz** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-08-21
+
+### Added
+
+- **Enquiry Status DocType** (`LogicX HR`) — master for the Enquiry "Status"
+  values. Auto-named from a unique, mandatory `Status Name`, plus a mandatory
+  `Status Group` Select (New / Pending / Hold / Closed) that carries the coarse
+  bucket the status rolls up to and is exposed as a standard list filter.
+  Ordered by `idx` (descending) so the picker keeps the order the old Select
+  had. Same role permissions as the other masters: `TM User`
+  (read/create/write), `TM Admin` (full, including delete/import, plus
+  permlevel 1).
+- **`create_enquiry_statuses` patch** — seeds the eleven default statuses with
+  their groups (New→New, Open→Pending, Hold for Approval/Spares/Job-Out→Hold,
+  Long Hold→New, Escalation→New, Won→Closed, Lost→Closed, Closed→Closed,
+  Re-open→New) and creates a status for any other value already stored on an
+  Enquiry, so no existing row ends up with a broken link. "Closed" is new — it
+  was not one of the old Select options.
+- **Enquiry Status link in the LogicX HR sidebar** (`workspace_sidebar/logicx_hr.json`) —
+  added as a child (idx 14) of the existing "Masters" section.
+
+### Changed
+
+- `Enquiry.status` is now a **Link to Enquiry Status** instead of a Select with
+  hard-coded options. Stored values are unchanged — the old option strings are
+  the new document names — so existing Enquiry records, the "Enquiry List-In
+  wise Status" / "Enquiry Owner wise Status" reports and the REST examples keep
+  working.
+
 ## [0.1.4] - 2026-08-21
 
 ### Added
