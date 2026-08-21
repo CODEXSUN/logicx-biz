@@ -5,6 +5,29 @@ All notable changes to **logicx-biz** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-08-21
+
+### Added
+
+- **Enquiry Group DocType** (`LogicX HR`) — master for the Enquiry "List in"
+  values. Auto-named from a unique, mandatory `Group Name`; ordered by `idx`
+  (descending) so the picker keeps the order the old Select had. Same role
+  permissions as the other masters: `TM User` (read/create/write), `TM Admin`
+  (full, including delete/import, plus permlevel 1).
+- **`create_enquiry_groups` patch** — seeds the eleven default groups (Stores,
+  DELL, ASUS, Spares, MBO, Service, On-site, Remote - AnyDesk, Follow, LogicX,
+  Admin) and creates a group for any other value already stored on an Enquiry,
+  so no existing row ends up with a broken link.
+- **"Masters" section in the LogicX HR sidebar** (`workspace_sidebar/logicx_hr.json`) —
+  collapsible section (idx 12) at the end, with **Enquiry Group** as its child link.
+
+### Changed
+
+- `Enquiry.group` ("List in") is now a **Link to Enquiry Group** instead of a
+  Select with hard-coded options. Stored values are unchanged — the old option
+  strings are the new document names — so existing Enquiry records, the
+  "Enquiry List-In wise Status" report and the REST examples keep working.
+
 ## [0.1.3] - 2026-08-19
 
 ### Added

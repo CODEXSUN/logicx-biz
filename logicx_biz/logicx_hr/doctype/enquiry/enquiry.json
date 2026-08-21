@@ -60,8 +60,8 @@
 		{
 			"label": "List in",
 			"fieldname": "group",
-			"fieldtype": "Select",
-			"options": "\nStores\nDELL\nASUS\nSpares\nMBO\nService\nOn-site\nRemote - AnyDesk\nFollow\nLogicX\nAdmin",
+			"fieldtype": "Link",
+			"options": "Enquiry Group",
 			"default": "",
 			"reqd": 0,
 			"in_list_view": 1,
