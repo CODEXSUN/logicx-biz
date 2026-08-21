@@ -23,8 +23,8 @@ frappe.query_reports["Enquiry Owner wise Status"] = {
 		{
 			fieldname: "group",
 			label: __("List in"),
-			fieldtype: "Select",
-			options: "\nStores\nDELL\nASUS\nSpares\nMBO\nService\nOn-site\nRemote - AnyDesk\nFollow\nAdmin",
+			fieldtype: "Link",
+			options: "Enquiry Group",
 		},
 	],
 };

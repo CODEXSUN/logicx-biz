@@ -33,6 +33,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the new document names — so existing Enquiry records, the "Enquiry List-In
   wise Status" / "Enquiry Owner wise Status" reports and the REST examples keep
   working.
+- **Both Enquiry status reports now bucket by `Enquiry Status.status_group`**
+  instead of their own hard-coded status lists, so a status added through the UI
+  lands in the right column automatically and the new "Closed" status no longer
+  falls into "Other". `get_status_groups()` / `get_status_bucket_map()` on the
+  Enquiry Status controller are the shared source. Consequence: "Enquiry List-In
+  wise Status" now has **New / Pending / Hold / Closed** columns — Won and Lost
+  are merged into **Closed**, since that is the group both map to.
+- `Enquiry Owner wise Status`: the "List in" filter is now a **Link to Enquiry
+  Group** instead of a Select with hard-coded options left over from the 0.1.4
+  refactor. Its visible columns become **Pending / Hold** (previously Open /
+  Hold); the other groups are still counted but stay hidden, as before.
 
 ## [0.1.4] - 2026-08-21
 

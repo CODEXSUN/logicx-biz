@@ -1,16 +1,17 @@
 import frappe
 from frappe import _
 
-STATUS_BUCKETS = {
-	"open": ["Open"],
-	"hold": ["Hold for Approval", "Hold for Spares", "Hold for Job-Out"],
-	"won": ["Won"],
-	"lost": ["Lost"],
-}
+from logicx_biz.logicx_hr.doctype.enquiry_status.enquiry_status import (
+	get_status_bucket_map,
+	get_status_groups,
+)
 
-STATUS_TO_BUCKET = {
-	status: fieldname for fieldname, statuses in STATUS_BUCKETS.items() for status in statuses
-}
+OTHER_BUCKET = "other"
+
+# Every group is counted, but only these are shown -- the report is used as a
+# live workload view, so the closed work is deliberately left out (see the
+# commented-out columns in get_columns).
+VISIBLE_GROUPS = ["Pending", "Hold"]
 
 
 def execute(filters=None):
@@ -21,13 +22,20 @@ def execute(filters=None):
 def get_columns():
 	columns = [
 		{"label": _("Assigned To"), "fieldname": "assigned_to", "fieldtype": "Data", "width": 150},
-		{"label": _("Open"), "fieldname": "open", "fieldtype": "Int", "width": 90},
-		{"label": _("Hold"), "fieldname": "hold", "fieldtype": "Int", "width": 90},
-		# {"label": _("Won"), "fieldname": "won", "fieldtype": "Int", "width": 90},
-		# {"label": _("Lost"), "fieldname": "lost", "fieldtype": "Int", "width": 90},
-		# {"label": _("Other"), "fieldname": "other", "fieldtype": "Int", "width": 90},
-		# {"label": _("Total"), "fieldname": "total", "fieldtype": "Int", "width": 150},
 	]
+	for status_group in VISIBLE_GROUPS:
+		columns.append(
+			{
+				"label": _(status_group),
+				"fieldname": frappe.scrub(status_group),
+				"fieldtype": "Int",
+				"width": 90,
+			}
+		)
+	# {"label": _("New"), "fieldname": "new", "fieldtype": "Int", "width": 90},
+	# {"label": _("Closed"), "fieldname": "closed", "fieldtype": "Int", "width": 90},
+	# {"label": _("Other"), "fieldname": "other", "fieldtype": "Int", "width": 90},
+	# {"label": _("Total"), "fieldname": "total", "fieldtype": "Int", "width": 150},
 	return columns
 
 
@@ -59,10 +67,13 @@ def get_data(filters):
 		as_dict=True,
 	)
 
+	status_buckets = get_status_bucket_map()
+	buckets = [frappe.scrub(status_group) for status_group in get_status_groups()] + [OTHER_BUCKET]
+
 	owners = {}
 	for row in rows:
 		owner_label = row.employee_name or row.assigned_to_employee or _("(unassigned)")
-		bucket = STATUS_TO_BUCKET.get(row.status, "other")
+		bucket = status_buckets.get(row.status, OTHER_BUCKET)
 		bucket_counts = owners.setdefault(owner_label, {})
 		bucket_counts[bucket] = bucket_counts.get(bucket, 0) + row.count
 
@@ -71,7 +82,7 @@ def get_data(filters):
 		bucket_counts = owners[owner_label]
 		row = {"assigned_to": owner_label}
 		total = 0
-		for bucket in list(STATUS_BUCKETS) + ["other"]:
+		for bucket in buckets:
 			count = bucket_counts.get(bucket, 0)
 			row[bucket] = count or None
 			total += count
