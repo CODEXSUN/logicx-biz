@@ -20,8 +20,18 @@
 				fieldtype: "Select",
 				options: "Customer\nSupplier",
 				default: "Customer",
-				on_change: function () {
-					frappe.query_report.set_filter_value("party", "");
+				on_change: function (report) {
+					// defining on_change replaces frappe's default filter handler, which
+					// is what reloads the report, so clear the party (it belongs to the
+					// previous party type) and reload by hand. the reload is deferred so
+					// the cleared party is in place before it runs, and _no_refresh
+					// swallows the reload that clearing the party triggers on its own
+					report._no_refresh = true;
+					report.set_filter_value("party", "");
+					setTimeout(function () {
+						report._no_refresh = false;
+						report.refresh();
+					}, 0);
 				},
 			},
 			{
