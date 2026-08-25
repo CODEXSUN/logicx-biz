@@ -109,6 +109,32 @@
 			"link_type": "DocType",
 			"link_to": "Enquiry Status",
 			"child": 1
+		},
+		{
+			"idx": 15,
+			"label": "Reports",
+			"type": "Section Break",
+			"icon": "file-text",
+			"indent": 1,
+			"collapsible": 1,
+			"keep_closed": 0,
+			"child": 0
+		},
+		{
+			"idx": 16,
+			"label": "Enquiry List-In wise Status",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Enquiry List-In wise Status",
+			"child": 1
+		},
+		{
+			"idx": 17,
+			"label": "Enquiry Owner wise Status",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Enquiry Owner wise Status",
+			"child": 1
 		}
 	]
 }

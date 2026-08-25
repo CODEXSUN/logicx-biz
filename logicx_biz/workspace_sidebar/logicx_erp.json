@@ -65,34 +65,41 @@
 		},
 		{
 			"idx": 9,
+			"label": "Party Not Reconciled",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Party Not Reconciled"
+		},
+		{
+			"idx": 10,
 			"label": "Negative Customer Outstanding",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Negative Customer Outstanding"
 		},
 		{
-			"idx": 10,
+			"idx": 11,
 			"label": "Negative Supplier Outstanding",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Negative Supplier Outstanding"
 		},
 		{
-			"idx": 11,
+			"idx": 12,
 			"label": "Sales GP GL Schemes",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Sales GP GL Schemes"
 		},
 		{
-			"idx": 12,
+			"idx": 13,
 			"label": "Sales Item-wise GP GL Schemes",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Sales Item-wise GP GL Schemes"
 		},
 		{
-			"idx": 13,
+			"idx": 14,
 			"label": "Doc",
 			"type": "Section Break",
 			"icon": "file-text",
@@ -102,7 +109,7 @@
 			"child": 0
 		},
 		{
-			"idx": 14,
+			"idx": 15,
 			"label": "Item",
 			"type": "Link",
 			"link_type": "DocType",
@@ -110,7 +117,7 @@
 			"child": 1
 		},
 		{
-			"idx": 15,
+			"idx": 16,
 			"label": "Rack",
 			"type": "Link",
 			"link_type": "DocType",
@@ -118,7 +125,7 @@
 			"child": 1
 		},
 		{
-			"idx": 16,
+			"idx": 17,
 			"label": "Crate",
 			"type": "Link",
 			"link_type": "DocType",
