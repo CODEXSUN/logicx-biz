@@ -2,16 +2,6 @@
 	frappe.query_reports["Party Not Reconciled"] = {
 		onload: function (report) {
 			wrap_column_headers(report);
-			bind_reconcile_link(report);
-		},
-		formatter: function (value, row, column, data, default_formatter) {
-			if (column.fieldname === "reconcile" && data && data.party) {
-				// plain content only -- reconcile_link_html below turns this into
-				// the actual clickable <a>, kept out of the datatable's own
-				// escaping/formatting path so the href data-attributes survive
-				return reconcile_link_html(data);
-			}
-			return default_formatter(value, row, column, data);
 		},
 		filters: [
 			{
@@ -51,45 +41,6 @@
 	const HEADER_WRAP_CLASS = "logicx-wrap-headers";
 	const HEADER_HEIGHT_INCREASE = "15px";
 	const FILTER_ROWS_INCREASE = `${0 * 40}px`;
-
-	function reconcile_link_html(data) {
-		// party/company are Frappe names (docname charset), never raw user text,
-		// but escape them anyway since they land in an HTML attribute
-		const party_type = frappe.utils.escape_html(data.party_type || "");
-		const party = frappe.utils.escape_html(data.party || "");
-		const company = frappe.utils.escape_html(data.company || "");
-		return (
-			`<a href="#" class="pnr-reconcile-link" ` +
-			`data-party-type="${party_type}" data-party="${party}" data-company="${company}">` +
-			`${__("Reconcile")}</a>`
-		);
-	}
-
-	function bind_reconcile_link(report) {
-		// delegated so it survives the datatable re-rendering rows on every
-		// refresh/sort/filter -- bind once against the page wrapper, which
-		// persists for the life of the report
-		report.page.wrapper.off("click", ".pnr-reconcile-link").on("click", ".pnr-reconcile-link", function (e) {
-			e.preventDefault();
-			const $link = $(this);
-
-			// prefilling and routing to a new document is the well-supported part
-			// of this flow (frappe.new_doc applies frappe.route_options as the new
-			// doc's field values); it does not run the form's "Get Unreconciled
-			// Entries" step for us, since that needs a receivable/payable account
-			// this report has no reliable way to resolve up front -- so the user
-			// still picks the account and clicks that button themselves.
-			frappe.route_options = {
-				party_type: $link.data("party-type"),
-				party: $link.data("party"),
-			};
-			const company = $link.data("company");
-			if (company) {
-				frappe.route_options.company = company;
-			}
-			frappe.new_doc("Payment Reconciliation");
-		});
-	}
 
 	function wrap_column_headers(report) {
 		// frappe-datatable truncates header labels with an ellipsis and offers no
