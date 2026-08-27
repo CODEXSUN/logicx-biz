@@ -122,7 +122,7 @@ def get_data(filters):
 		LEFT JOIN `tabCustomer` cust ON cust.name = grp.party AND grp.party_type = 'Customer'
 		LEFT JOIN `tabSupplier` supp ON supp.name = grp.party AND grp.party_type = 'Supplier'
 		GROUP BY party_name, grp.party_type, grp.party
-		HAVING {unreconciled_debit} != 0 OR {unreconciled_credit} != 0
+		HAVING {unreconciled_debit} != 0 AND {unreconciled_credit} != 0
 		ORDER BY grp.party_type, grp.party
 		""",
 		params,
