@@ -73,11 +73,11 @@ def get_data(filters):
 
 	# entries settle against each other within an `against_voucher` group; an entry
 	# that references nothing (an on-account payment, an unlinked journal entry)
-	# stands alone as its own group, keyed by its own voucher. a group whose debit
-	# and credit do not net to zero is still awaiting reconciliation, so the whole
-	# of that group's debit and credit is reported as non-reconciled.
-	unsettled_debit = "SUM(CASE WHEN grp.net_amount != 0 THEN grp.debit ELSE 0 END)"
-	unsettled_credit = "SUM(CASE WHEN grp.net_amount != 0 THEN grp.credit ELSE 0 END)"
+	# stands alone as its own group, keyed by its own voucher. within a group the
+	# debit and credit cancel out as far as they go, so only what is left over --
+	# the group's net amount -- is still awaiting reconciliation and gets reported.
+	unsettled_debit = "SUM(CASE WHEN grp.net_amount > 0 THEN grp.net_amount ELSE 0 END)"
+	unsettled_credit = "SUM(CASE WHEN grp.net_amount < 0 THEN -grp.net_amount ELSE 0 END)"
 
 	return frappe.db.sql(
 		f"""
