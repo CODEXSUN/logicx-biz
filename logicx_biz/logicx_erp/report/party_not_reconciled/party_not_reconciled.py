@@ -45,6 +45,12 @@ def get_columns():
 			"width": 150,
 		},
 		{
+			"label": _(""),
+			"fieldname": "reconcile",
+			"fieldtype": "Data",
+			"width": 100,
+		},
+		{
 			"label": _("Receivable<br>Amount"),
 			"fieldname": "receivable_amount",
 			"fieldtype": "Currency",
@@ -98,6 +104,8 @@ def get_data(filters):
 			grp.party_type,
 			grp.party,
 			COALESCE(cust.customer_name, supp.supplier_name) AS party_name,
+			'Reconcile' AS reconcile,
+			MAX(grp.company) AS company,
 			NULLIF({unreconciled_debit}, 0) AS debit_non_reconciled,
 			NULLIF({unreconciled_credit}, 0) AS credit_non_reconciled,
 			CASE WHEN {net_unreconciled} > 0
@@ -108,6 +116,7 @@ def get_data(filters):
 			SELECT
 				ple.party_type,
 				ple.party,
+				ple.company,
 				CASE WHEN ple.account_type = 'Payable'
 				     THEN -SUM(ple.amount) ELSE SUM(ple.amount) END AS net_debit
 			FROM `tabPayment Ledger Entry` ple
@@ -115,6 +124,7 @@ def get_data(filters):
 			GROUP BY
 				ple.party_type,
 				ple.party,
+				ple.company,
 				ple.account_type,
 				ple.against_voucher_type,
 				ple.against_voucher_no
