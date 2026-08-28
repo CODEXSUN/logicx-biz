@@ -42,6 +42,7 @@
 				checkboxColumn: true,
 				events: Object.assign({}, options.events, {
 					onCheckRow: function () {
+						enforce_single_checked_row();
 						update_party_statement_action();
 					},
 				}),
@@ -49,7 +50,9 @@
 		},
 		after_datatable_render: function () {
 			// every (re)render starts with nothing checked, so the action goes back
-			// to disabled until the user checks exactly one row again
+			// to disabled until the user checks exactly one row again, and the
+			// tracked checked-state below resets to match
+			previous_checked = [];
 			update_party_statement_action();
 		},
 	};
@@ -65,6 +68,12 @@
 	// binds `this` inside the query_report config hooks
 	let current_report = null;
 	let action_button = null;
+	// last-seen result of getCheckedRows(), used by enforce_single_checked_row()
+	// below to tell which row was just (un)checked -- getCheckedRows() always
+	// comes back in ascending row-index order, not click order, so a plain diff
+	// against the previous snapshot is the only reliable way to find it
+	let previous_checked = [];
+	let enforcing_single_check = false;
 
 	function add_party_statement_action(report) {
 		current_report = report;
@@ -90,6 +99,36 @@
 		if (!current_report.datatable.rowmanager) return [];
 		const indexes = current_report.datatable.rowmanager.getCheckedRows() || [];
 		return indexes.map((i) => current_report.data[i]).filter(Boolean);
+	}
+
+	function enforce_single_checked_row() {
+		// keeps the checkbox column acting like a radio button: whichever row was
+		// just checked wins, every other checked row gets unchecked to match
+		if (enforcing_single_check) return;
+		const rowmanager = current_report && current_report.datatable && current_report.datatable.rowmanager;
+		if (!rowmanager) return;
+
+		const checked = rowmanager.getCheckedRows() || [];
+		if (checked.length > 1) {
+			// the row missing from the previous snapshot is the one just clicked;
+			// if that's ambiguous (e.g. the header "check all" box), fall back to
+			// the highest row index so the collapse is at least deterministic
+			const newly_checked = checked.find((i) => !previous_checked.includes(i));
+			const keep = newly_checked !== undefined ? newly_checked : checked[checked.length - 1];
+
+			enforcing_single_check = true;
+			try {
+				checked.forEach((rowIndex) => {
+					if (rowIndex !== keep) {
+						rowmanager.checkRow(rowIndex, false);
+					}
+				});
+			} finally {
+				enforcing_single_check = false;
+			}
+		}
+
+		previous_checked = rowmanager.getCheckedRows() || [];
 	}
 
 	function update_party_statement_action() {
