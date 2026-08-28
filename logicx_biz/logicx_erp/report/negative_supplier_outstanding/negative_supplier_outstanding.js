@@ -2,6 +2,7 @@
 	frappe.query_reports["Negative Supplier Outstanding"] = {
 		onload: function (report) {
 			wrap_column_headers(report);
+			add_statement_buttons(report);
 		},
 		filters: [
 			{
@@ -11,6 +12,19 @@
 				options: "Supplier",
 			},
 		],
+		formatter: function (value, row, column, data, default_formatter) {
+			if (column.fieldname === "open_statement") {
+				if (!data || !data.party) return "";
+				const party = frappe.utils.escape_html(data.party);
+				return (
+					'<button type="button" class="btn btn-xs btn-default open-statement-btn" ' +
+					'data-party="' + party + '">' +
+					__("Statement") +
+					"</button>"
+				);
+			}
+			return default_formatter(value, row, column, data);
+		},
 	};
 
 
@@ -18,6 +32,28 @@
 	const HEADER_WRAP_CLASS = "logicx-wrap-headers";
 	const HEADER_HEIGHT_INCREASE = "15px";
 	const FILTER_ROWS_INCREASE = `${0 * 40}px`;
+
+	// this report only ever lists Supplier balances (see get_data()'s
+	// party_type = 'Supplier' filter), so the Statement button below can route
+	// with a fixed party_type instead of reading one off the row
+	const PARTY_TYPE = "Supplier";
+
+	function add_statement_buttons(report) {
+		// delegated so it survives the datatable re-rendering rows on every
+		// refresh/filter change -- bind once against the page wrapper, which
+		// persists for the life of the report
+		report.page.wrapper.on("click", ".open-statement-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			const party = $(this).attr("data-party");
+			if (!party) return;
+			frappe.route_options = {
+				party_type: PARTY_TYPE,
+				party: party,
+			};
+			frappe.set_route("query-report", "Party Statement");
+		});
+	}
 
 	function wrap_column_headers(report) {
 		// frappe-datatable truncates header labels with an ellipsis and offers no

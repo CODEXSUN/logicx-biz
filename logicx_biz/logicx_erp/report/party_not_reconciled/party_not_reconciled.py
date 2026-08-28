@@ -56,6 +56,15 @@ def get_columns():
 			"fieldtype": "Currency",
 			"width": 150,
 		},
+		{
+			# no data is selected for this column -- party_not_reconciled.js's
+			# formatter renders a button here for every row (using party_type/party
+			# off the row itself), regardless of fieldtype/value
+			"label": "",
+			"fieldname": "open_statement",
+			"fieldtype": "HTML",
+			"width": 110,
+		},
 	]
 
 

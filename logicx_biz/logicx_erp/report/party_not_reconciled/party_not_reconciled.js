@@ -2,6 +2,7 @@
 	frappe.query_reports["Party Not Reconciled"] = {
 		onload: function (report) {
 			wrap_column_headers(report);
+			add_statement_buttons(report);
 		},
 		filters: [
 			{
@@ -34,6 +35,20 @@
 				},
 			},
 		],
+		formatter: function (value, row, column, data, default_formatter) {
+			if (column.fieldname === "open_statement") {
+				if (!data || !data.party_type || !data.party) return "";
+				const party_type = frappe.utils.escape_html(data.party_type);
+				const party = frappe.utils.escape_html(data.party);
+				return (
+					'<button type="button" class="btn btn-xs btn-default open-statement-btn" ' +
+					'data-party-type="' + party_type + '" data-party="' + party + '">' +
+					__("Statement") +
+					"</button>"
+				);
+			}
+			return default_formatter(value, row, column, data);
+		},
 	};
 
 
@@ -41,6 +56,25 @@
 	const HEADER_WRAP_CLASS = "logicx-wrap-headers";
 	const HEADER_HEIGHT_INCREASE = "15px";
 	const FILTER_ROWS_INCREASE = `${0 * 40}px`;
+
+	function add_statement_buttons(report) {
+		// delegated so it survives the datatable re-rendering rows on every
+		// refresh/filter change -- bind once against the page wrapper, which
+		// persists for the life of the report
+		report.page.wrapper.on("click", ".open-statement-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			const $btn = $(this);
+			const party_type = $btn.attr("data-party-type");
+			const party = $btn.attr("data-party");
+			if (!party_type || !party) return;
+			frappe.route_options = {
+				party_type: party_type,
+				party: party,
+			};
+			frappe.set_route("query-report", "Party Statement");
+		});
+	}
 
 	function wrap_column_headers(report) {
 		// frappe-datatable truncates header labels with an ellipsis and offers no

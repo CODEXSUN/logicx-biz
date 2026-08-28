@@ -28,6 +28,15 @@ def get_columns():
 			"fieldtype": "Currency",
 			"width": 150,
 		},
+		{
+			# no data is selected for this column -- negative_customer_outstanding.js's
+			# formatter renders a button here for every row (this report is always
+			# Customer, so only party is needed off the row)
+			"label": "",
+			"fieldname": "open_statement",
+			"fieldtype": "HTML",
+			"width": 110,
+		},
 	]
 
 
