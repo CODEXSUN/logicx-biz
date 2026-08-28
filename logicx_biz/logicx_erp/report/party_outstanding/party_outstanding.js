@@ -2,6 +2,7 @@
 	frappe.query_reports["Party Outstanding"] = {
 		onload: function (report) {
 			wrap_column_headers(report);
+			add_party_statement_action(report);
 		},
 		filters: [
 			{
@@ -34,6 +35,23 @@
 				},
 			},
 		],
+		get_datatable_options: function (options) {
+			// adds the row-selection checkbox column; the onCheckRow hook below
+			// drives the "Open Party Statement" action's enabled state
+			return Object.assign({}, options, {
+				checkboxColumn: true,
+				events: Object.assign({}, options.events, {
+					onCheckRow: function () {
+						update_party_statement_action();
+					},
+				}),
+			});
+		},
+		after_datatable_render: function () {
+			// every (re)render starts with nothing checked, so the action goes back
+			// to disabled until the user checks exactly one row again
+			update_party_statement_action();
+		},
 	};
 
 
@@ -41,6 +59,58 @@
 	const HEADER_WRAP_CLASS = "logicx-wrap-headers";
 	const HEADER_HEIGHT_INCREASE = "15px";
 	const FILTER_ROWS_INCREASE = `${0 * 40}px`;
+
+	// set once from onload; kept in module scope so the row-selection helpers
+	// below can reach the current report/button without relying on how frappe
+	// binds `this` inside the query_report config hooks
+	let current_report = null;
+	let action_button = null;
+
+	function add_party_statement_action(report) {
+		current_report = report;
+		action_button = report.page.add_inner_button(__("Open Party Statement"), function () {
+			open_party_statement();
+		});
+		update_party_statement_action();
+	}
+
+	function get_checked_rows() {
+		if (!current_report || !current_report.datatable || !current_report.datatable.rows) {
+			return [];
+		}
+		// frappe's QueryReport exposes get_checked_items() as a thin wrapper around
+		// datatable.rows.getCheckedRows(); fall back to the raw datatable call in
+		// case it's ever missing, and map its row indexes back to report.data,
+		// which is where party_type/party for each row actually live
+		if (typeof current_report.get_checked_items === "function") {
+			return current_report.get_checked_items();
+		}
+		const indexes = current_report.datatable.rows.getCheckedRows() || [];
+		return indexes.map((i) => current_report.data[i]).filter(Boolean);
+	}
+
+	function update_party_statement_action() {
+		if (!action_button) return;
+		const checked = get_checked_rows();
+		action_button.prop("disabled", checked.length !== 1);
+	}
+
+	function open_party_statement() {
+		const checked = get_checked_rows();
+		if (checked.length !== 1) return;
+
+		const row = checked[0];
+		// route_options is applied against Party Statement's own filters in
+		// declaration order (party_type, then party), so by the time its
+		// party_type on_change clears party (see above) and defers its refresh,
+		// party has already been re-set to our value -- same deferred-refresh
+		// trick this report's own on_change relies on
+		frappe.route_options = {
+			party_type: row.party_type,
+			party: row.party,
+		};
+		frappe.set_route("query-report", "Party Statement");
+	}
 
 	function wrap_column_headers(report) {
 		// frappe-datatable truncates header labels with an ellipsis and offers no
