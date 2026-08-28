@@ -3,6 +3,7 @@
 		onload: function (report) {
 			wrap_column_headers(report);
 			add_party_statement_action(report);
+			add_statement_buttons(report);
 		},
 		filters: [
 			{
@@ -54,6 +55,20 @@
 			// tracked checked-state below resets to match
 			previous_checked = [];
 			update_party_statement_action();
+		},
+		formatter: function (value, row, column, data, default_formatter) {
+			if (column.fieldname === "open_statement") {
+				if (!data || !data.party_type || !data.party) return "";
+				const party_type = frappe.utils.escape_html(data.party_type);
+				const party = frappe.utils.escape_html(data.party);
+				return (
+					'<button type="button" class="btn btn-xs btn-default open-statement-btn" ' +
+					'data-party-type="' + party_type + '" data-party="' + party + '">' +
+					__("Statement") +
+					"</button>"
+				);
+			}
+			return default_formatter(value, row, column, data);
 		},
 	};
 
@@ -137,21 +152,41 @@
 		action_button.prop("disabled", checked.length !== 1);
 	}
 
-	function open_party_statement() {
-		const checked = get_checked_rows();
-		if (checked.length !== 1) return;
-
-		const row = checked[0];
+	function route_to_party_statement(party_type, party) {
 		// route_options is applied against Party Statement's own filters in
 		// declaration order (party_type, then party), so by the time its
 		// party_type on_change clears party (see above) and defers its refresh,
 		// party has already been re-set to our value -- same deferred-refresh
 		// trick this report's own on_change relies on
 		frappe.route_options = {
-			party_type: row.party_type,
-			party: row.party,
+			party_type: party_type,
+			party: party,
 		};
 		frappe.set_route("query-report", "Party Statement");
+	}
+
+	function open_party_statement() {
+		const checked = get_checked_rows();
+		if (checked.length !== 1) return;
+
+		const row = checked[0];
+		route_to_party_statement(row.party_type, row.party);
+	}
+
+	function add_statement_buttons(report) {
+		// the per-row button rendered by the "formatter" hook above is a plain
+		// <button>, re-rendered on every refresh/filter change -- delegating the
+		// click handler from the page wrapper (bound once, here) means it keeps
+		// working across re-renders without needing to rebind it each time
+		report.page.wrapper.on("click", ".open-statement-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			const $btn = $(this);
+			const party_type = $btn.attr("data-party-type");
+			const party = $btn.attr("data-party");
+			if (!party_type || !party) return;
+			route_to_party_statement(party_type, party);
+		});
 	}
 
 	function wrap_column_headers(report) {

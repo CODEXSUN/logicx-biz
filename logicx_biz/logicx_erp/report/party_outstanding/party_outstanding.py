@@ -40,6 +40,15 @@ def get_columns():
 			"fieldtype": "Currency",
 			"width": 150,
 		},
+		{
+			# no data is selected for this column -- party_outstanding.js's formatter
+			# renders a button here for every row (using party_type/party off the row
+			# itself), regardless of fieldtype/value, so nothing to add in get_data()
+			"label": "",
+			"fieldname": "open_statement",
+			"fieldtype": "HTML",
+			"width": 110,
+		},
 	]
 
 
