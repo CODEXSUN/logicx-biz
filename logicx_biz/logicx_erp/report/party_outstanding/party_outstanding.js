@@ -75,17 +75,20 @@
 	}
 
 	function get_checked_rows() {
-		if (!current_report || !current_report.datatable || !current_report.datatable.rows) {
+		if (!current_report || !current_report.datatable) {
 			return [];
 		}
 		// frappe's QueryReport exposes get_checked_items() as a thin wrapper around
-		// datatable.rows.getCheckedRows(); fall back to the raw datatable call in
-		// case it's ever missing, and map its row indexes back to report.data,
-		// which is where party_type/party for each row actually live
+		// datatable.rowmanager.getCheckedRows() -- note "rowmanager", not ".rows",
+		// which doesn't exist and is what silently broke this. fall back to the raw
+		// datatable call in case get_checked_items is ever missing, and map its row
+		// indexes back to report.data, which is where party_type/party for each
+		// row actually live
 		if (typeof current_report.get_checked_items === "function") {
 			return current_report.get_checked_items();
 		}
-		const indexes = current_report.datatable.rows.getCheckedRows() || [];
+		if (!current_report.datatable.rowmanager) return [];
+		const indexes = current_report.datatable.rowmanager.getCheckedRows() || [];
 		return indexes.map((i) => current_report.data[i]).filter(Boolean);
 	}
 
