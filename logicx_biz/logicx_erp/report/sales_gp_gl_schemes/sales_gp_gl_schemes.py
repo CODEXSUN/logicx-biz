@@ -87,6 +87,16 @@ def get_columns():
 			"disable_total": 1,
 			"width": 80,
 		},
+		{
+			# no data is selected for this column -- sales_gp_gl_schemes.js's formatter
+			# renders a button here for every row, using invoice_number off the row and
+			# from_date/to_date off this report's own filters (both apply to the whole
+			# report, not per row, so they aren't selected as columns here)
+			"label": "",
+			"fieldname": "open_item_wise",
+			"fieldtype": "HTML",
+			"width": 110,
+		},
 	]
 
 

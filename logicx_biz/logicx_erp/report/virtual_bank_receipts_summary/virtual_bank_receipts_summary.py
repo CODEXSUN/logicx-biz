@@ -27,7 +27,7 @@ def get_columns():
 			# formatter renders a button here for every row, using mode_of_payment off
 			# the row and posting_date off this report's own filter (posting_date isn't
 			# a per-row field here -- the whole report is already scoped to one date)
-			"label": _("Breakup"),
+			"label": "",
 			"fieldname": "open_breakup",
 			"fieldtype": "HTML",
 			"width": 110,

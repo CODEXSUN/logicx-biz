@@ -25,6 +25,12 @@ frappe.query_reports["Sales Item-wise GP GL Schemes"] = {
 			options: "Sales Person"
 		},
 		{
+			fieldname: "invoice_number",
+			label: __("Invoice Number"),
+			fieldtype: "Link",
+			options: "Sales Invoice"
+		},
+		{
 			fieldname: "item_code",
 			label: __("Item"),
 			fieldtype: "Link",

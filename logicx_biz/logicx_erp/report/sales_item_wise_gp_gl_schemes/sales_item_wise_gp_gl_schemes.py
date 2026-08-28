@@ -133,6 +133,10 @@ def get_data(filters):
 		conditions.append("sh.posting_date <= %(to_date)s")
 		params["to_date"] = filters["to_date"]
 
+	if filters.get("invoice_number"):
+		conditions.append("sh.name = %(invoice_number)s")
+		params["invoice_number"] = filters["invoice_number"]
+
 	if filters.get("customer_code"):
 		conditions.append("sh.customer = %(customer_code)s")
 		params["customer_code"] = filters["customer_code"]
