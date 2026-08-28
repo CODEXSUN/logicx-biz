@@ -9,6 +9,8 @@ AGEING_RANGES = {
 	"0-30 days": (None, 30),
 	"31-60 days": (31, 60),
 	"61-Above": (61, None),
+	"61-90 days": (61, 90),
+	"91-Above": (91, None),
 	"0-21 days": (None, 21),
 	"22-45 days": (22, 45),
 	"46-Above": (46, None),
