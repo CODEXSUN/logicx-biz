@@ -2,15 +2,17 @@ import frappe
 from frappe import _
 
 # days overdue covered by each ageing range, both bounds inclusive; a None bound is
-# open-ended (used both for "46-Above" and for "Below 21 days", which also covers
+# open-ended (used both for "46-Above" and for "0-21 days", which also covers
 # not-yet-due/negative ageing). The keys double as the Select options in
 # party_overdue_statement.js and as the second line of the amount column header.
 AGEING_RANGES = {
-	"Below 21 days": (None, 21),
+	"0-21 days": (None, 21),
 	"22-45 days": (22, 45),
+	"0-30 days": (None, 30),
+	"31-45 days": (31, 45),
 	"46-Above": (46, None),
 }
-DEFAULT_AGEING_RANGE = "22-45 days"
+DEFAULT_AGEING_RANGE = "31-45 days"
 
 # amounts below this are rounding residue (mostly from multi-currency conversion)
 # and count as settled, the way Payment Reconciliation ignores them too
