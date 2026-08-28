@@ -10,8 +10,8 @@
 				fieldtype: "Select",
 				// kept in sync with AGEING_RANGES in party_overdue_statement.py, which
 				// also prints the selected range in the amount column header
-				options: "0-21 days\n22-45 days\n0-30 days\n31-45 days\n46-Above",
-				default: "31-45 days",
+				options: "0-30 days\n31-60 days\n61-Above\n0-21 days\n22-45 days\n46-Above",
+				default: "31-60 days",
 				reqd: 1,
 			},
 			{

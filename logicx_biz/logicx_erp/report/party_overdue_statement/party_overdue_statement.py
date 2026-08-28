@@ -6,13 +6,14 @@ from frappe import _
 # not-yet-due/negative ageing). The keys double as the Select options in
 # party_overdue_statement.js and as the second line of the amount column header.
 AGEING_RANGES = {
+	"0-30 days": (None, 30),
+	"31-60 days": (31, 60),
+	"61-Above": (61, None),
 	"0-21 days": (None, 21),
 	"22-45 days": (22, 45),
-	"0-30 days": (None, 30),
-	"31-45 days": (31, 45),
 	"46-Above": (46, None),
 }
-DEFAULT_AGEING_RANGE = "31-45 days"
+DEFAULT_AGEING_RANGE = "31-60 days"
 
 # amounts below this are rounding residue (mostly from multi-currency conversion)
 # and count as settled, the way Payment Reconciliation ignores them too
