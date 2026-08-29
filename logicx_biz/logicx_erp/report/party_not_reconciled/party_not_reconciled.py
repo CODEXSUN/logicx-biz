@@ -63,7 +63,7 @@ def get_columns():
 			"label": "",
 			"fieldname": "open_statement",
 			"fieldtype": "HTML",
-			"width": 190,
+			"width": 280,
 		},
 	]
 

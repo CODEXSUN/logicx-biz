@@ -45,6 +45,11 @@
 			'style="margin-left:4px" ' +
 			'data-party="' + party + '">' +
 			__("Bill-wise") +
+			"</button>" +
+			'<button type="button" class="btn btn-xs btn-default open-dashboard-btn" ' +
+			'style="margin-left:4px" ' +
+			'data-party="' + party + '">' +
+			__("Dashboard") +
 			"</button>"
 		);
 	}
@@ -68,6 +73,14 @@
 			if (!party) return;
 			open_report_in_new_tab("Party Bill-wise Statement", PARTY_TYPE, party);
 		});
+
+		report.page.wrapper.on("click", ".open-dashboard-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			const party = $(this).attr("data-party");
+			if (!party) return;
+			open_party_page(PARTY_TYPE, party);
+		});
 	}
 	// open `report_name` in a new browser tab with the row's party prefilled.
 	// frappe.route_options can't survive window.open (a fresh document), so the
@@ -77,6 +90,15 @@
 		const params = $.param({ party_type: party_type, party: party });
 		const url = "/app/query-report/" + encodeURIComponent(report_name) + "?" + params;
 		window.open(url, "_blank");
+	}
+
+	// unlike the two report buttons above, the dashboard opens in this same tab:
+	// it is the overview you drill down from, so the desk router handles it and
+	// the browser Back button returns to this report. route_options survives an
+	// in-app route change, and party_page reads it on its on_page_show.
+	function open_party_page(party_type, party) {
+		frappe.route_options = { party_type: party_type, party: party };
+		frappe.set_route("party-page");
 	}
 
 	function wrap_column_headers(report) {
