@@ -16,12 +16,7 @@
 			if (column.fieldname === "open_statement") {
 				if (!data || !data.party) return "";
 				const party = frappe.utils.escape_html(data.party);
-				return (
-					'<button type="button" class="btn btn-xs btn-default open-statement-btn" ' +
-					'data-party="' + party + '">' +
-					__("Statement") +
-					"</button>"
-				);
+				return render_statement_buttons(party);
 			}
 			return default_formatter(value, row, column, data);
 		},
@@ -34,9 +29,25 @@
 	const FILTER_ROWS_INCREASE = `${0 * 40}px`;
 
 	// this report only ever lists Customer balances (see get_data()'s
-	// party_type = 'Customer' filter), so the Statement button below can route
-	// with a fixed party_type instead of reading one off the row
+	// party_type = 'Customer' filter), so the buttons below can route with a
+	// fixed party_type instead of reading one off the row
 	const PARTY_TYPE = "Customer";
+
+	// two per-row buttons in the one HTML cell, laid out left to right: "Statement"
+	// hands off to Party Statement, "Bill-wise" to Party Bill-wise Statement
+	function render_statement_buttons(party) {
+		return (
+			'<button type="button" class="btn btn-xs btn-default open-statement-btn" ' +
+			'data-party="' + party + '">' +
+			__("Statement") +
+			"</button>" +
+			'<button type="button" class="btn btn-xs btn-default open-bill-wise-btn" ' +
+			'style="margin-left:4px" ' +
+			'data-party="' + party + '">' +
+			__("Bill-wise") +
+			"</button>"
+		);
+	}
 
 	function add_statement_buttons(report) {
 		// delegated so it survives the datatable re-rendering rows on every
@@ -52,6 +63,18 @@
 				party: party,
 			};
 			frappe.set_route("query-report", "Party Statement");
+		});
+
+		report.page.wrapper.on("click", ".open-bill-wise-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			const party = $(this).attr("data-party");
+			if (!party) return;
+			frappe.route_options = {
+				party_type: PARTY_TYPE,
+				party: party,
+			};
+			frappe.set_route("query-report", "Party Bill-wise Statement");
 		});
 	}
 

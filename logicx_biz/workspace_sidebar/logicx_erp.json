@@ -58,45 +58,45 @@
 		},
 		{
 			"idx": 8,
-			"label": "Party Outstanding",
-			"type": "Link",
-			"link_type": "Report",
-			"link_to": "Party Outstanding"
-		},
-		{
-			"idx": 9,
-			"label": "Party Not Reconciled",
-			"type": "Link",
-			"link_type": "Report",
-			"link_to": "Party Not Reconciled"
-		},
-		{
-			"idx": 10,
-			"label": "Party Overdue Statement",
-			"type": "Link",
-			"link_type": "Report",
-			"link_to": "Party Overdue Statement"
-		},
-		{
-			"idx": 11,
 			"label": "Party Bill-wise Statement",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Party Bill-wise Statement"
 		},
 		{
-			"idx": 12,
+			"idx": 9,
+			"label": "Party Outstanding",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Party Outstanding"
+		},
+		{
+			"idx": 10,
 			"label": "Negative Customer Outstanding",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Negative Customer Outstanding"
 		},
 		{
-			"idx": 13,
+			"idx": 11,
 			"label": "Negative Supplier Outstanding",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Negative Supplier Outstanding"
+		},
+		{
+			"idx": 12,
+			"label": "Party Not Reconciled",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Party Not Reconciled"
+		},
+		{
+			"idx": 13,
+			"label": "Party Overdue Statement",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Party Overdue Statement"
 		},
 		{
 			"idx": 14,

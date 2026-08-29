@@ -61,12 +61,7 @@
 				if (!data || !data.party_type || !data.party) return "";
 				const party_type = frappe.utils.escape_html(data.party_type);
 				const party = frappe.utils.escape_html(data.party);
-				return (
-					'<button type="button" class="btn btn-xs btn-default open-statement-btn" ' +
-					'data-party-type="' + party_type + '" data-party="' + party + '">' +
-					__("Statement") +
-					"</button>"
-				);
+				return render_statement_buttons(party_type, party);
 			}
 			return default_formatter(value, row, column, data);
 		},
@@ -165,6 +160,16 @@
 		frappe.set_route("query-report", "Party Statement");
 	}
 
+	function route_to_bill_wise_statement(party_type, party) {
+		// same deferred-refresh handoff as route_to_party_statement, into Party
+		// Bill-wise Statement (whose filters declare party_type before party too)
+		frappe.route_options = {
+			party_type: party_type,
+			party: party,
+		};
+		frappe.set_route("query-report", "Party Bill-wise Statement");
+	}
+
 	function open_party_statement() {
 		const checked = get_checked_rows();
 		if (checked.length !== 1) return;
@@ -173,11 +178,29 @@
 		route_to_party_statement(row.party_type, row.party);
 	}
 
+	// two per-row buttons in the one HTML cell, laid out left to right: "Statement"
+	// hands off to Party Statement, "Bill-wise" to Party Bill-wise Statement. Both
+	// carry the row's own party_type/party on data- attributes for the delegated
+	// click handlers in add_statement_buttons() to route with.
+	function render_statement_buttons(party_type, party) {
+		return (
+			'<button type="button" class="btn btn-xs btn-default open-statement-btn" ' +
+			'data-party-type="' + party_type + '" data-party="' + party + '">' +
+			__("Statement") +
+			"</button>" +
+			'<button type="button" class="btn btn-xs btn-default open-bill-wise-btn" ' +
+			'style="margin-left:4px" ' +
+			'data-party-type="' + party_type + '" data-party="' + party + '">' +
+			__("Bill-wise") +
+			"</button>"
+		);
+	}
+
 	function add_statement_buttons(report) {
-		// the per-row button rendered by the "formatter" hook above is a plain
-		// <button>, re-rendered on every refresh/filter change -- delegating the
-		// click handler from the page wrapper (bound once, here) means it keeps
-		// working across re-renders without needing to rebind it each time
+		// the per-row buttons rendered by the "formatter" hook above are plain
+		// <button>s, re-rendered on every refresh/filter change -- delegating the
+		// click handlers from the page wrapper (bound once, here) means they keep
+		// working across re-renders without needing to rebind them each time
 		report.page.wrapper.on("click", ".open-statement-btn", function (e) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -186,6 +209,16 @@
 			const party = $btn.attr("data-party");
 			if (!party_type || !party) return;
 			route_to_party_statement(party_type, party);
+		});
+
+		report.page.wrapper.on("click", ".open-bill-wise-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			const $btn = $(this);
+			const party_type = $btn.attr("data-party-type");
+			const party = $btn.attr("data-party");
+			if (!party_type || !party) return;
+			route_to_bill_wise_statement(party_type, party);
 		});
 	}
 

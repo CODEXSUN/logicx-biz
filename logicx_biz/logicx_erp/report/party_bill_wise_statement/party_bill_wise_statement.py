@@ -9,7 +9,7 @@ ROUNDING_TOLERANCE = 0.01
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
-	return get_columns(), get_data(filters)
+	return get_columns(), get_data(filters), get_message(filters)
 
 
 def get_columns():
@@ -46,6 +46,16 @@ def get_columns():
 			"width": 140,
 		},
 	]
+
+
+def get_message(filters):
+	party = filters.get("party")
+	if not party:
+		return None
+	party_type = filters.get("party_type") or "Customer"
+	name_field = "supplier_name" if party_type == "Supplier" else "customer_name"
+	party_name = frappe.db.get_value(party_type, party, name_field) or party
+	return "<b>Name : </b> " + frappe.utils.escape_html(party_name)
 
 
 def get_data(filters):

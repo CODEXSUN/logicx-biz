@@ -65,7 +65,7 @@ def get_columns(ageing_range):
 			"label": "",
 			"fieldname": "open_statement",
 			"fieldtype": "HTML",
-			"width": 110,
+			"width": 190,
 		},
 	]
 
