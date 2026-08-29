@@ -58,11 +58,7 @@
 			e.stopPropagation();
 			const party = $(this).attr("data-party");
 			if (!party) return;
-			frappe.route_options = {
-				party_type: PARTY_TYPE,
-				party: party,
-			};
-			frappe.set_route("query-report", "Party Statement");
+			open_report_in_new_tab("Party Statement", PARTY_TYPE, party);
 		});
 
 		report.page.wrapper.on("click", ".open-bill-wise-btn", function (e) {
@@ -70,12 +66,17 @@
 			e.stopPropagation();
 			const party = $(this).attr("data-party");
 			if (!party) return;
-			frappe.route_options = {
-				party_type: PARTY_TYPE,
-				party: party,
-			};
-			frappe.set_route("query-report", "Party Bill-wise Statement");
+			open_report_in_new_tab("Party Bill-wise Statement", PARTY_TYPE, party);
 		});
+	}
+	// open `report_name` in a new browser tab with the row's party prefilled.
+	// frappe.route_options can't survive window.open (a fresh document), so the
+	// filters ride along as URL query params instead -- party_type before party,
+	// the order the target report's party_type on_change depends on
+	function open_report_in_new_tab(report_name, party_type, party) {
+		const params = $.param({ party_type: party_type, party: party });
+		const url = "/app/query-report/" + encodeURIComponent(report_name) + "?" + params;
+		window.open(url, "_blank");
 	}
 
 	function wrap_column_headers(report) {

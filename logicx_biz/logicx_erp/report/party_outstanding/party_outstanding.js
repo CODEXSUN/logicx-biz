@@ -160,14 +160,15 @@
 		frappe.set_route("query-report", "Party Statement");
 	}
 
-	function route_to_bill_wise_statement(party_type, party) {
-		// same deferred-refresh handoff as route_to_party_statement, into Party
-		// Bill-wise Statement (whose filters declare party_type before party too)
-		frappe.route_options = {
-			party_type: party_type,
-			party: party,
-		};
-		frappe.set_route("query-report", "Party Bill-wise Statement");
+	// open `report_name` in a new browser tab with the given party prefilled.
+	// frappe.route_options can't survive window.open (a fresh document), so the
+	// filters ride along as URL query params instead -- party_type before party,
+	// the order Party Statement / Party Bill-wise Statement's party_type
+	// on_change depends on
+	function open_report_in_new_tab(report_name, party_type, party) {
+		const params = $.param({ party_type: party_type, party: party });
+		const url = "/app/query-report/" + encodeURIComponent(report_name) + "?" + params;
+		window.open(url, "_blank");
 	}
 
 	function open_party_statement() {
@@ -208,7 +209,7 @@
 			const party_type = $btn.attr("data-party-type");
 			const party = $btn.attr("data-party");
 			if (!party_type || !party) return;
-			route_to_party_statement(party_type, party);
+			open_report_in_new_tab("Party Statement", party_type, party);
 		});
 
 		report.page.wrapper.on("click", ".open-bill-wise-btn", function (e) {
@@ -218,7 +219,7 @@
 			const party_type = $btn.attr("data-party-type");
 			const party = $btn.attr("data-party");
 			if (!party_type || !party) return;
-			route_to_bill_wise_statement(party_type, party);
+			open_report_in_new_tab("Party Bill-wise Statement", party_type, party);
 		});
 	}
 
