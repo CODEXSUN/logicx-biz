@@ -1,0 +1,28 @@
+{
+	"doctype": "Report",
+	"name": "Party Bill-wise Statement",
+	"report_name": "Party Bill-wise Statement",
+	"report_type": "Script Report",
+	"module": "LogicX ERP",
+	"ref_doctype": "GL Entry",
+	"is_standard": "Yes",
+	"add_total_row": 0,
+	"prepared_report": 0,
+	"letter_head": null,
+	"columns": [],
+	"filters": [],
+	"roles": [
+		{
+			"role": "System Manager"
+		},
+		{
+			"role": "TM Admin"
+		},
+		{
+			"role": "TM Accounts"
+		},
+		{
+			"role": "TM User"
+		}
+	]
+}
