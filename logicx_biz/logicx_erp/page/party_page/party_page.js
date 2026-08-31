@@ -54,6 +54,11 @@
 			// bumped per load so a slow response for a party the user has already
 			// moved on from can be dropped instead of landing under the new name
 			request_seq: 0,
+			// the last result handed to each statement card, kept so switching tabs
+			// can (re)build the datatable while its pane is actually visible --
+			// frappe-datatable sizes its columns wrong when built inside a hidden pane
+			pending: {},
+			active_tab: CARDS[0].key,
 			url_params_read: false,
 			// frappe lazy-loads the datatable bundle; the report views await this
 			// same call before constructing one, so the page does too
@@ -62,6 +67,7 @@
 
 		setup_filters(built);
 		setup_open_report_links(built);
+		setup_tabs(built);
 		load(built, built.party_type, "");
 
 		return built;
@@ -77,19 +83,35 @@
 			</div>`
 		).join("");
 
-		const cards = CARDS.map(
-			(card) => `
-			<div class="logicx-pp-card" data-report="${card.key}">
-				<div class="logicx-pp-card-head">
-					<div class="logicx-pp-card-title">${frappe.utils.escape_html(card.title)}</div>
-					<a href="#" class="logicx-pp-open-report hidden"
-						data-report-name="${frappe.utils.escape_html(card.report)}">
-						${__("Open full report")} &#8599;
-					</a>
-				</div>
+		const tab_buttons = CARDS.map(
+			(card, i) => `
+			<button type="button" class="logicx-pp-tab${i === 0 ? " is-active" : ""}"
+				data-tab="${card.key}">
+				${frappe.utils.escape_html(card.title)}
+			</button>`
+		).join("");
+
+		const tab_panes = CARDS.map(
+			(card, i) => `
+			<div class="logicx-pp-tabpane${i === 0 ? "" : " hidden"}" data-report="${card.key}">
 				<div class="logicx-pp-card-body is-table"></div>
 			</div>`
 		).join("");
+
+		// one "Open full report" link lives in the tab nav and is repointed at the
+		// active tab's report (see activate_tab); the click handler reads
+		// data-report-name at click time
+		const tabs = `
+			<div class="logicx-pp-card logicx-pp-tabcard">
+				<div class="logicx-pp-tabnav">
+					<div class="logicx-pp-tabnav-tabs">${tab_buttons}</div>
+					<a href="#" class="logicx-pp-open-report hidden"
+						data-report-name="${frappe.utils.escape_html(CARDS[0].report)}">
+						${__("Open full report")} &#8599;
+					</a>
+				</div>
+				${tab_panes}
+			</div>`;
 
 		return `
 			<div class="logicx-pp-card">
@@ -101,7 +123,7 @@
 				</div>
 			</div>
 			<div class="logicx-pp-stats">${tiles}</div>
-			${cards}
+			${tabs}
 		`;
 	}
 
@@ -188,6 +210,7 @@
 		const seq = ++state.request_seq;
 		state.party_type = party_type;
 		state.party = party;
+		state.pending = {};
 		state.$el.find(".logicx-pp-open-report").toggleClass("hidden", !party);
 
 		if (!party) {
@@ -204,7 +227,7 @@
 				if (seq !== state.request_seq) return;
 				const columns = message.columns || [];
 				const rows = to_row_objects(columns, message.result || []);
-				render_table(state, "bill_wise", columns, rows, seq);
+				render_card(state, "bill_wise", columns, rows, seq);
 				set_outstanding_tiles(state, rows);
 			})
 			.catch(() => {
@@ -218,7 +241,7 @@
 			.then((message) => {
 				if (seq !== state.request_seq) return;
 				const columns = message.columns || [];
-				render_table(state, "statement", columns, to_row_objects(columns, message.result || []), seq);
+				render_card(state, "statement", columns, to_row_objects(columns, message.result || []), seq);
 			})
 			.catch(() => {
 				if (seq !== state.request_seq) return;
@@ -283,6 +306,47 @@
 			});
 			return obj;
 		});
+	}
+
+	function setup_tabs(state) {
+		// delegated from the page wrapper so the handler survives every re-render
+		state.$el.on("click", ".logicx-pp-tab", function () {
+			activate_tab(state, $(this).attr("data-tab"));
+		});
+	}
+
+	function activate_tab(state, key) {
+		if (!key || key === state.active_tab) return;
+		state.active_tab = key;
+
+		state.$el.find(".logicx-pp-tab").each(function () {
+			$(this).toggleClass("is-active", $(this).attr("data-tab") === key);
+		});
+		state.$el.find(".logicx-pp-tabpane").each(function () {
+			$(this).toggleClass("hidden", $(this).attr("data-report") !== key);
+		});
+
+		// repoint the shared "Open full report" link at the now-visible report
+		const card = CARDS.find((c) => c.key === key);
+		if (card) {
+			state.$el.find(".logicx-pp-open-report").attr("data-report-name", card.report);
+		}
+
+		// build the datatable now that its pane is visible (see pending in build)
+		render_pending(state, key);
+	}
+
+	// hand a result to a statement card: remember it, and build the table now only
+	// if that card's tab is the one on screen
+	function render_card(state, key, columns, rows, seq) {
+		state.pending[key] = { columns: columns, rows: rows, seq: seq };
+		if (key === state.active_tab) render_table(state, key, columns, rows, seq);
+	}
+
+	function render_pending(state, key) {
+		const p = state.pending[key];
+		if (!p || p.seq !== state.request_seq) return;
+		render_table(state, key, p.columns, p.rows, p.seq);
 	}
 
 	function render_table(state, key, columns, rows, seq) {
@@ -636,6 +700,50 @@
 			50% { opacity: 0.45; }
 		}
 
+		/* tab strip that fronts the two statement cards; it stands in for the
+		   per-card title bar the cards used to carry */
+		.logicx-pp-tabnav {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--margin-md);
+			padding: 0 var(--padding-lg);
+			border-bottom: 1px solid var(--border-color);
+		}
+
+		.logicx-pp-tabnav-tabs {
+			display: flex;
+			gap: var(--margin-lg);
+			flex-wrap: wrap;
+		}
+
+		.logicx-pp-tab {
+			appearance: none;
+			background: none;
+			border: none;
+			border-bottom: 2px solid transparent;
+			margin-bottom: -1px;
+			padding: var(--padding-md) 2px;
+			font-size: var(--text-md);
+			font-weight: 600;
+			color: var(--text-muted);
+			cursor: pointer;
+			white-space: nowrap;
+		}
+
+		.logicx-pp-tab:hover {
+			color: var(--text-color);
+		}
+
+		.logicx-pp-tab.is-active {
+			color: var(--text-color);
+			border-bottom-color: var(--primary, var(--text-color));
+		}
+
+		.logicx-pp-tabpane.hidden {
+			display: none;
+		}
+
 		.logicx-pp-open-report {
 			font-size: var(--text-sm);
 			color: var(--text-muted);
@@ -702,7 +810,7 @@
 		   ledger. max-height rather than height so a short result still shrinks to
 		   fit; !important because frappe-datatable sets its own height inline. */
 		.logicx-pp-card-body.is-table .dt-scrollable {
-			max-height: 360px !important;
+			max-height: 33333px !important;
 			overflow-y: auto !important;
 		}
 	`;
