@@ -9,19 +9,21 @@
 	const STYLE_ID = "logicx-party-page-styles";
 
 	// the first three tiles are read off the same result that fills the tab below
-	// them, so a tile can never disagree with the table it summarises
+	// them, so a tile can never disagree with the table it summarises -- and `tab`
+	// sends a click on the tile to that same card. the activity tiles have no
+	// statement of their own, so they fall back to the ledger.
 	const TILES = [
-		{ key: "outstanding", label: __("Outstanding") },
-		{ key: "bills", label: __("Bills") },
-		{ key: "not_reconciled", label: __("Not Reconciled") },
-		{ key: "last_invoice", label: __("Last Invoice") },
-		{ key: "last_payment", label: __("Last Payment") },
+		{ key: "outstanding", label: __("Outstanding"), tab: "ledger_statement" },
+		{ key: "bills", label: __("Bills"), tab: "bill_wise_statement" },
+		{ key: "not_reconciled", label: __("Not Reconciled"), tab: "payment_wise_non_reconciled" },
+		{ key: "last_invoice", label: __("Last Invoice"), tab: "ledger_statement" },
+		{ key: "last_payment", label: __("Last Payment"), tab: "ledger_statement" },
 	];
 
 	const CARDS = [
 		{ key: "bill_wise_statement", title: __("Bill-wise"), report: BILL_WISE_STATEMENT_REPORT },
 		{ key: "payment_wise_non_reconciled", title: __("Not Reconciled"), report: PAYMENT_WISE_NON_RECONCILED_REPORT },
-		{ key: "ledger_statement", title: __("Statement/Ledger"), report: LEDGER_STATEMENT_REPORT },
+		{ key: "ledger_statement", title: __("Statement / Ledger"), report: LEDGER_STATEMENT_REPORT },
 	];
 
 	// held across on_page_load / on_page_show, which frappe calls separately
@@ -79,7 +81,8 @@
 	function render_scaffold() {
 		const tiles = TILES.map(
 			(tile) => `
-			<div class="logicx-pp-card logicx-pp-tile" data-tile="${tile.key}">
+			<div class="logicx-pp-card logicx-pp-tile" data-tile="${tile.key}"
+				data-tab="${tile.tab}" role="button" tabindex="0">
 				<div class="logicx-pp-tile-label">${frappe.utils.escape_html(tile.label)}</div>
 				<div class="logicx-pp-tile-value">&ndash;</div>
 				<div class="logicx-pp-tile-caption"></div>
@@ -314,8 +317,16 @@
 	}
 
 	function setup_tabs(state) {
-		// delegated from the page wrapper so the handler survives every re-render
-		state.$el.on("click", ".logicx-pp-tab", function () {
+		// delegated from the page wrapper so the handlers survive every re-render
+		state.$el.on("click", ".logicx-pp-tab, .logicx-pp-tile", function () {
+			activate_tab(state, $(this).attr("data-tab"));
+		});
+
+		// the tabs are real buttons, but the tiles are divs, so Enter and Space have
+		// to be wired up by hand to match the role they now advertise
+		state.$el.on("keydown", ".logicx-pp-tile", function (e) {
+			if (e.key !== "Enter" && e.key !== " ") return;
+			e.preventDefault();
 			activate_tab(state, $(this).attr("data-tab"));
 		});
 	}
@@ -712,6 +723,17 @@
 
 		.logicx-pp-tile {
 			padding: var(--padding-md) var(--padding-lg);
+			cursor: pointer;
+			transition: border-color 0.12s ease;
+		}
+
+		.logicx-pp-tile:hover {
+			border-color: var(--gray-400, var(--text-muted));
+		}
+
+		.logicx-pp-tile:focus-visible {
+			outline: 2px solid var(--primary, var(--text-color));
+			outline-offset: 2px;
 		}
 
 		.logicx-pp-tile-label {
