@@ -1,7 +1,7 @@
 (function () {
 	const PAGE_NAME = "party-page";
-	const BILL_WISE_REPORT = "Party Bill-wise Statement";
-	const STATEMENT_REPORT = "Party Statement";
+	const BILL_WISE_STATEMENT_REPORT = "Party Bill-wise Statement";
+	const LEDGER_STATEMENT_REPORT = "Party Statement";
 	const NOT_RECONCILED_REPORT = "Party Not Reconciled";
 	const PARTY_TYPES = ["Customer", "Supplier"];
 	const RIGHT_ALIGNED = ["Currency", "Float", "Int", "Percent"];
@@ -17,8 +17,8 @@
 	];
 
 	const CARDS = [
-		{ key: "bill_wise", title: __(BILL_WISE_REPORT), report: BILL_WISE_REPORT },
-		{ key: "statement", title: __(STATEMENT_REPORT), report: STATEMENT_REPORT },
+		{ key: "bill_wise_statement", title: __("Statement: Bill-wise"), report: BILL_WISE_STATEMENT_REPORT },
+		{ key: "ledger_statement", title: __("Statement: Ledger"), report: LEDGER_STATEMENT_REPORT },
 	];
 
 	// held across on_page_load / on_page_show, which frappe calls separately
@@ -222,30 +222,30 @@
 		TILES.forEach((tile) => state.$el.find(`[data-tile="${tile.key}"]`).addClass("is-loading"));
 		CARDS.forEach((card) => show_note(state, card.key, __("Loading...")));
 
-		run_report(BILL_WISE_REPORT, party_type, party)
+		run_report(BILL_WISE_STATEMENT_REPORT, party_type, party)
 			.then((message) => {
 				if (seq !== state.request_seq) return;
 				const columns = message.columns || [];
 				const rows = to_row_objects(columns, message.result || []);
-				render_card(state, "bill_wise", columns, rows, seq);
+				render_card(state, "bill_wise_statement", columns, rows, seq);
 				set_outstanding_tiles(state, rows);
 			})
 			.catch(() => {
 				if (seq !== state.request_seq) return;
-				show_note(state, "bill_wise", __("Could not load this statement."), true);
+				show_note(state, "bill_wise_statement", __("Could not load this statement."), true);
 				set_tile(state, "outstanding", "&ndash;", "");
 				set_tile(state, "bills", "&ndash;", "");
 			});
 
-		run_report(STATEMENT_REPORT, party_type, party)
+		run_report(LEDGER_STATEMENT_REPORT, party_type, party)
 			.then((message) => {
 				if (seq !== state.request_seq) return;
 				const columns = message.columns || [];
-				render_card(state, "statement", columns, to_row_objects(columns, message.result || []), seq);
+				render_card(state, "ledger_statement", columns, to_row_objects(columns, message.result || []), seq);
 			})
 			.catch(() => {
 				if (seq !== state.request_seq) return;
-				show_note(state, "statement", __("Could not load this statement."), true);
+				show_note(state, "ledger_statement", __("Could not load this statement."), true);
 			});
 
 		// the Not Reconciled tile is fed by the report of the same name, so the two
