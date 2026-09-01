@@ -61,9 +61,9 @@ def get_columns():
 			# formatter renders a button here for every row (using party_type/party
 			# off the row itself), regardless of fieldtype/value
 			"label": "",
-			"fieldname": "open_statement",
+			"fieldname": "open_dashboard",
 			"fieldtype": "HTML",
-			"width": 280,
+			"width": 110,
 		},
 	]
 

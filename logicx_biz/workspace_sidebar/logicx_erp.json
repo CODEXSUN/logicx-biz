@@ -51,83 +51,62 @@
 		},
 		{
 			"idx": 7,
-			"label": "Party Page",
+			"label": "Party Dashboard",
 			"type": "Link",
 			"link_type": "Page",
-			"link_to": "party-page"
+			"link_to": "party-dashboard"
 		},
 		{
 			"idx": 8,
-			"label": "Party Statement",
-			"type": "Link",
-			"link_type": "Report",
-			"link_to": "Party Statement"
-		},
-		{
-			"idx": 9,
-			"label": "Party Bill-wise Statement",
-			"type": "Link",
-			"link_type": "Report",
-			"link_to": "Party Bill-wise Statement"
-		},
-		{
-			"idx": 10,
-			"label": "Party Payment-wise Non-Reconciled",
-			"type": "Link",
-			"link_type": "Report",
-			"link_to": "Party Payment-wise Non-Reconciled"
-		},
-		{
-			"idx": 11,
 			"label": "Party Outstanding",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Party Outstanding"
 		},
 		{
-			"idx": 12,
+			"idx": 9,
 			"label": "Negative Customer Outstanding",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Negative Customer Outstanding"
 		},
 		{
-			"idx": 13,
+			"idx": 10,
 			"label": "Negative Supplier Outstanding",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Negative Supplier Outstanding"
 		},
 		{
-			"idx": 14,
+			"idx": 11,
 			"label": "Party Not Reconciled",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Party Not Reconciled"
 		},
 		{
-			"idx": 15,
+			"idx": 12,
 			"label": "Party Overdue Statement",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Party Overdue Statement"
 		},
 		{
-			"idx": 16,
+			"idx": 13,
 			"label": "Sales GP GL Schemes",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Sales GP GL Schemes"
 		},
 		{
-			"idx": 17,
+			"idx": 14,
 			"label": "Sales Item-wise GP GL Schemes",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Sales Item-wise GP GL Schemes"
 		},
 		{
-			"idx": 18,
+			"idx": 15,
 			"label": "Doc",
 			"type": "Section Break",
 			"icon": "file-text",
@@ -137,7 +116,7 @@
 			"child": 0
 		},
 		{
-			"idx": 19,
+			"idx": 16,
 			"label": "Item",
 			"type": "Link",
 			"link_type": "DocType",
@@ -145,7 +124,7 @@
 			"child": 1
 		},
 		{
-			"idx": 20,
+			"idx": 17,
 			"label": "Rack",
 			"type": "Link",
 			"link_type": "DocType",
@@ -153,7 +132,7 @@
 			"child": 1
 		},
 		{
-			"idx": 21,
+			"idx": 18,
 			"label": "Crate",
 			"type": "Link",
 			"link_type": "DocType",

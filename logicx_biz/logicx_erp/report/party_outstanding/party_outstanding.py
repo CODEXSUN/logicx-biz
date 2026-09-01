@@ -45,9 +45,9 @@ def get_columns():
 			# renders a button here for every row (using party_type/party off the row
 			# itself), regardless of fieldtype/value, so nothing to add in get_data()
 			"label": "",
-			"fieldname": "open_statement",
+			"fieldname": "open_dashboard",
 			"fieldtype": "HTML",
-			"width": 280,
+			"width": 110,
 		},
 	]
 

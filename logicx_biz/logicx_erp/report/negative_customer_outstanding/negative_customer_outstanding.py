@@ -33,9 +33,9 @@ def get_columns():
 			# formatter renders a button here for every row (this report is always
 			# Customer, so only party is needed off the row)
 			"label": "",
-			"fieldname": "open_statement",
+			"fieldname": "open_dashboard",
 			"fieldtype": "HTML",
-			"width": 280,
+			"width": 110,
 		},
 	]
 

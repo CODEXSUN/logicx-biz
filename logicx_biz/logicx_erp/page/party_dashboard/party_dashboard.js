@@ -1,12 +1,12 @@
 (function () {
-	const PAGE_NAME = "party-page";
+	const PAGE_NAME = "party-dashboard";
 	const BILL_WISE_STATEMENT_REPORT = "Party Bill-wise Statement";
 	const LEDGER_STATEMENT_REPORT = "Party Statement";
 	const PAYMENT_WISE_NON_RECONCILED_REPORT = "Party Payment-wise Non-Reconciled";
 	const PARTY_TYPES = ["Customer", "Supplier"];
 	const RIGHT_ALIGNED = ["Currency", "Float", "Int", "Percent"];
 	const PARTY_DEBOUNCE_MS = 300;
-	const STYLE_ID = "logicx-party-page-styles";
+	const STYLE_ID = "logicx-party-dashboard-styles";
 
 	// the first three tiles are read off the same result that fills the tab below
 	// them, so a tile can never disagree with the table it summarises -- and `tab`
@@ -40,13 +40,13 @@
 	function build(wrapper) {
 		const page = frappe.ui.make_app_page({
 			parent: wrapper,
-			title: __("Party Page"),
+			title: __("Party Dashboard"),
 			single_column: true,
 		});
 
 		inject_styles();
 
-		const $el = $('<div class="logicx-pp"></div>').appendTo(page.main);
+		const $el = $('<div class="logicx-pd"></div>').appendTo(page.main);
 		$el.html(render_scaffold());
 
 		const built = {
@@ -81,17 +81,17 @@
 	function render_scaffold() {
 		const tiles = TILES.map(
 			(tile) => `
-			<div class="logicx-pp-card logicx-pp-tile" data-tile="${tile.key}"
+			<div class="logicx-pd-card logicx-pd-tile" data-tile="${tile.key}"
 				data-tab="${tile.tab}" role="button" tabindex="0">
-				<div class="logicx-pp-tile-label">${frappe.utils.escape_html(tile.label)}</div>
-				<div class="logicx-pp-tile-value">&ndash;</div>
-				<div class="logicx-pp-tile-caption"></div>
+				<div class="logicx-pd-tile-label">${frappe.utils.escape_html(tile.label)}</div>
+				<div class="logicx-pd-tile-value">&ndash;</div>
+				<div class="logicx-pd-tile-caption"></div>
 			</div>`
 		).join("");
 
 		const tab_buttons = CARDS.map(
 			(card, i) => `
-			<button type="button" class="logicx-pp-tab${i === 0 ? " is-active" : ""}"
+			<button type="button" class="logicx-pd-tab${i === 0 ? " is-active" : ""}"
 				data-tab="${card.key}">
 				${frappe.utils.escape_html(card.title)}
 			</button>`
@@ -99,8 +99,8 @@
 
 		const tab_panes = CARDS.map(
 			(card, i) => `
-			<div class="logicx-pp-tabpane${i === 0 ? "" : " hidden"}" data-report="${card.key}">
-				<div class="logicx-pp-card-body is-table"></div>
+			<div class="logicx-pd-tabpane${i === 0 ? "" : " hidden"}" data-report="${card.key}">
+				<div class="logicx-pd-card-body is-table"></div>
 			</div>`
 		).join("");
 
@@ -108,10 +108,10 @@
 		// active tab's report (see activate_tab); the click handler reads
 		// data-report-name at click time
 		const tabs = `
-			<div class="logicx-pp-card logicx-pp-tabcard">
-				<div class="logicx-pp-tabnav">
-					<div class="logicx-pp-tabnav-tabs">${tab_buttons}</div>
-					<a href="#" class="logicx-pp-open-report hidden"
+			<div class="logicx-pd-card logicx-pd-tabcard">
+				<div class="logicx-pd-tabnav">
+					<div class="logicx-pd-tabnav-tabs">${tab_buttons}</div>
+					<a href="#" class="logicx-pd-open-report hidden"
 						data-report-name="${frappe.utils.escape_html(CARDS[0].report)}">
 						${__("Open full report")} &#8599;
 					</a>
@@ -120,15 +120,15 @@
 			</div>`;
 
 		return `
-			<div class="logicx-pp-card">
-				<div class="logicx-pp-card-body">
-					<div class="logicx-pp-filters">
-						<div class="logicx-pp-filter" data-filter="party_type"></div>
-						<div class="logicx-pp-filter" data-filter="party"></div>
+			<div class="logicx-pd-card">
+				<div class="logicx-pd-card-body">
+					<div class="logicx-pd-filters">
+						<div class="logicx-pd-filter" data-filter="party_type"></div>
+						<div class="logicx-pd-filter" data-filter="party"></div>
 					</div>
 				</div>
 			</div>
-			<div class="logicx-pp-stats">${tiles}</div>
+			<div class="logicx-pd-stats">${tiles}</div>
 			${tabs}
 		`;
 	}
@@ -217,7 +217,7 @@
 		state.party_type = party_type;
 		state.party = party;
 		state.pending = {};
-		state.$el.find(".logicx-pp-open-report").toggleClass("hidden", !party);
+		state.$el.find(".logicx-pd-open-report").toggleClass("hidden", !party);
 
 		if (!party) {
 			TILES.forEach((tile) => set_tile(state, tile.key, "&ndash;", ""));
@@ -274,7 +274,7 @@
 
 		frappe
 			.call({
-				method: "logicx_biz.logicx_erp.party_page.get_party_activity",
+				method: "logicx_biz.logicx_erp.party_dashboard.get_party_activity",
 				args: { party_type: party_type, party: party },
 			})
 			.then((r) => {
@@ -318,13 +318,13 @@
 
 	function setup_tabs(state) {
 		// delegated from the page wrapper so the handlers survive every re-render
-		state.$el.on("click", ".logicx-pp-tab, .logicx-pp-tile", function () {
+		state.$el.on("click", ".logicx-pd-tab, .logicx-pd-tile", function () {
 			activate_tab(state, $(this).attr("data-tab"));
 		});
 
 		// the tabs are real buttons, but the tiles are divs, so Enter and Space have
 		// to be wired up by hand to match the role they now advertise
-		state.$el.on("keydown", ".logicx-pp-tile", function (e) {
+		state.$el.on("keydown", ".logicx-pd-tile", function (e) {
 			if (e.key !== "Enter" && e.key !== " ") return;
 			e.preventDefault();
 			activate_tab(state, $(this).attr("data-tab"));
@@ -335,17 +335,17 @@
 		if (!key || key === state.active_tab) return;
 		state.active_tab = key;
 
-		state.$el.find(".logicx-pp-tab").each(function () {
+		state.$el.find(".logicx-pd-tab").each(function () {
 			$(this).toggleClass("is-active", $(this).attr("data-tab") === key);
 		});
-		state.$el.find(".logicx-pp-tabpane").each(function () {
+		state.$el.find(".logicx-pd-tabpane").each(function () {
 			$(this).toggleClass("hidden", $(this).attr("data-report") !== key);
 		});
 
 		// repoint the shared "Open full report" link at the now-visible report
 		const card = CARDS.find((c) => c.key === key);
 		if (card) {
-			state.$el.find(".logicx-pp-open-report").attr("data-report-name", card.report);
+			state.$el.find(".logicx-pd-open-report").attr("data-report-name", card.report);
 		}
 
 		// build the datatable now that its pane is visible (see pending in build)
@@ -439,7 +439,7 @@
 		html = open_links_in_new_tab(html);
 		// both report .py files mark their Total / Closing Balance rows with bold: 1
 		if (data && data.bold) {
-			html = `<span class="logicx-pp-bold">${html}</span>`;
+			html = `<span class="logicx-pd-bold">${html}</span>`;
 		}
 		return html;
 	}
@@ -458,12 +458,12 @@
 	}
 
 	function get_card_body(state, key) {
-		return state.$el.find(`[data-report="${key}"] .logicx-pp-card-body`);
+		return state.$el.find(`[data-report="${key}"] .logicx-pd-card-body`);
 	}
 
 	function show_note(state, key, text, is_error) {
 		destroy_table(state, key);
-		const css_class = is_error ? "logicx-pp-note is-error" : "logicx-pp-note";
+		const css_class = is_error ? "logicx-pd-note is-error" : "logicx-pd-note";
 		get_card_body(state, key).html(
 			`<div class="${css_class}">${frappe.utils.escape_html(text)}</div>`
 		);
@@ -550,17 +550,17 @@
 	function count_and_amount(count, singular, plural, amount, side) {
 		const noun = count === 1 ? singular : plural;
 		return (
-			`<span class="logicx-pp-amount">${count} ` +
-			`<span class="logicx-pp-unit">${frappe.utils.escape_html(noun)}</span></span>` +
-			'<span class="logicx-pp-amount-sep">|</span>' +
-			`<span class="logicx-pp-amount">${format_amount(amount)}${dc(side)}</span>`
+			`<span class="logicx-pd-amount">${count} ` +
+			`<span class="logicx-pd-unit">${frappe.utils.escape_html(noun)}</span></span>` +
+			'<span class="logicx-pd-amount-sep">|</span>' +
+			`<span class="logicx-pd-amount">${format_amount(amount)}${dc(side)}</span>`
 		);
 	}
 
 	// written as literals so the translation extractor still sees Dr and Cr
 	function dc(side) {
 		const label = side === "Dr" ? __("Dr") : __("Cr");
-		return ` <span class="logicx-pp-dc">${label}</span>`;
+		return ` <span class="logicx-pd-dc">${label}</span>`;
 	}
 
 	// plain grouped number rather than a currency string: the Dr/Cr suffix already
@@ -591,15 +591,15 @@
 		const $tile = state.$el.find(`[data-tile="${key}"]`);
 		$tile.removeClass("is-loading");
 		$tile
-			.find(".logicx-pp-tile-value")
+			.find(".logicx-pd-tile-value")
 			.html(value_html)
 			.toggleClass("is-negative", !!is_negative);
-		$tile.find(".logicx-pp-tile-caption").text(caption || "");
+		$tile.find(".logicx-pd-tile-caption").text(caption || "");
 	}
 
 	function setup_open_report_links(state) {
 		// delegated from the page wrapper so the handler survives every re-render
-		state.$el.on("click", ".logicx-pp-open-report", function (e) {
+		state.$el.on("click", ".logicx-pd-open-report", function (e) {
 			e.preventDefault();
 			if (!state.party) return;
 			open_report_in_new_tab($(this).attr("data-report-name"), state.party_type, state.party);
@@ -616,7 +616,7 @@
 		window.open(url, "_blank");
 	}
 
-	// the styles live here rather than in a sibling party_page.css because a
+	// the styles live here rather than in a sibling party_dashboard.css because a
 	// standard Page's .css asset is not reliably served across frappe versions,
 	// and the same injected-<style> approach is what logicx_dashboard.js and the
 	// report JS in this app already use. textContent is re-set on every load so
@@ -632,21 +632,21 @@
 	}
 
 	const PAGE_STYLES = `
-		.logicx-pp {
+		.logicx-pd {
 			display: flex;
 			flex-direction: column;
 			gap: var(--margin-md);
 			padding-bottom: var(--padding-lg);
 		}
 
-		.logicx-pp-card {
+		.logicx-pd-card {
 			background-color: var(--card-bg);
 			border: 1px solid var(--border-color);
 			border-radius: var(--border-radius-md);
 			box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
 		}
 
-		.logicx-pp-card-head {
+		.logicx-pd-card-head {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
@@ -655,28 +655,28 @@
 			border-bottom: 1px solid var(--border-color);
 		}
 
-		.logicx-pp-card-title {
+		.logicx-pd-card-title {
 			font-size: var(--text-md);
 			font-weight: 600;
 			color: var(--text-color);
 		}
 
-		.logicx-pp-card-body {
+		.logicx-pd-card-body {
 			padding: var(--padding-md) var(--padding-lg);
 		}
 
 		/* the datatable brings its own padding, so its card body has none */
-		.logicx-pp-card-body.is-table {
+		.logicx-pd-card-body.is-table {
 			padding: 0;
 		}
 
-		.logicx-pp-filters {
+		.logicx-pd-filters {
 			display: flex;
 			flex-wrap: wrap;
 			gap: var(--margin-md);
 		}
 
-		.logicx-pp-filter {
+		.logicx-pd-filter {
 			flex: 1 1 240px;
 			min-width: 200px;
 			max-width: 360px;
@@ -684,11 +684,11 @@
 
 		/* frappe's control markup ships its own bottom margin; the flex gap above
 		   already spaces these, so drop it */
-		.logicx-pp-filter .frappe-control {
+		.logicx-pd-filter .frappe-control {
 			margin-bottom: 0;
 		}
 
-		.logicx-pp-filter .control-label {
+		.logicx-pd-filter .control-label {
 			font-size: 11px;
 			font-weight: 600;
 			letter-spacing: 0.04em;
@@ -697,46 +697,46 @@
 			margin-bottom: var(--margin-xs);
 		}
 
-		.logicx-pp-stats {
+		.logicx-pd-stats {
 			display: grid;
 			grid-template-columns: repeat(5, minmax(0, 1fr));
 			gap: var(--margin-md);
 		}
 
 		@media (max-width: 1400px) {
-			.logicx-pp-stats {
+			.logicx-pd-stats {
 				grid-template-columns: repeat(3, minmax(0, 1fr));
 			}
 		}
 
 		@media (max-width: 900px) {
-			.logicx-pp-stats {
+			.logicx-pd-stats {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 		}
 
 		@media (max-width: 520px) {
-			.logicx-pp-stats {
+			.logicx-pd-stats {
 				grid-template-columns: minmax(0, 1fr);
 			}
 		}
 
-		.logicx-pp-tile {
+		.logicx-pd-tile {
 			padding: var(--padding-md) var(--padding-lg);
 			cursor: pointer;
 			transition: border-color 0.12s ease;
 		}
 
-		.logicx-pp-tile:hover {
+		.logicx-pd-tile:hover {
 			border-color: var(--gray-400, var(--text-muted));
 		}
 
-		.logicx-pp-tile:focus-visible {
+		.logicx-pd-tile:focus-visible {
 			outline: 2px solid var(--primary, var(--text-color));
 			outline-offset: 2px;
 		}
 
-		.logicx-pp-tile-label {
+		.logicx-pd-tile-label {
 			font-size: 11px;
 			font-weight: 600;
 			letter-spacing: 0.04em;
@@ -748,7 +748,7 @@
 			text-overflow: ellipsis;
 		}
 
-		.logicx-pp-tile-value {
+		.logicx-pd-tile-value {
 			font-size: 26px;
 			line-height: 1.15;
 			font-weight: 600;
@@ -760,13 +760,13 @@
 		}
 
 		/* two figures share these tiles, so they step down a size to fit them */
-		[data-tile="bills"] .logicx-pp-tile-value,
-		[data-tile="not_reconciled"] .logicx-pp-tile-value {
+		[data-tile="bills"] .logicx-pd-tile-value,
+		[data-tile="not_reconciled"] .logicx-pd-tile-value {
 			font-size: 17px;
 			line-height: 1.75;
 		}
 
-		.logicx-pp-amount-sep {
+		.logicx-pd-amount-sep {
 			color: var(--text-muted);
 			font-weight: 400;
 			margin: 0 6px;
@@ -774,19 +774,19 @@
 
 		/* the unit word and the Dr/Cr marker step down so the figure leads; they
 		   inherit colour rather than dim it, so a red tile stays red throughout */
-		.logicx-pp-unit,
-		.logicx-pp-dc {
+		.logicx-pd-unit,
+		.logicx-pd-dc {
 			font-size: 0.7em;
 			font-weight: 600;
 		}
 
 		/* a ledger balance on the wrong side for the party type, and any amount
 		   still waiting to be reconciled */
-		.logicx-pp-tile-value.is-negative {
+		.logicx-pd-tile-value.is-negative {
 			color: var(--red-500);
 		}
 
-		.logicx-pp-tile-caption {
+		.logicx-pd-tile-caption {
 			margin-top: 2px;
 			font-size: var(--text-sm);
 			color: var(--text-muted);
@@ -794,26 +794,26 @@
 		}
 
 		/* skeleton shown while a tile is waiting on its request */
-		.logicx-pp-tile.is-loading .logicx-pp-tile-value,
-		.logicx-pp-tile.is-loading .logicx-pp-tile-caption {
+		.logicx-pd-tile.is-loading .logicx-pd-tile-value,
+		.logicx-pd-tile.is-loading .logicx-pd-tile-caption {
 			color: transparent;
 			background-color: var(--skeleton-bg, var(--bg-color));
 			border-radius: var(--border-radius-sm);
-			animation: logicx-pp-pulse 1.4s ease-in-out infinite;
+			animation: logicx-pd-pulse 1.4s ease-in-out infinite;
 		}
 
-		.logicx-pp-tile.is-loading .logicx-pp-tile-caption {
+		.logicx-pd-tile.is-loading .logicx-pd-tile-caption {
 			max-width: 60px;
 		}
 
-		@keyframes logicx-pp-pulse {
+		@keyframes logicx-pd-pulse {
 			0%, 100% { opacity: 1; }
 			50% { opacity: 0.45; }
 		}
 
 		/* tab strip that fronts the two statement cards; it stands in for the
 		   per-card title bar the cards used to carry */
-		.logicx-pp-tabnav {
+		.logicx-pd-tabnav {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
@@ -822,13 +822,13 @@
 			border-bottom: 1px solid var(--border-color);
 		}
 
-		.logicx-pp-tabnav-tabs {
+		.logicx-pd-tabnav-tabs {
 			display: flex;
 			gap: var(--margin-lg);
 			flex-wrap: wrap;
 		}
 
-		.logicx-pp-tab {
+		.logicx-pd-tab {
 			appearance: none;
 			background: none;
 			border: none;
@@ -842,56 +842,56 @@
 			white-space: nowrap;
 		}
 
-		.logicx-pp-tab:hover {
+		.logicx-pd-tab:hover {
 			color: var(--text-color);
 		}
 
-		.logicx-pp-tab.is-active {
+		.logicx-pd-tab.is-active {
 			color: var(--text-color);
 			border-bottom-color: var(--primary, var(--text-color));
 		}
 
-		.logicx-pp-tabpane.hidden {
+		.logicx-pd-tabpane.hidden {
 			display: none;
 		}
 
-		.logicx-pp-open-report {
+		.logicx-pd-open-report {
 			font-size: var(--text-sm);
 			color: var(--text-muted);
 			white-space: nowrap;
 		}
 
-		.logicx-pp-open-report:hover {
+		.logicx-pd-open-report:hover {
 			color: var(--text-color);
 			text-decoration: none;
 		}
 
 		/* frappe's desk CSS defines .hidden too; repeated here so the link's
 		   visibility never depends on that global staying put */
-		.logicx-pp-open-report.hidden {
+		.logicx-pd-open-report.hidden {
 			display: none;
 		}
 
 		/* the report .py files mark their Total / Closing Balance rows with bold: 1 */
-		.logicx-pp-bold {
+		.logicx-pd-bold {
 			font-weight: 600;
 		}
 
 		/* inline empty / error / loading line inside a table card */
-		.logicx-pp-note {
+		.logicx-pd-note {
 			padding: var(--padding-lg);
 			font-size: var(--text-md);
 			color: var(--text-muted);
 			text-align: center;
 		}
 
-		.logicx-pp-note.is-error {
+		.logicx-pd-note.is-error {
 			color: var(--red-500);
 		}
 
 		/* frappe-datatable draws its own borders; the card already supplies the
 		   outer one, and the rounded bottom corners need to clip the last row */
-		.logicx-pp-card-body.is-table .datatable {
+		.logicx-pd-card-body.is-table .datatable {
 			border: none;
 			border-bottom-left-radius: var(--border-radius-md);
 			border-bottom-right-radius: var(--border-radius-md);
@@ -903,12 +903,12 @@
 		   frappe-datatable truncates header labels with an ellipsis and offers no
 		   wrap option, so allow wrapping the same way wrap_column_headers() does
 		   in the report JS. */
-		.logicx-pp-card-body.is-table .dt-header .dt-row-header,
-		.logicx-pp-card-body.is-table .dt-header .dt-row-header .dt-cell--header {
+		.logicx-pd-card-body.is-table .dt-header .dt-row-header,
+		.logicx-pd-card-body.is-table .dt-header .dt-row-header .dt-cell--header {
 			height: 50px !important;
 		}
 
-		.logicx-pp-card-body.is-table .dt-header .dt-cell--header .dt-cell__content {
+		.logicx-pd-card-body.is-table .dt-header .dt-cell--header .dt-cell__content {
 			white-space: normal !important;
 			overflow-wrap: break-word;
 			text-overflow: clip;
@@ -921,7 +921,7 @@
 		   page, so the stat tiles above stay in view while you read down a long
 		   ledger. max-height rather than height so a short result still shrinks to
 		   fit; !important because frappe-datatable sets its own height inline. */
-		.logicx-pp-card-body.is-table .dt-scrollable {
+		.logicx-pd-card-body.is-table .dt-scrollable {
 			max-height: 33333px !important;
 			overflow-y: auto !important;
 		}

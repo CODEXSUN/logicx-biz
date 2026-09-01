@@ -19,7 +19,7 @@ PAYMENT_VOUCHER_TYPES = ("Payment Entry", "Journal Entry")
 def get_party_activity(party_type: str, party: str) -> dict:
 	"""How long it has been since this party was last invoiced and last paid.
 
-	Backs the two right-hand tiles of the Party Page. Reads `tabGL Entry`, the
+	Backs the two right-hand tiles of the Party Dashboard. Reads `tabGL Entry`, the
 	same source Party Statement reports from, so the days shown here always
 	line up with the statement rendered underneath them.
 
