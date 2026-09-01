@@ -2,12 +2,14 @@
 	const PAGE_NAME = "party-page";
 	const BILL_WISE_STATEMENT_REPORT = "Party Bill-wise Statement";
 	const LEDGER_STATEMENT_REPORT = "Party Statement";
-	const NOT_RECONCILED_REPORT = "Party Not Reconciled";
+	const PAYMENT_WISE_NON_RECONCILED_REPORT = "Party Payment-wise Non-Reconciled";
 	const PARTY_TYPES = ["Customer", "Supplier"];
 	const RIGHT_ALIGNED = ["Currency", "Float", "Int", "Percent"];
 	const PARTY_DEBOUNCE_MS = 300;
 	const STYLE_ID = "logicx-party-page-styles";
 
+	// the first three tiles are read off the same result that fills the tab below
+	// them, so a tile can never disagree with the table it summarises
 	const TILES = [
 		{ key: "outstanding", label: __("Outstanding") },
 		{ key: "bills", label: __("Bills") },
@@ -17,8 +19,9 @@
 	];
 
 	const CARDS = [
-		{ key: "bill_wise_statement", title: __("Statement: Bill-wise"), report: BILL_WISE_STATEMENT_REPORT },
-		{ key: "ledger_statement", title: __("Statement: Ledger"), report: LEDGER_STATEMENT_REPORT },
+		{ key: "bill_wise_statement", title: __("Bill-wise"), report: BILL_WISE_STATEMENT_REPORT },
+		{ key: "payment_wise_non_reconciled", title: __("Not Reconciled"), report: PAYMENT_WISE_NON_RECONCILED_REPORT },
+		{ key: "ledger_statement", title: __("Statement/Ledger"), report: LEDGER_STATEMENT_REPORT },
 	];
 
 	// held across on_page_load / on_page_show, which frappe calls separately
@@ -228,40 +231,42 @@
 				const columns = message.columns || [];
 				const rows = to_row_objects(columns, message.result || []);
 				render_card(state, "bill_wise_statement", columns, rows, seq);
-				set_outstanding_tiles(state, rows);
+				set_bills_tile(state, rows, party_type);
 			})
 			.catch(() => {
 				if (seq !== state.request_seq) return;
 				show_note(state, "bill_wise_statement", __("Could not load this statement."), true);
-				set_tile(state, "outstanding", "&ndash;", "");
 				set_tile(state, "bills", "&ndash;", "");
+			});
+
+		// the payments side of the same reconciliation the bill-wise tab shows the
+		// bills side of
+		run_report(PAYMENT_WISE_NON_RECONCILED_REPORT, party_type, party)
+			.then((message) => {
+				if (seq !== state.request_seq) return;
+				const columns = message.columns || [];
+				const rows = to_row_objects(columns, message.result || []);
+				render_card(state, "payment_wise_non_reconciled", columns, rows, seq);
+				set_not_reconciled_tile(state, rows, party_type);
+			})
+			.catch(() => {
+				if (seq !== state.request_seq) return;
+				show_note(state, "payment_wise_non_reconciled", __("Could not load this statement."), true);
+				set_tile(state, "not_reconciled", "&ndash;", "");
 			});
 
 		run_report(LEDGER_STATEMENT_REPORT, party_type, party)
 			.then((message) => {
 				if (seq !== state.request_seq) return;
 				const columns = message.columns || [];
-				render_card(state, "ledger_statement", columns, to_row_objects(columns, message.result || []), seq);
+				const rows = to_row_objects(columns, message.result || []);
+				render_card(state, "ledger_statement", columns, rows, seq);
+				set_outstanding_tile(state, rows, party_type);
 			})
 			.catch(() => {
 				if (seq !== state.request_seq) return;
 				show_note(state, "ledger_statement", __("Could not load this statement."), true);
-			});
-
-		// the Not Reconciled tile is fed by the report of the same name, so the two
-		// can never disagree -- same reason Outstanding/Bills come off the bill-wise
-		// result rather than being recomputed here
-		run_report(NOT_RECONCILED_REPORT, party_type, party)
-			.then((message) => {
-				if (seq !== state.request_seq) return;
-				set_not_reconciled_tile(
-					state,
-					to_row_objects(message.columns || [], message.result || [])
-				);
-			})
-			.catch(() => {
-				if (seq !== state.request_seq) return;
-				set_tile(state, "not_reconciled", "&ndash;", "");
+				set_tile(state, "outstanding", "&ndash;", "");
 			});
 
 		frappe
@@ -453,34 +458,98 @@
 		);
 	}
 
-	function set_outstanding_tiles(state, rows) {
-		// the report appends its own bold Total row; reading the tiles off that
-		// same result is what keeps them in step with the table underneath
-		const total_row = rows.find((row) => row.bold);
-		const bill_rows = rows.filter((row) => !row.bold);
-		const outstanding = total_row ? total_row.outstanding_value || 0 : 0;
+	// the ledger's own closing balance rather than the bill-wise total, so advances
+	// and anything else that never sat against a bill are counted
+	function set_outstanding_tile(state, rows, party_type) {
+		// party_statement.py appends Total and then Closing Balance, both marked
+		// bold, so the balance is the last row rather than the first bold one
+		const closing = rows.length ? rows[rows.length - 1] : null;
+		if (!closing || !closing.bold) {
+			set_tile(state, "outstanding", "&ndash;", "");
+			return;
+		}
 
-		set_tile(state, "outstanding", frappe.format(outstanding, { fieldtype: "Currency" }), "");
-		set_tile(state, "bills", String(bill_rows.length), __("pending"));
+		// that row fills one side only -- debit when positive, credit when negative
+		const balance = (closing.debit || 0) - (closing.credit || 0);
+		if (!balance) {
+			set_tile(state, "outstanding", currency(0), "");
+			return;
+		}
+
+		const side = balance > 0 ? "Dr" : "Cr";
+		const amount = currency(Math.abs(balance));
+		set_tile(state, "outstanding", amount + dc(side), "", side !== natural_side(party_type));
 	}
 
-	function set_not_reconciled_tile(state, rows) {
-		// Party Not Reconciled lists a party only when BOTH sides are still open
-		// (its HAVING clause), so no row back means this party has nothing left
-		// to reconcile -- not that the query failed
-		const row = rows[0];
-		if (!row) {
+	// inline: true stops frappe's Currency formatter wrapping the value in its own
+	// right-aligned div, which would push this tile out of line with the others
+	function currency(value) {
+		return frappe.format(value, { fieldtype: "Currency" }, { inline: true });
+	}
+
+	function set_bills_tile(state, rows, party_type) {
+		const total_row = rows.find((row) => row.bold);
+		const bill_rows = rows.filter((row) => !row.bold);
+		if (!bill_rows.length) {
+			set_tile(state, "bills", "&ndash;", __("none pending"));
+			return;
+		}
+
+		// bills sit on the party's own side by construction, so never the red one
+		const html = count_and_amount(
+			bill_rows.length,
+			__("bill"),
+			__("bills"),
+			(total_row && total_row.outstanding_value) || 0,
+			natural_side(party_type)
+		);
+		set_tile(state, "bills", html, "");
+	}
+
+	function set_not_reconciled_tile(state, rows, party_type) {
+		const total_row = rows.find((row) => row.bold);
+		const payment_rows = rows.filter((row) => !row.bold);
+		// the report lists only what is still unallocated, so an empty result means
+		// nothing is left to reconcile -- not that the query failed
+		if (!payment_rows.length) {
 			set_tile(state, "not_reconciled", "&ndash;", __("nothing open"));
 			return;
 		}
 
-		const debit = format_amount(row.debit_non_reconciled);
-		const credit = format_amount(row.credit_non_reconciled);
-		const html =
-			`<span class="logicx-pp-amount">${debit} ${__("Dr")}</span>` +
+		const html = count_and_amount(
+			payment_rows.length,
+			__("payment"),
+			__("payments"),
+			(total_row && total_row.non_reconciled_value) || 0,
+			// payments sit opposite the party's own side
+			natural_side(party_type) === "Dr" ? "Cr" : "Dr"
+		);
+		// money left unallocated is worth flagging whatever the party type
+		set_tile(state, "not_reconciled", html, "", true);
+	}
+
+	// which side this party's own balances belong on: a Customer owes us (debit),
+	// we owe a Supplier (credit). the other side is a negative balance.
+	function natural_side(party_type) {
+		return party_type === "Supplier" ? "Cr" : "Dr";
+	}
+
+	// "6 bills | 70,675.00 Dr" -- the count carries the unit word, so the amount
+	// drops its currency symbol rather than crowd two symbols into one tile
+	function count_and_amount(count, singular, plural, amount, side) {
+		const noun = count === 1 ? singular : plural;
+		return (
+			`<span class="logicx-pp-amount">${count} ` +
+			`<span class="logicx-pp-unit">${frappe.utils.escape_html(noun)}</span></span>` +
 			'<span class="logicx-pp-amount-sep">|</span>' +
-			`<span class="logicx-pp-amount">${credit} ${__("Cr")}</span>`;
-		set_tile(state, "not_reconciled", html, "");
+			`<span class="logicx-pp-amount">${format_amount(amount)}${dc(side)}</span>`
+		);
+	}
+
+	// written as literals so the translation extractor still sees Dr and Cr
+	function dc(side) {
+		const label = side === "Dr" ? __("Dr") : __("Cr");
+		return ` <span class="logicx-pp-dc">${label}</span>`;
 	}
 
 	// plain grouped number rather than a currency string: the Dr/Cr suffix already
@@ -505,10 +574,15 @@
 		set_tile(state, key, frappe.utils.escape_html(String(days)), caption);
 	}
 
-	function set_tile(state, key, value_html, caption) {
+	// is_negative is applied on every call, so a tile left red by the previous party
+	// clears itself when the next one loads
+	function set_tile(state, key, value_html, caption, is_negative) {
 		const $tile = state.$el.find(`[data-tile="${key}"]`);
 		$tile.removeClass("is-loading");
-		$tile.find(".logicx-pp-tile-value").html(value_html);
+		$tile
+			.find(".logicx-pp-tile-value")
+			.html(value_html)
+			.toggleClass("is-negative", !!is_negative);
 		$tile.find(".logicx-pp-tile-caption").text(caption || "");
 	}
 
@@ -663,7 +737,8 @@
 			text-overflow: ellipsis;
 		}
 
-		/* two figures share this tile, so it steps down a size to fit them */
+		/* two figures share these tiles, so they step down a size to fit them */
+		[data-tile="bills"] .logicx-pp-tile-value,
 		[data-tile="not_reconciled"] .logicx-pp-tile-value {
 			font-size: 17px;
 			line-height: 1.75;
@@ -673,6 +748,20 @@
 			color: var(--text-muted);
 			font-weight: 400;
 			margin: 0 6px;
+		}
+
+		/* the unit word and the Dr/Cr marker step down so the figure leads; they
+		   inherit colour rather than dim it, so a red tile stays red throughout */
+		.logicx-pp-unit,
+		.logicx-pp-dc {
+			font-size: 0.7em;
+			font-weight: 600;
+		}
+
+		/* a ledger balance on the wrong side for the party type, and any amount
+		   still waiting to be reconciled */
+		.logicx-pp-tile-value.is-negative {
+			color: var(--red-500);
 		}
 
 		.logicx-pp-tile-caption {
@@ -787,7 +876,8 @@
 			overflow: hidden;
 		}
 
-		/* Party Bill-wise Statement labels a column "Outstanding<br>Value".
+		/* Party Bill-wise Statement labels a column "Outstanding<br>Value", and
+		   Party Payment-wise Non-Reconciled a "Non-Reconciled<br>Value".
 		   frappe-datatable truncates header labels with an ellipsis and offers no
 		   wrap option, so allow wrapping the same way wrap_column_headers() does
 		   in the report JS. */
