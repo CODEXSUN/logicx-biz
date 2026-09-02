@@ -14,16 +14,16 @@
 	// statement of their own, so they fall back to the ledger.
 	const TILES = [
 		{ key: "outstanding", label: __("Outstanding"), tab: "ledger_statement" },
-		{ key: "bills", label: __("Bills"), tab: "bill_wise_statement" },
-		{ key: "not_reconciled", label: __("Not Reconciled"), tab: "payment_wise_non_reconciled" },
+		{ key: "bills", label: __("UnReconciled Bills"), tab: "bill_wise_statement" },
+		{ key: "not_reconciled", label: __("UnReconciled Payments"), tab: "payment_wise_non_reconciled" },
 		{ key: "last_invoice", label: __("Last Invoice"), tab: "ledger_statement" },
 		{ key: "last_payment", label: __("Last Payment"), tab: "ledger_statement" },
 	];
 
 	const CARDS = [
-		{ key: "bill_wise_statement", title: __("Bill-wise"), report: BILL_WISE_STATEMENT_REPORT },
-		{ key: "payment_wise_non_reconciled", title: __("Not Reconciled"), report: PAYMENT_WISE_NON_RECONCILED_REPORT },
-		{ key: "ledger_statement", title: __("Statement / Ledger"), report: LEDGER_STATEMENT_REPORT },
+		{ key: "bill_wise_statement", title: __("UnReconciled Bills"), report: BILL_WISE_STATEMENT_REPORT },
+		{ key: "payment_wise_non_reconciled", title: __("UnReconciled Payments"), report: PAYMENT_WISE_NON_RECONCILED_REPORT },
+		{ key: "ledger_statement", title: __("Statement"), report: LEDGER_STATEMENT_REPORT },
 	];
 
 	// held across on_page_load / on_page_show, which frappe calls separately
@@ -406,10 +406,10 @@
 			columns: dt_columns,
 			data: rows,
 			layout: "fluid",
-			inlineFilters: false,
+			inlineFilters: true,
 			serialNoColumn: false,
 			checkboxColumn: false,
-			disableReorderColumn: true,
+			disableReorderColumn: false,
 			dynamicRowHeight: true,
 			noDataMessage: __("No records"),
 		});
@@ -791,6 +791,23 @@
 			font-size: var(--text-sm);
 			color: var(--text-muted);
 			min-height: 1.2em;
+		}
+
+		/* the day count and its date read as one line: the caption sits beside the
+		   figure on the same baseline instead of stacking under it */
+		[data-tile="last_invoice"] .logicx-pd-tile-value,
+		[data-tile="last_payment"] .logicx-pd-tile-value,
+		[data-tile="last_invoice"] .logicx-pd-tile-caption,
+		[data-tile="last_payment"] .logicx-pd-tile-caption {
+			display: inline-block;
+			vertical-align: baseline;
+		}
+
+		[data-tile="last_invoice"] .logicx-pd-tile-caption,
+		[data-tile="last_payment"] .logicx-pd-tile-caption {
+			margin-top: 0;
+			margin-left: 4px;
+			white-space: nowrap;
 		}
 
 		/* skeleton shown while a tile is waiting on its request */
