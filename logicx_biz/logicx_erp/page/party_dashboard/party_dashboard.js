@@ -499,10 +499,19 @@
 		set_tile(state, "outstanding", amount + dc(side), "", side !== natural_side(party_type));
 	}
 
-	// inline: true stops frappe's Currency formatter wrapping the value in its own
-	// right-aligned div, which would push this tile out of line with the others
+	// format_currency returns the plain string frappe's Currency formatter would
+	// build, without the right-aligned div it wraps around it -- that div would
+	// push this tile out of line with the others
 	function currency(value) {
-		return frappe.format(value, { fieldtype: "Currency" }, { inline: true });
+		if (typeof format_currency === "function") return format_currency(whole(value), null, 0);
+		return frappe.format(whole(value), { fieldtype: "Currency" }, { inline: true });
+	}
+
+	// the tiles read at a glance, where the paise cost width without adding
+	// anything, so they are dropped. truncated rather than rounded, so a tile
+	// never reads higher than the figure in the tab below it
+	function whole(value) {
+		return Math.trunc(value || 0);
 	}
 
 	function set_bills_tile(state, rows, party_type) {
@@ -552,7 +561,7 @@
 		return party_type === "Supplier" ? "Cr" : "Dr";
 	}
 
-	// "6 bills | 70,675.00 Dr" -- the count carries the unit word, so the amount
+	// "6 bills | 70,675 Dr" -- the count carries the unit word, so the amount
 	// drops its currency symbol rather than crowd two symbols into one tile
 	function count_and_amount(count, singular, plural, amount, side) {
 		const noun = count === 1 ? singular : plural;
@@ -573,9 +582,9 @@
 	// plain grouped number rather than a currency string: the Dr/Cr suffix already
 	// says what it is, and two symbols would not fit the tile
 	function format_amount(value) {
-		const amount = value || 0;
-		if (typeof format_number === "function") return format_number(amount, null, 2);
-		return frappe.format(amount, { fieldtype: "Float" });
+		const amount = whole(value);
+		if (typeof format_number === "function") return format_number(amount, null, 0);
+		return String(amount);
 	}
 
 	function set_activity_tiles(state, activity) {
