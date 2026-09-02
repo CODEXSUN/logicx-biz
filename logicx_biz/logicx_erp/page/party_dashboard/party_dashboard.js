@@ -21,8 +21,8 @@
 	];
 
 	const CARDS = [
-		{ key: "bill_wise_statement", title: __("UnReconciled Bills"), report: BILL_WISE_STATEMENT_REPORT },
-		{ key: "payment_wise_non_reconciled", title: __("UnReconciled Payments"), report: PAYMENT_WISE_NON_RECONCILED_REPORT },
+		{ key: "bill_wise_statement", title: __("UnReconciled\nBills"), report: BILL_WISE_STATEMENT_REPORT },
+		{ key: "payment_wise_non_reconciled", title: __("UnReconciled\nPayments"), report: PAYMENT_WISE_NON_RECONCILED_REPORT },
 		{ key: "ledger_statement", title: __("Statement"), report: LEDGER_STATEMENT_REPORT },
 	];
 
@@ -78,6 +78,12 @@
 		return built;
 	}
 
+	// a card title may carry a line break; escape_html would print a literal
+	// "<br>", so escape each line and join them with a real one
+	function escape_lines(text) {
+		return String(text).split("\n").map(frappe.utils.escape_html).join("<br>");
+	}
+
 	function render_scaffold() {
 		const tiles = TILES.map(
 			(tile) => `
@@ -93,7 +99,7 @@
 			(card, i) => `
 			<button type="button" class="logicx-pd-tab${i === 0 ? " is-active" : ""}"
 				data-tab="${card.key}">
-				${frappe.utils.escape_html(card.title)}
+				${escape_lines(card.title)}
 			</button>`
 		).join("");
 
@@ -396,7 +402,8 @@
 			align: RIGHT_ALIGNED.includes(col.fieldtype) ? "right" : "left",
 			editable: false,
 			focusable: false,
-			dropdown: false,
+			dropdown: true, // sortable
+			sortable: true, // sortable
 			format: function (value, row, column, data) {
 				return format_cell(value, col, data);
 			},
@@ -409,7 +416,7 @@
 			inlineFilters: true,
 			serialNoColumn: false,
 			checkboxColumn: false,
-			disableReorderColumn: false,
+			disableReorderColumn: true,
 			dynamicRowHeight: true,
 			noDataMessage: __("No records"),
 		});
@@ -856,6 +863,7 @@
 			font-weight: 600;
 			color: var(--text-muted);
 			cursor: pointer;
+			text-align: center;
 			white-space: nowrap;
 		}
 
