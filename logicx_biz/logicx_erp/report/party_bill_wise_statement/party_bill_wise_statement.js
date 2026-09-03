@@ -35,8 +35,20 @@
 				},
 			},
 		],
+		formatter: function (value, row, column, data, default_formatter) {
+			const html = default_formatter(value, row, column, data);
+			// anything aged past the cut-off reads red, so a stale row is visible
+			// without reading the number. same exclusive bound as the Party
+			// Dashboard's "21 Days Overdue" tile, which counts these same rows.
+			if (column.fieldname === "age" && data && data.age > AGE_ALERT_DAYS) {
+				return `<span style="color: var(--red-500)">${html}</span>`;
+			}
+			return html;
+		},
 	};
 
+
+	const AGE_ALERT_DAYS = 21;
 
 	const ROUTE = "Party Bill-wise Statement";
 	const HEADER_WRAP_CLASS = "logicx-wrap-headers";

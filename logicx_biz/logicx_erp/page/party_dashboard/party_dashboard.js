@@ -8,17 +8,30 @@
 	const PARTY_DEBOUNCE_MS = 300;
 	const STYLE_ID = "logicx-party-dashboard-styles";
 
-	// the first three tiles are read off the same result that fills the tab below
+	// the first five tiles are read off the same result that fills the tab below
 	// them, so a tile can never disagree with the table it summarises -- and `tab`
 	// sends a click on the tile to that same card. the activity tiles have no
 	// statement of their own, so they fall back to the ledger.
 	const TILES = [
-		{ key: "outstanding", label: __("Outstanding"), tab: "ledger_statement" },
+		{ key: "outstanding", label: __("Balance"), tab: "ledger_statement" },
 		{ key: "bills", label: __("UnReconciled Bills"), tab: "bill_wise_statement" },
+		{ key: "overdue_21", label: __("21 Days Overdue"), tab: "bill_wise_statement" },
+		{ key: "overdue_30", label: __("30 Days Overdue"), tab: "bill_wise_statement" },
 		{ key: "not_reconciled", label: __("UnReconciled Payments"), tab: "payment_wise_non_reconciled" },
 		{ key: "last_invoice", label: __("Last Invoice"), tab: "ledger_statement" },
 		{ key: "last_payment", label: __("Last Payment"), tab: "ledger_statement" },
 	];
+
+	// the ageing cut-offs the two overdue tiles read off the bill-wise result --
+	// `days` is exclusive, so a bill exactly that old is not yet overdue by it
+	const OVERDUE_TILES = [
+		{ key: "overdue_21", days: 21 },
+		{ key: "overdue_30", days: 30 },
+	];
+
+	// the Age column of a bill/payment row reads red past this many days, again
+	// exclusive -- kept equal to the first overdue tile's cut-off above
+	const AGE_ALERT_DAYS = 21;
 
 	const CARDS = [
 		{ key: "bill_wise_statement", title: __("UnReconciled\nBills"), report: BILL_WISE_STATEMENT_REPORT },
@@ -241,11 +254,13 @@
 				const rows = to_row_objects(columns, message.result || []);
 				render_card(state, "bill_wise_statement", columns, rows, seq);
 				set_bills_tile(state, rows, party_type);
+				set_overdue_tiles(state, rows);
 			})
 			.catch(() => {
 				if (seq !== state.request_seq) return;
 				show_note(state, "bill_wise_statement", __("Could not load this statement."), true);
 				set_tile(state, "bills", "&ndash;", "");
+				OVERDUE_TILES.forEach((tile) => set_tile(state, tile.key, "&ndash;", ""));
 			});
 
 		// the payments side of the same reconciliation the bill-wise tab shows the
@@ -461,6 +476,12 @@
 		if (data && data.bold) {
 			html = `<span class="logicx-pd-bold">${html}</span>`;
 		}
+		// the two statements carrying an Age column flag a stale row in red, on
+		// the same cut-off the "21 Days Overdue" tile counts by and the report
+		// pages colour by, so the card agrees with both
+		if (col.fieldname === "age" && (value || 0) > AGE_ALERT_DAYS) {
+			html = `<span class="logicx-pd-age-alert">${html}</span>`;
+		}
 		return html;
 	}
 
@@ -544,6 +565,27 @@
 			natural_side(party_type)
 		);
 		set_tile(state, "bills", html, "");
+	}
+
+	// the same bill rows the tile above counts, narrowed to those past each
+	// cut-off. the report ages every bill from its own posting date, so `age` is
+	// taken as given rather than recomputed here.
+	function set_overdue_tiles(state, rows) {
+		const bill_rows = rows.filter((row) => !row.bold);
+		OVERDUE_TILES.forEach((tile) => {
+			const overdue = bill_rows.filter((row) => (row.age || 0) > tile.days);
+			if (!overdue.length) {
+				set_tile(state, tile.key, "&ndash;", __("none overdue"));
+				return;
+			}
+
+			const total = overdue.reduce((sum, row) => sum + (row.outstanding_value || 0), 0);
+			// the caption goes through .text(), so it is plain rather than the
+			// marked-up figure `counted` builds for a tile value
+			const noun = overdue.length === 1 ? __("bill") : __("bills");
+			// money this old is worth flagging whatever the party type
+			set_tile(state, tile.key, currency(total), `${overdue.length} ${noun}`, true);
+		});
 	}
 
 	function set_not_reconciled_tile(state, rows, party_type) {
@@ -762,13 +804,16 @@
 			margin-bottom: var(--margin-xs);
 		}
 
+		/* four across puts the balance, the bills and the two overdue cut-offs on
+		   one row and the rest on the next -- seven tiles in a row would squeeze
+		   the currency figures past the width they need */
 		.logicx-pd-stats {
 			display: grid;
-			grid-template-columns: repeat(5, minmax(0, 1fr));
+			grid-template-columns: repeat(4, minmax(0, 1fr));
 			gap: var(--margin-md);
 		}
 
-		@media (max-width: 1400px) {
+		@media (max-width: 1100px) {
 			.logicx-pd-stats {
 				grid-template-columns: repeat(3, minmax(0, 1fr));
 			}
@@ -950,6 +995,10 @@
 		/* the report .py files mark their Total / Closing Balance rows with bold: 1 */
 		.logicx-pd-bold {
 			font-weight: 600;
+		}
+
+		.logicx-pd-age-alert {
+			color: var(--red-500);
 		}
 
 		/* inline empty / error / loading line inside a table card */
