@@ -325,6 +325,7 @@
 	function setup_tabs(state) {
 		// delegated from the page wrapper so the handlers survive every re-render
 		state.$el.on("click", ".logicx-pd-tab, .logicx-pd-tile", function () {
+			if (open_voucher($(this))) return;
 			activate_tab(state, $(this).attr("data-tab"));
 		});
 
@@ -333,8 +334,20 @@
 		state.$el.on("keydown", ".logicx-pd-tile", function (e) {
 			if (e.key !== "Enter" && e.key !== " ") return;
 			e.preventDefault();
+			if (open_voucher($(this))) return;
 			activate_tab(state, $(this).attr("data-tab"));
 		});
+	}
+
+	// an activity tile stands for one document, so it opens that document instead
+	// of the tab it would otherwise switch to. returns whether it handled the
+	// press, so a tile with nothing to open still falls back to its tab.
+	function open_voucher($tile) {
+		const voucher_type = $tile.attr("data-voucher-type");
+		const voucher_no = $tile.attr("data-voucher-no");
+		if (!voucher_type || !voucher_no) return false;
+		frappe.set_route("Form", voucher_type, voucher_no);
+		return true;
 	}
 
 	function activate_tab(state, key) {
@@ -564,12 +577,24 @@
 	// "6 bills | 70,675 Dr" -- the count carries the unit word, so the amount
 	// drops its currency symbol rather than crowd two symbols into one tile
 	function count_and_amount(count, singular, plural, amount, side) {
+		return two_figures(counted(count, singular, plural), format_amount(amount) + dc(side));
+	}
+
+	// the two figures a tile can hold, split by a thin rule
+	function two_figures(left_html, right_html) {
+		return (
+			`<span class="logicx-pd-amount">${left_html}</span>` +
+			'<span class="logicx-pd-amount-sep">|</span>' +
+			`<span class="logicx-pd-amount">${right_html}</span>`
+		);
+	}
+
+	// "6 bills", "1 day" -- the unit word steps down beside the figure it counts
+	function counted(count, singular, plural) {
 		const noun = count === 1 ? singular : plural;
 		return (
-			`<span class="logicx-pd-amount">${count} ` +
-			`<span class="logicx-pd-unit">${frappe.utils.escape_html(noun)}</span></span>` +
-			'<span class="logicx-pd-amount-sep">|</span>' +
-			`<span class="logicx-pd-amount">${format_amount(amount)}${dc(side)}</span>`
+			`${frappe.utils.escape_html(String(count))} ` +
+			`<span class="logicx-pd-unit">${frappe.utils.escape_html(noun)}</span>`
 		);
 	}
 
@@ -588,17 +613,40 @@
 	}
 
 	function set_activity_tiles(state, activity) {
-		set_days_tile(state, "last_invoice", activity.last_invoice_days, activity.last_invoice_date);
-		set_days_tile(state, "last_payment", activity.last_payment_days, activity.last_payment_date);
+		set_activity_tile(state, "last_invoice", activity);
+		set_activity_tile(state, "last_payment", activity);
 	}
 
-	function set_days_tile(state, key, days, date) {
+	// "20 days | 2,500" over the posting date, and the tile itself opens the
+	// voucher those figures came from. get_party_activity returns every key for
+	// both tiles, flattened under the tile's own name.
+	function set_activity_tile(state, key, activity) {
+		const days = activity[`${key}_days`];
 		if (days === null || days === undefined) {
 			set_tile(state, key, "&ndash;", __("none"));
 			return;
 		}
-		const caption = `${__("days")} \u00b7 ${frappe.datetime.str_to_user(date)}`;
-		set_tile(state, key, frappe.utils.escape_html(String(days)), caption);
+
+		const amount = activity[`${key}_amount`];
+		const aged = counted(days, __("day"), __("days"));
+		// a voucher that nets to nothing still has an amount worth showing; only a
+		// missing one leaves the tile with its day count alone
+		const value =
+			amount === null || amount === undefined ? aged : two_figures(aged, currency(amount));
+
+		set_tile(state, key, value, frappe.datetime.str_to_user(activity[`${key}_date`]));
+		link_tile(state, key, activity[`${key}_voucher_type`], activity[`${key}_voucher_no`]);
+	}
+
+	// points a tile at the document it describes (see open_voucher). set_tile
+	// clears the link first, so a tile never keeps the previous party's voucher.
+	function link_tile(state, key, voucher_type, voucher_no) {
+		if (!voucher_type || !voucher_no) return;
+		state.$el
+			.find(`[data-tile="${key}"]`)
+			.attr("data-voucher-type", voucher_type)
+			.attr("data-voucher-no", voucher_no)
+			.attr("title", __("Open {0}", [voucher_no]));
 	}
 
 	// is_negative is applied on every call, so a tile left red by the previous party
@@ -606,6 +654,7 @@
 	function set_tile(state, key, value_html, caption, is_negative) {
 		const $tile = state.$el.find(`[data-tile="${key}"]`);
 		$tile.removeClass("is-loading");
+		$tile.removeAttr("data-voucher-type").removeAttr("data-voucher-no").removeAttr("title");
 		$tile
 			.find(".logicx-pd-tile-value")
 			.html(value_html)
@@ -777,7 +826,9 @@
 
 		/* two figures share these tiles, so they step down a size to fit them */
 		[data-tile="bills"] .logicx-pd-tile-value,
-		[data-tile="not_reconciled"] .logicx-pd-tile-value {
+		[data-tile="not_reconciled"] .logicx-pd-tile-value,
+		[data-tile="last_invoice"] .logicx-pd-tile-value,
+		[data-tile="last_payment"] .logicx-pd-tile-value {
 			font-size: 17px;
 			line-height: 1.75;
 		}
@@ -809,21 +860,11 @@
 			min-height: 1.2em;
 		}
 
-		/* the day count and its date read as one line: the caption sits beside the
-		   figure on the same baseline instead of stacking under it */
-		[data-tile="last_invoice"] .logicx-pd-tile-value,
-		[data-tile="last_payment"] .logicx-pd-tile-value,
+		/* the posting date reads as a date, not as a sentence that can wrap */
 		[data-tile="last_invoice"] .logicx-pd-tile-caption,
 		[data-tile="last_payment"] .logicx-pd-tile-caption {
-			display: inline-block;
-			vertical-align: baseline;
-		}
-
-		[data-tile="last_invoice"] .logicx-pd-tile-caption,
-		[data-tile="last_payment"] .logicx-pd-tile-caption {
-			margin-top: 0;
-			margin-left: 4px;
 			white-space: nowrap;
+			font-variant-numeric: tabular-nums;
 		}
 
 		/* skeleton shown while a tile is waiting on its request */
