@@ -3,24 +3,38 @@
 	const BILL_WISE_STATEMENT_REPORT = "Party Bill-wise Statement";
 	const LEDGER_STATEMENT_REPORT = "Party Statement";
 	const PAYMENT_WISE_NON_RECONCILED_REPORT = "Party Payment-wise Non-Reconciled";
+	const OUTSTANDING_DETAILED_REPORT = "Party Outstanding Detailed";
 	const PARTY_TYPES = ["Customer", "Supplier"];
 	const RIGHT_ALIGNED = ["Currency", "Float", "Int", "Percent"];
 	const PARTY_DEBOUNCE_MS = 300;
 	const STYLE_ID = "logicx-party-dashboard-styles";
 
-	// the first five tiles are read off the same result that fills the tab below
-	// them, so a tile can never disagree with the table it summarises -- and `tab`
-	// sends a click on the tile to that same card. the activity tiles have no
+	// a tile is read off the same result that fills the tab below it, so it can
+	// never disagree with the table it summarises -- and `tab` sends a click on
+	// the tile to that same card. the ledger-total and activity tiles have no
 	// statement of their own, so they fall back to the ledger.
-	const TILES = [
-		{ key: "outstanding", label: __("Balance"), tab: "ledger_statement" },
-		{ key: "bills", label: __("UnReconciled Bills"), tab: "bill_wise_statement" },
-		{ key: "overdue_21", label: __("21 Days Overdue"), tab: "bill_wise_statement" },
-		{ key: "overdue_30", label: __("30 Days Overdue"), tab: "bill_wise_statement" },
-		{ key: "not_reconciled", label: __("UnReconciled Payments"), tab: "payment_wise_non_reconciled" },
-		{ key: "last_invoice", label: __("Last Invoice"), tab: "ledger_statement" },
-		{ key: "last_payment", label: __("Last Payment"), tab: "ledger_statement" },
+	// grouped by the row it is shown in: the ledger read left to right along the
+	// top -- what it opened at, what moved, where it stands, and the last voucher
+	// on either side -- with what is still open underneath
+	const TILE_ROWS = [
+		[
+			{ key: "opening", label: __("Opening"), tab: "ledger_statement" },
+			{ key: "debits", label: __("Debits"), tab: "ledger_statement" },
+			{ key: "credits", label: __("Credits"), tab: "ledger_statement" },
+			{ key: "outstanding", label: __("Balance"), tab: "ledger_statement" },
+			{ key: "last_invoice", label: __("Last Invoice"), tab: "ledger_statement" },
+			{ key: "last_payment", label: __("Last Payment"), tab: "ledger_statement" },
+		],
+		[
+			{ key: "bills", label: __("UnReconciled Bills"), tab: "bill_wise_statement" },
+			{ key: "not_reconciled", label: __("UnReconciled Payments"), tab: "payment_wise_non_reconciled" },
+			{ key: "overdue_21", label: __("21 Days Overdue Bills"), tab: "bill_wise_statement" },
+			{ key: "overdue_30", label: __("30 Days Overdue Bills"), tab: "bill_wise_statement" },
+		],
 	];
+
+	// the same tiles as one list, for everything that treats them as a set
+	const TILES = TILE_ROWS.flat();
 
 	// the ageing cut-offs the two overdue tiles read off the bill-wise result --
 	// `days` is exclusive, so a bill exactly that old is not yet overdue by it
@@ -28,6 +42,10 @@
 		{ key: "overdue_21", days: 21 },
 		{ key: "overdue_30", days: 30 },
 	];
+
+	// the Opening / Debits / Credits tiles, named after the columns of
+	// Party Outstanding Detailed they are read from
+	const LEDGER_TOTAL_TILES = ["opening", "debits", "credits"];
 
 	// the Age column of a bill/payment row reads red past this many days, again
 	// exclusive -- kept equal to the first overdue tile's cut-off above
@@ -97,14 +115,24 @@
 		return String(text).split("\n").map(frappe.utils.escape_html).join("<br>");
 	}
 
-	function render_scaffold() {
-		const tiles = TILES.map(
-			(tile) => `
+	function render_tile(tile) {
+		return `
 			<div class="logicx-pd-card logicx-pd-tile" data-tile="${tile.key}"
 				data-tab="${tile.tab}" role="button" tabindex="0">
 				<div class="logicx-pd-tile-label">${frappe.utils.escape_html(tile.label)}</div>
 				<div class="logicx-pd-tile-value">&ndash;</div>
 				<div class="logicx-pd-tile-caption"></div>
+			</div>`;
+	}
+
+	function render_scaffold() {
+		// a grid of its own per row: the rows hold different numbers of tiles, so
+		// each spreads its own across the full width instead of ending on the gap
+		// a single grid would leave
+		const tile_rows = TILE_ROWS.map(
+			(row, i) => `
+			<div class="logicx-pd-stats${i === 0 ? " is-ledger-row" : ""}">
+				${row.map(render_tile).join("")}
 			</div>`
 		).join("");
 
@@ -147,7 +175,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="logicx-pd-stats">${tiles}</div>
+			${tile_rows}
 			${tabs}
 		`;
 	}
@@ -291,6 +319,20 @@
 				if (seq !== state.request_seq) return;
 				show_note(state, "ledger_statement", __("Could not load this statement."), true);
 				set_tile(state, "outstanding", "&ndash;", "");
+			});
+
+		// the ledger totals behind the first three tiles. this report has no tab
+		// of its own -- it is the party-wise list the dashboard drills down from,
+		// narrowed here to the one party on screen
+		run_report(OUTSTANDING_DETAILED_REPORT, party_type, party)
+			.then((message) => {
+				if (seq !== state.request_seq) return;
+				const rows = to_row_objects(message.columns || [], message.result || []);
+				set_ledger_total_tiles(state, rows, party_type);
+			})
+			.catch(() => {
+				if (seq !== state.request_seq) return;
+				LEDGER_TOTAL_TILES.forEach((key) => set_tile(state, key, "&ndash;", ""));
 			});
 
 		frappe
@@ -522,15 +564,36 @@
 		}
 
 		// that row fills one side only -- debit when positive, credit when negative
-		const balance = (closing.debit || 0) - (closing.credit || 0);
-		if (!balance) {
-			set_tile(state, "outstanding", currency(0), "");
+		set_signed_tile(state, "outstanding", (closing.debit || 0) - (closing.credit || 0), party_type);
+	}
+
+	// Opening and Balance are net figures, so they name the side they landed on
+	// the way the report does; the side that is not the party's own is the one
+	// worth flagging
+	function set_signed_tile(state, key, value, party_type) {
+		const amount = value || 0;
+		if (!amount) {
+			set_tile(state, key, currency(0), "");
 			return;
 		}
 
-		const side = balance > 0 ? "Dr" : "Cr";
-		const amount = currency(Math.abs(balance));
-		set_tile(state, "outstanding", amount + dc(side), "", side !== natural_side(party_type));
+		const side = amount > 0 ? "Dr" : "Cr";
+		set_tile(state, key, currency(Math.abs(amount)) + dc(side), "", side !== natural_side(party_type));
+	}
+
+	// Opening, Debits and Credits are taken from Party Outstanding Detailed
+	// rather than re-totalled here, so the tiles and that report cannot drift
+	// apart. Opening is the net of the entries flagged as opening, Debits and
+	// Credits the gross movement since -- Balance above is where the three meet.
+	// Debits and Credits sit on a fixed side each, so neither carries a marker.
+	function set_ledger_total_tiles(state, rows, party_type) {
+		// the report is filtered down to this one party, so its row is the first;
+		// a party whose four figures are all zero is left out of it entirely, and
+		// the tiles then read zero rather than "no data"
+		const totals = rows[0] || {};
+		set_signed_tile(state, "opening", totals.opening, party_type);
+		set_tile(state, "debits", currency(totals.debits || 0), "");
+		set_tile(state, "credits", currency(totals.credits || 0), "");
 	}
 
 	// format_currency returns the plain string frappe's Currency formatter would
@@ -813,20 +876,38 @@
 			gap: var(--margin-md);
 		}
 
+		/* the ledger row carries six tiles to the four of the row below it */
+		.logicx-pd-stats.is-ledger-row {
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+		}
+
+		/* six only stay legible on a wide page; below that the ledger row joins
+		   the ladder the rest of the tiles already step down. .is-ledger-row is
+		   repeated in each rule because it would otherwise outrank them on
+		   specificity and hold the row at six */
+		@media (max-width: 1400px) {
+			.logicx-pd-stats.is-ledger-row {
+				grid-template-columns: repeat(4, minmax(0, 1fr));
+			}
+		}
+
 		@media (max-width: 1100px) {
-			.logicx-pd-stats {
+			.logicx-pd-stats,
+			.logicx-pd-stats.is-ledger-row {
 				grid-template-columns: repeat(3, minmax(0, 1fr));
 			}
 		}
 
 		@media (max-width: 900px) {
-			.logicx-pd-stats {
+			.logicx-pd-stats,
+			.logicx-pd-stats.is-ledger-row {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 		}
 
 		@media (max-width: 520px) {
-			.logicx-pd-stats {
+			.logicx-pd-stats,
+			.logicx-pd-stats.is-ledger-row {
 				grid-template-columns: minmax(0, 1fr);
 			}
 		}
@@ -869,8 +950,15 @@
 			text-overflow: ellipsis;
 		}
 
-		/* two figures share these tiles, so they step down a size to fit them */
+		/* two figures share some of these tiles, and the rest are read across the
+		   row beside them, so every tile but the headline Balance steps down to
+		   the one size */
+		[data-tile="opening"] .logicx-pd-tile-value,
+		[data-tile="debits"] .logicx-pd-tile-value,
+		[data-tile="credits"] .logicx-pd-tile-value,
 		[data-tile="bills"] .logicx-pd-tile-value,
+		[data-tile="overdue_21"] .logicx-pd-tile-value,
+		[data-tile="overdue_30"] .logicx-pd-tile-value,
 		[data-tile="not_reconciled"] .logicx-pd-tile-value,
 		[data-tile="last_invoice"] .logicx-pd-tile-value,
 		[data-tile="last_payment"] .logicx-pd-tile-value {
