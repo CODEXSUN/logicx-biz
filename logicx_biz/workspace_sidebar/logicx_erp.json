@@ -65,48 +65,55 @@
 		},
 		{
 			"idx": 9,
+			"label": "Party Outstanding Detailed",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Party Outstanding Detailed"
+		},
+		{
+			"idx": 10,
 			"label": "Negative Customer Outstanding",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Negative Customer Outstanding"
 		},
 		{
-			"idx": 10,
+			"idx": 11,
 			"label": "Negative Supplier Outstanding",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Negative Supplier Outstanding"
 		},
 		{
-			"idx": 11,
+			"idx": 12,
 			"label": "Party Not Reconciled",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Party Not Reconciled"
 		},
 		{
-			"idx": 12,
+			"idx": 13,
 			"label": "Party Overdue Statement",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Party Overdue Statement"
 		},
 		{
-			"idx": 13,
+			"idx": 14,
 			"label": "Sales GP GL Schemes",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Sales GP GL Schemes"
 		},
 		{
-			"idx": 14,
+			"idx": 15,
 			"label": "Sales Item-wise GP GL Schemes",
 			"type": "Link",
 			"link_type": "Report",
 			"link_to": "Sales Item-wise GP GL Schemes"
 		},
 		{
-			"idx": 15,
+			"idx": 16,
 			"label": "Doc",
 			"type": "Section Break",
 			"icon": "file-text",
@@ -116,7 +123,7 @@
 			"child": 0
 		},
 		{
-			"idx": 16,
+			"idx": 17,
 			"label": "Item",
 			"type": "Link",
 			"link_type": "DocType",
@@ -124,7 +131,7 @@
 			"child": 1
 		},
 		{
-			"idx": 17,
+			"idx": 18,
 			"label": "Rack",
 			"type": "Link",
 			"link_type": "DocType",
@@ -132,7 +139,7 @@
 			"child": 1
 		},
 		{
-			"idx": 18,
+			"idx": 19,
 			"label": "Crate",
 			"type": "Link",
 			"link_type": "DocType",
