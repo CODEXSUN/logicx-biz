@@ -1,0 +1,1 @@
+"""Stock Search Detailed report."""

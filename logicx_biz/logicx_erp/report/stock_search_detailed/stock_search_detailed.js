@@ -1,5 +1,5 @@
 (function () {
-	frappe.query_reports["Stock Details Search"] = {
+	frappe.query_reports["Stock Search Detailed"] = {
 		onload: function (report) {
 			wrap_column_headers(report);
 			apply_search_on_enter(report);
@@ -84,7 +84,7 @@
 	}
 
 
-	const ROUTE = "Stock Details Search";
+	const ROUTE = "Stock Search Detailed";
 	const HEADER_WRAP_CLASS = "logicx-wrap-headers";
 	const HEADER_HEIGHT_INCREASE = "15px";
 	const FILTER_ROWS_INCREASE = `${1 * 40}px`; // ceiling(filters.COUNT / 6) - 1 = ceiling(9 / 6) - 1 = 1

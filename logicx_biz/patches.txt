@@ -7,3 +7,4 @@
 logicx_biz.patches.delete_stock_details_report
 logicx_biz.patches.create_enquiry_groups
 logicx_biz.patches.create_enquiry_statuses
+logicx_biz.patches.delete_stock_details_search_report

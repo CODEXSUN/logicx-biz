@@ -23,10 +23,10 @@
 		},
 		{
 			"idx": 3,
-			"label": "Stock Details Search",
+			"label": "Stock Search Detailed",
 			"type": "Link",
 			"link_type": "Report",
-			"link_to": "Stock Details Search"
+			"link_to": "Stock Search Detailed"
 		},
 		{
 			"idx": 4,
