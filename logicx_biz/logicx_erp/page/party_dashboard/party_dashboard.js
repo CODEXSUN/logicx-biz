@@ -9,13 +9,14 @@
 	const PARTY_DEBOUNCE_MS = 300;
 	const STYLE_ID = "logicx-party-dashboard-styles";
 
-	// a tile is read off the same result that fills the tab below it, so it can
-	// never disagree with the table it summarises -- and `tab` sends a click on
-	// the tile to that same card. the ledger-total and activity tiles have no
-	// statement of their own, so they fall back to the ledger.
-	// grouped by the row it is shown in: the ledger read left to right along the
-	// top -- what it opened at, what moved, where it stands, and the last voucher
-	// on either side -- with what is still open underneath
+	// a tile is read off the same result that fills one of the statement tabs, so
+	// it can never disagree with the table it summarises -- and `tab` sends a
+	// click on the tile to that same tab. the ledger-total and activity tiles
+	// have no statement of their own, so they fall back to the ledger.
+	// grouped by the row it is shown in on the Dashboard tab: the ledger read
+	// left to right along the top -- what it opened at, what moved, where it
+	// stands, and the last voucher on either side -- with what is still open
+	// underneath
 	const TILE_ROWS = [
 		[
 			{ key: "opening", label: __("Opening"), tab: "ledger_statement" },
@@ -52,10 +53,16 @@
 	const AGE_ALERT_DAYS = 21;
 
 	const CARDS = [
-		{ key: "bill_wise_statement", title: __("UnReconciled\nBills"), report: BILL_WISE_STATEMENT_REPORT },
-		{ key: "payment_wise_non_reconciled", title: __("UnReconciled\nPayments"), report: PAYMENT_WISE_NON_RECONCILED_REPORT },
+		{ key: "bill_wise_statement", title: __("UnReconciled Bills"), report: BILL_WISE_STATEMENT_REPORT },
+		{ key: "payment_wise_non_reconciled", title: __("UnReconciled Payments"), report: PAYMENT_WISE_NON_RECONCILED_REPORT },
 		{ key: "ledger_statement", title: __("Statement"), report: LEDGER_STATEMENT_REPORT },
 	];
+
+	// the tab strip: the tiles lead in a Dashboard tab of their own, and each
+	// statement card follows in the tab named after it. the Dashboard tab has no
+	// report behind it, which is what tells the rest of the page it is not a card
+	const DASHBOARD_TAB = "dashboard";
+	const TABS = [{ key: DASHBOARD_TAB, title: __("Dashboard") }].concat(CARDS);
 
 	// held across on_page_load / on_page_show, which frappe calls separately
 	let state = null;
@@ -94,7 +101,7 @@
 			// can (re)build the datatable while its pane is actually visible --
 			// frappe-datatable sizes its columns wrong when built inside a hidden pane
 			pending: {},
-			active_tab: CARDS[0].key,
+			active_tab: TABS[0].key,
 			url_params_read: false,
 			// frappe lazy-loads the datatable bundle; the report views await this
 			// same call before constructing one, so the page does too
@@ -136,24 +143,30 @@
 			</div>`
 		).join("");
 
-		const tab_buttons = CARDS.map(
-			(card, i) => `
+		const tab_buttons = TABS.map(
+			(tab, i) => `
 			<button type="button" class="logicx-pd-tab${i === 0 ? " is-active" : ""}"
-				data-tab="${card.key}">
-				${escape_lines(card.title)}
+				data-tab="${tab.key}">
+				${escape_lines(tab.title)}
 			</button>`
 		).join("");
 
-		const tab_panes = CARDS.map(
-			(card, i) => `
-			<div class="logicx-pd-tabpane${i === 0 ? "" : " hidden"}" data-report="${card.key}">
-				<div class="logicx-pd-card-body is-table"></div>
+		// the Dashboard pane holds the tiles; every other pane is an empty body a
+		// datatable is built into once its tab is on screen
+		const tab_panes = TABS.map(
+			(tab, i) => `
+			<div class="logicx-pd-tabpane${i === 0 ? "" : " hidden"}" data-report="${tab.key}">
+				${
+					tab.key === DASHBOARD_TAB
+						? `<div class="logicx-pd-card-body logicx-pd-tiles">${tile_rows}</div>`
+						: `<div class="logicx-pd-card-body is-table"></div>`
+				}
 			</div>`
 		).join("");
 
 		// one "Open full report" link lives in the tab nav and is repointed at the
-		// active tab's report (see activate_tab); the click handler reads
-		// data-report-name at click time
+		// active tab's report (see update_open_report_link); the click handler
+		// reads data-report-name at click time
 		const tabs = `
 			<div class="logicx-pd-card logicx-pd-tabcard">
 				<div class="logicx-pd-tabnav">
@@ -175,7 +188,6 @@
 					</div>
 				</div>
 			</div>
-			${tile_rows}
 			${tabs}
 		`;
 	}
@@ -264,7 +276,7 @@
 		state.party_type = party_type;
 		state.party = party;
 		state.pending = {};
-		state.$el.find(".logicx-pd-open-report").toggleClass("hidden", !party);
+		update_open_report_link(state);
 
 		if (!party) {
 			TILES.forEach((tile) => set_tile(state, tile.key, "&ndash;", ""));
@@ -418,14 +430,20 @@
 			$(this).toggleClass("hidden", $(this).attr("data-report") !== key);
 		});
 
-		// repoint the shared "Open full report" link at the now-visible report
-		const card = CARDS.find((c) => c.key === key);
-		if (card) {
-			state.$el.find(".logicx-pd-open-report").attr("data-report-name", card.report);
-		}
+		update_open_report_link(state);
 
 		// build the datatable now that its pane is visible (see pending in build)
 		render_pending(state, key);
+	}
+
+	// the shared "Open full report" link follows the active tab. the Dashboard tab
+	// has no single report behind it, so the link goes away there, as it does
+	// before a party is picked
+	function update_open_report_link(state) {
+		const card = CARDS.find((c) => c.key === state.active_tab);
+		const $link = state.$el.find(".logicx-pd-open-report");
+		if (card) $link.attr("data-report-name", card.report);
+		$link.toggleClass("hidden", !card || !state.party);
 	}
 
 	// hand a result to a statement card: remember it, and build the table now only
@@ -867,6 +885,20 @@
 			margin-bottom: var(--margin-xs);
 		}
 
+		/* the tiles live inside the Dashboard tab now, so the spacing between the
+		   two tile rows -- once the page's own gap -- comes from the pane, and
+		   each tile drops the shadow it no longer needs sitting on a card rather
+		   than on the page behind one */
+		.logicx-pd-tiles {
+			display: flex;
+			flex-direction: column;
+			gap: var(--margin-md);
+		}
+
+		.logicx-pd-tiles .logicx-pd-tile {
+			box-shadow: none;
+		}
+
 		/* four across puts the balance, the bills and the two overdue cut-offs on
 		   one row and the rest on the next -- seven tiles in a row would squeeze
 		   the currency figures past the width they need */
@@ -1018,8 +1050,8 @@
 			50% { opacity: 0.45; }
 		}
 
-		/* tab strip that fronts the two statement cards; it stands in for the
-		   per-card title bar the cards used to carry */
+		/* tab strip that fronts the tiles and the statement cards; it stands in for
+		   the per-card title bar the cards used to carry */
 		.logicx-pd-tabnav {
 			display: flex;
 			align-items: center;
