@@ -203,12 +203,15 @@ after_app_install = ["logicx_biz.desk_fixes.cleanup_shadow_sidebars"]
 # ---------------
 # Hook on document methods and events
 
-# mobile numbers on parties must be exactly 10 digits (see mobile_validation.py)
 doc_events = {
+	# mobile numbers on parties must be exactly 10 digits (see mobile_validation.py)
 	"Address": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
 	"Contact": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
 	"Customer": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
 	"Supplier": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
+	# Batch.vendor is read-only, so it is stamped from the voucher that created
+	# the batch (see batch.py)
+	"Batch": {"before_insert": "logicx_biz.logicx_erp.batch.set_vendor"},
 }
 
 # Scheduled Tasks
