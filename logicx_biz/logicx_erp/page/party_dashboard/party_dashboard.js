@@ -32,15 +32,20 @@
 				source: "ledger_totals",
 				tab: "ledger_statement",
 			},
+			// what a debit or a credit means to the party reads differently on
+			// either side of the book, so these two name themselves per party
+			// type; `label` is the fallback for anything not listed there
 			{
 				key: "debits",
 				label: __("Debits"),
+				labels: { Customer: __("Sold"), Supplier: __("Paid") },
 				source: "ledger_totals",
 				tab: "ledger_statement",
 			},
 			{
 				key: "credits",
 				label: __("Credits"),
+				labels: { Customer: __("Payment Received"), Supplier: __("Purchased") },
 				source: "ledger_totals",
 				tab: "ledger_statement",
 			},
@@ -283,6 +288,7 @@
 			this.party = party;
 			this.results = {};
 			this.update_open_report_link();
+			this.set_tile_labels(party_type);
 
 			if (!party) {
 				this.set_tiles(blank(TILES));
@@ -315,6 +321,16 @@
 
 		$tile(key) {
 			return this.$el.find(`[data-tile="${key}"]`);
+		}
+
+		// the party-type-dependent tiles are renamed before anything is fetched,
+		// so a tile never reads under the other side's name while it loads
+		set_tile_labels(party_type) {
+			TILES.forEach((tile) => {
+				this.$tile(tile.key)
+					.find(".logicx-pd-tile-label")
+					.text(tile_label(tile, party_type));
+			});
 		}
 
 		set_tiles(views) {
@@ -542,10 +558,14 @@
 		return `
 			<div class="logicx-pd-card logicx-pd-tile" data-tile="${tile.key}"
 				data-tab="${tile.tab}" role="button" tabindex="0">
-				<div class="logicx-pd-tile-label">${frappe.utils.escape_html(tile.label)}</div>
+				<div class="logicx-pd-tile-label">${frappe.utils.escape_html(tile_label(tile, PARTY_TYPES[0]))}</div>
 				<div class="logicx-pd-tile-value${tile.lead ? " is-lead" : ""}">${DASH}</div>
 				<div class="logicx-pd-tile-caption"></div>
 			</div>`;
+	}
+
+	function tile_label(tile, party_type) {
+		return (tile.labels && tile.labels[party_type]) || tile.label;
 	}
 
 	// a tab title may carry a line break; escape_html would print a literal "<br>", so escape each line and join them with a real one
