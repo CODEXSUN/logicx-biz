@@ -26,17 +26,30 @@
 	// either side last, centred under the two full rows above.
 	const TILE_ROWS = [
 		[
-			{ key: "opening", label: __("Opening"), source: "ledger_totals", tab: "ledger_statement" },
-			{ key: "debits", label: __("Debits"), source: "ledger_totals", tab: "ledger_statement" },
-			{ key: "credits", label: __("Credits"), source: "ledger_totals", tab: "ledger_statement" },
+			{
+				key: "opening",
+				label: __("Opening"),
+				source: "ledger_totals",
+				tab: "ledger_statement",
+			},
+			{
+				key: "debits",
+				label: __("Debits"),
+				source: "ledger_totals",
+				tab: "ledger_statement",
+			},
+			{
+				key: "credits",
+				label: __("Credits"),
+				source: "ledger_totals",
+				tab: "ledger_statement",
+			},
 			{
 				key: "outstanding",
 				label: __("Balance"),
 				source: "ledger_statement",
 				tab: "ledger_statement",
-				// the figure the three beside it add up to, so it is the one tile
-				// that reads at headline size
-				lead: true,
+				lead: true, // the figure the three beside it add up to, so it is the one tile // that reads at headline size
 			},
 		],
 		[
@@ -52,8 +65,7 @@
 				source: "payment_wise_non_reconciled",
 				tab: "payment_wise_non_reconciled",
 			},
-			// `overdue_days` is the ageing cut-off the tile counts by, and is
-			// exclusive: a bill exactly that old is not yet overdue by it
+			// `overdue_days` is the ageing cut-off the tile counts by, and is exclusive: a bill exactly that old is not yet overdue by it
 			{
 				key: "overdue_21",
 				label: __("21 Days Overdue Bills"),
@@ -70,8 +82,18 @@
 			},
 		],
 		[
-			{ key: "last_invoice", label: __("Last Invoice"), source: "activity", tab: "ledger_statement" },
-			{ key: "last_payment", label: __("Last Payment"), source: "activity", tab: "ledger_statement" },
+			{
+				key: "last_invoice",
+				label: __("Last Invoice"),
+				source: "activity",
+				tab: "ledger_statement",
+			},
+			{
+				key: "last_payment",
+				label: __("Last Payment"),
+				source: "activity",
+				tab: "ledger_statement",
+			},
 		],
 	];
 
@@ -112,9 +134,7 @@
 			derive: ledger_tiles,
 		},
 		{
-			// the ledger totals behind the first three tiles. this report has no
-			// tab of its own -- it is the party-wise list the dashboard drills
-			// down from, narrowed here to the one party on screen.
+			// the ledger totals behind the first three tiles. this report has no tab of its own -- it is the party-wise list the dashboard drills down from, narrowed here to the one party on screen.
 			key: "ledger_totals",
 			report: OUTSTANDING_DETAILED_REPORT,
 			derive: ledger_total_tiles,
@@ -128,9 +148,8 @@
 
 	const CARDS = SOURCES.filter((source) => source.card);
 
-	// the tab strip: the tiles lead in a Dashboard tab of their own, and each
-	// statement card follows in the tab named after it. the Dashboard tab has no
-	// report behind it, which is what tells the rest of the page it is not a card.
+	// the tab strip: the tiles lead in a Dashboard tab of their own, and each statement card follows in the tab named after it.
+	// the Dashboard tab has no report behind it, which is what tells the rest of the page it is not a card.
 	const DASHBOARD_TAB = "dashboard";
 	const TABS = [{ key: DASHBOARD_TAB, title: __("Dashboard") }].concat(CARDS);
 
@@ -195,9 +214,7 @@
 			});
 			this.controls.party_type.set_value(PARTY_TYPES[0]);
 
-			// a standalone control has no sibling field to hang a Dynamic Link
-			// off, so this is a plain Link repointed whenever the party type
-			// changes (see point_party_at below)
+			// a standalone control has no sibling field to hang a Dynamic Link off, so this is a plain Link repointed whenever the party type changes (see point_party_at below)
 			this.controls.party = frappe.ui.form.make_control({
 				parent: this.$el.find('[data-filter="party"]'),
 				df: {
@@ -215,8 +232,7 @@
 
 		on_party_type_change() {
 			const party_type = this.selected_party_type();
-			// the selected party belongs to the previous party type, so it goes
-			// with it
+			// the selected party belongs to the previous party type, so it goes with it
 			this.point_party_at(party_type, { clear: true });
 			this.load(party_type, "");
 		}
@@ -240,9 +256,8 @@
 			const from_route = frappe.route_options || {};
 			frappe.route_options = null;
 
-			// URL params are read once, on the first show -- the desk keeps the
-			// query string around as you navigate away and back, and re-applying
-			// it would silently undo whatever the user picked in the meantime
+			// URL params are read once, on the first show -- the desk keeps the query string around as you navigate away and back,
+			// and re-applying it would silently undo whatever the user picked in the meantime
 			const from_url = this.url_params_read ? {} : frappe.utils.get_query_params() || {};
 			this.url_params_read = true;
 
@@ -306,9 +321,7 @@
 			Object.keys(views).forEach((key) => this.set_tile(key, views[key]));
 		}
 
-		// every part of a tile is written on every call, so nothing of the
-		// previous party's -- a red value, a voucher link -- survives into the
-		// next one. an empty view renders as a dash.
+		// every part of a tile is written on every call, so nothing of the previous party's -- a red value, a voucher link -- survives into the next one. an empty view renders as a dash.
 		set_tile(key, view) {
 			const voucher = view.voucher && view.voucher.type && view.voucher.no ? view.voucher : null;
 			const $tile = this.$tile(key);
@@ -334,8 +347,7 @@
 				this.on_press($(e.currentTarget));
 			});
 
-			// the tabs are real buttons, but the tiles are divs, so Enter and
-			// Space have to be wired up by hand to match the role they advertise
+			// the tabs are real buttons, but the tiles are divs, so Enter and Space have to be wired up by hand to match the role they advertise
 			this.$el.on("keydown", ".logicx-pd-tile", (e) => {
 				if (e.key !== "Enter" && e.key !== " ") return;
 				e.preventDefault();
@@ -353,8 +365,7 @@
 			});
 		}
 
-		// an activity tile stands for one document, so it opens that document
-		// instead of the tab it would otherwise switch to
+		// an activity tile stands for one document, so it opens that document instead of the tab it would otherwise switch to
 		on_press($target) {
 			const voucher_type = $target.attr("data-voucher-type");
 			const voucher_no = $target.attr("data-voucher-no");
@@ -382,9 +393,7 @@
 			this.render_table(key);
 		}
 
-		// the shared "Open full report" link follows the active tab. the Dashboard
-		// tab has no single report behind it, so the link goes away there, as it
-		// does before a party is picked.
+		// the shared "Open full report" link follows the active tab. the Dashboard tab has no single report behind it, so the link goes away there, as it does before a party is picked.
 		update_open_report_link() {
 			const card = CARDS.find((c) => c.key === this.active_tab);
 			const $link = this.$el.find(".logicx-pd-open-report");
@@ -394,15 +403,13 @@
 
 		/* -------------------------------------------------------------- tables */
 
-		// hand a result to a statement card: remember it, and build the table now
-		// only if that card's tab is the one on screen
+		// hand a result to a statement card: remember it, and build the table now only if that card's tab is the one on screen
 		set_card(key, data) {
 			this.results[key] = { columns: data.columns, rows: data.rows, seq: this.seq };
 			if (key === this.active_tab) this.render_table(key);
 		}
 
-		// called both when a result lands and when its tab is opened, whichever
-		// comes second; `rendered` is what keeps it from building twice
+		// called both when a result lands and when its tab is opened, whichever comes second; `rendered` is what keeps it from building twice
 		render_table(key) {
 			const result = this.results[key];
 			if (!result || result.seq !== this.seq || result.rendered) return;
@@ -478,9 +485,7 @@
 		`;
 	}
 
-	// one "Open full report" link lives in the tab nav and is repointed at the
-	// active tab's report (see update_open_report_link); the click handler reads
-	// data-report-name at click time
+	// one "Open full report" link lives in the tab nav and is repointed at the active tab's report (see update_open_report_link); the click handler reads data-report-name at click time
 	function render_tabcard() {
 		const buttons = TABS.map(
 			(tab, i) => `
@@ -490,15 +495,13 @@
 			</button>`
 		).join("");
 
-		// the Dashboard pane holds the tiles; every other pane is an empty body a
-		// datatable is built into once its tab is on screen
+		// the Dashboard pane holds the tiles; every other pane is an empty body a datatable is built into once its tab is on screen
 		const panes = TABS.map(
 			(tab, i) => `
 			<div class="logicx-pd-tabpane${i === 0 ? "" : " hidden"}" data-report="${tab.key}">
-				${
-					tab.key === DASHBOARD_TAB
-						? `<div class="logicx-pd-card-body logicx-pd-tiles">${render_tile_rows()}</div>`
-						: `<div class="logicx-pd-card-body is-table"></div>`
+				${tab.key === DASHBOARD_TAB
+					? `<div class="logicx-pd-card-body logicx-pd-tiles">${render_tile_rows()}</div>`
+					: `<div class="logicx-pd-card-body is-table"></div>`
 				}
 			</div>`
 		).join("");
@@ -516,8 +519,7 @@
 			</div>`;
 	}
 
-	// a grid of its own per row, so a row that does not fill its columns can be
-	// centred under the ones that do without disturbing them
+	// a grid of its own per row, so a row that does not fill its columns can be centred under the ones that do without disturbing them
 	function render_tile_rows() {
 		return TILE_ROWS.map((row) => {
 			// the column this row's first tile starts at: the first for a row
@@ -546,8 +548,7 @@
 			</div>`;
 	}
 
-	// a tab title may carry a line break; escape_html would print a literal
-	// "<br>", so escape each line and join them with a real one
+	// a tab title may carry a line break; escape_html would print a literal "<br>", so escape each line and join them with a real one
 	function escape_lines(text) {
 		return String(text).split("\n").map(frappe.utils.escape_html).join("<br>");
 	}
@@ -624,16 +625,16 @@
 		const views = {
 			bills: bills.length
 				? {
-						// bills sit on the party's own side by construction, so
-						// never the red one
-						value: count_and_amount(
-							bills.length,
-							__("bill"),
-							__("bills"),
-							total && total.outstanding_value,
-							own_side(ctx.party_type)
-						),
-				  }
+					// bills sit on the party's own side by construction, so
+					// never the red one
+					value: count_and_amount(
+						bills.length,
+						__("bill"),
+						__("bills"),
+						total && total.outstanding_value,
+						own_side(ctx.party_type)
+					),
+				}
 				: { caption: __("none pending") },
 		};
 
@@ -641,13 +642,13 @@
 			const overdue = bills.filter((row) => (row.age || 0) > tile.overdue_days);
 			views[tile.key] = overdue.length
 				? {
-						value: currency(sum(overdue, "outstanding_value")),
-						// the caption goes through .text(), so it is plain rather
-						// than the marked-up figure `counted` builds for a value
-						caption: `${overdue.length} ${overdue.length === 1 ? __("bill") : __("bills")}`,
-						// money this old is worth flagging whatever the party type
-						negative: true,
-				  }
+					value: currency(sum(overdue, "outstanding_value")),
+					// the caption goes through .text(), so it is plain rather
+					// than the marked-up figure `counted` builds for a value
+					caption: `${overdue.length} ${overdue.length === 1 ? __("bill") : __("bills")}`,
+					// money this old is worth flagging whatever the party type
+					negative: true,
+				}
 				: { caption: __("none overdue") };
 		});
 
