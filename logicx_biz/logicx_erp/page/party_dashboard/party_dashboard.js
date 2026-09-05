@@ -15,16 +15,14 @@
 	// have no statement of their own, so they fall back to the ledger.
 	// grouped by the row it is shown in on the Dashboard tab: the ledger read
 	// left to right along the top -- what it opened at, what moved, where it
-	// stands, and the last voucher on either side -- with what is still open
-	// underneath
+	// stands -- then what is still open beneath it, and the last voucher on
+	// either side last, centred under the two full rows above
 	const TILE_ROWS = [
 		[
 			{ key: "opening", label: __("Opening"), tab: "ledger_statement" },
 			{ key: "debits", label: __("Debits"), tab: "ledger_statement" },
 			{ key: "credits", label: __("Credits"), tab: "ledger_statement" },
 			{ key: "outstanding", label: __("Balance"), tab: "ledger_statement" },
-			{ key: "last_invoice", label: __("Last Invoice"), tab: "ledger_statement" },
-			{ key: "last_payment", label: __("Last Payment"), tab: "ledger_statement" },
 		],
 		[
 			{ key: "bills", label: __("UnReconciled Bills"), tab: "bill_wise_statement" },
@@ -32,7 +30,15 @@
 			{ key: "overdue_21", label: __("21 Days Overdue Bills"), tab: "bill_wise_statement" },
 			{ key: "overdue_30", label: __("30 Days Overdue Bills"), tab: "bill_wise_statement" },
 		],
+		[
+			{ key: "last_invoice", label: __("Last Invoice"), tab: "ledger_statement" },
+			{ key: "last_payment", label: __("Last Payment"), tab: "ledger_statement" },
+		],
 	];
+
+	// how many tiles a full row holds -- kept in step with the grid in
+	// PAGE_STYLES, which a short row is centred under
+	const TILE_COLUMNS = 4;
 
 	// the same tiles as one list, for everything that treats them as a set
 	const TILES = TILE_ROWS.flat();
@@ -133,12 +139,11 @@
 	}
 
 	function render_scaffold() {
-		// a grid of its own per row: the rows hold different numbers of tiles, so
-		// each spreads its own across the full width instead of ending on the gap
-		// a single grid would leave
+		// a grid of its own per row, so a row that does not fill its columns can be
+		// centred under the ones that do without disturbing them
 		const tile_rows = TILE_ROWS.map(
-			(row, i) => `
-			<div class="logicx-pd-stats${i === 0 ? " is-ledger-row" : ""}">
+			(row) => `
+			<div class="logicx-pd-stats${row.length < TILE_COLUMNS ? " is-short-row" : ""}">
 				${row.map(render_tile).join("")}
 			</div>`
 		).join("");
@@ -930,62 +935,60 @@
 		}
 
 		/* the tiles live inside the Dashboard tab now, so the spacing between the
-		   two tile rows -- once the page's own gap -- comes from the pane, and
-		   each tile drops the shadow it no longer needs sitting on a card rather
-		   than on the page behind one */
+		   tile rows -- once the page's own gap -- comes from the pane. the block
+		   is capped and centred rather than held off the edges by a fixed inset,
+		   so a wide page leaves the room either side without a narrow one paying
+		   for it; the padding is only the gutter it keeps once the cap stops
+		   biting. each tile drops the shadow it no longer needs sitting on a card
+		   rather than on the page behind one. */
 		.logicx-pd-tiles {
 			display: flex;
 			flex-direction: column;
 			gap: var(--margin-md);
-			padding-left: 0;
-			padding-right: 0;
+			width: 100%;
+			max-width: 1040px;
+			margin: 0 auto;
+			padding-left: var(--padding-md);
+			padding-right: var(--padding-md);
 		}
 
 		.logicx-pd-tiles .logicx-pd-tile {
 			box-shadow: none;
 		}
 
-		/* four across puts the balance, the bills and the two overdue cut-offs on
-		   one row and the rest on the next -- seven tiles in a row would squeeze
-		   the currency figures past the width they need */
+		/* four across -- the width the currency figures need, and the number of
+		   tiles each of the two full rows carries. kept in step with TILE_COLUMNS,
+		   which decides which rows are short enough to centre. */
 		.logicx-pd-stats {
 			display: grid;
 			grid-template-columns: repeat(4, minmax(0, 1fr));
 			gap: var(--margin-md);
 		}
 
-		/* the ledger row carries six tiles to the four of the row below it */
-		.logicx-pd-stats.is-ledger-row {
-			grid-template-columns: repeat(6, minmax(0, 1fr));
-		}
-
-		/* six only stay legible on a wide page; below that the ledger row joins
-		   the ladder the rest of the tiles already step down. .is-ledger-row is
-		   repeated in each rule because it would otherwise outrank them on
-		   specificity and hold the row at six */
-		@media (max-width: 1400px) {
-			.logicx-pd-stats.is-ledger-row {
-				grid-template-columns: repeat(4, minmax(0, 1fr));
+		/* the activity row carries two tiles to the four above it, so it is centred
+		   under them: starting its first tile one column in leaves an empty column
+		   at either end. only while the grid is four across -- below that the rows
+		   step down and the pair reads from the left like everything else. */
+		@media (min-width: 1101px) {
+			.logicx-pd-stats.is-short-row > .logicx-pd-tile:first-child {
+				grid-column: 2;
 			}
 		}
 
 		@media (max-width: 1100px) {
-			.logicx-pd-stats,
-			.logicx-pd-stats.is-ledger-row {
+			.logicx-pd-stats {
 				grid-template-columns: repeat(3, minmax(0, 1fr));
 			}
 		}
 
 		@media (max-width: 900px) {
-			.logicx-pd-stats,
-			.logicx-pd-stats.is-ledger-row {
+			.logicx-pd-stats {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 		}
 
 		@media (max-width: 520px) {
-			.logicx-pd-stats,
-			.logicx-pd-stats.is-ledger-row {
+			.logicx-pd-stats {
 				grid-template-columns: minmax(0, 1fr);
 			}
 		}
