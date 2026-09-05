@@ -20,5 +20,70 @@
 		"insert_after": "stock_uom",
 		"reqd": 0,
 		"in_standard_filter": 1
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Batch-pricing_section",
+		"dt": "Batch",
+		"fieldname": "pricing_section",
+		"label": "Pricing",
+		"fieldtype": "Section Break",
+		"insert_after": "description"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Batch-mrp",
+		"dt": "Batch",
+		"fieldname": "mrp",
+		"label": "MRP",
+		"fieldtype": "Currency",
+		"insert_after": "pricing_section"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Batch-mop",
+		"dt": "Batch",
+		"fieldname": "mop",
+		"label": "MOP",
+		"fieldtype": "Currency",
+		"insert_after": "mrp"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Batch-pricing_column",
+		"dt": "Batch",
+		"fieldname": "pricing_column",
+		"fieldtype": "Column Break",
+		"insert_after": "mop"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Batch-min_selling_price",
+		"dt": "Batch",
+		"fieldname": "min_selling_price",
+		"label": "Min Selling Price",
+		"fieldtype": "Currency",
+		"insert_after": "pricing_column"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Batch-max_selling_price",
+		"dt": "Batch",
+		"fieldname": "max_selling_price",
+		"label": "Max Selling Price",
+		"fieldtype": "Currency",
+		"insert_after": "min_selling_price"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Batch-vendor",
+		"dt": "Batch",
+		"fieldname": "vendor",
+		"label": "Vendor",
+		"fieldtype": "Link",
+		"options": "Supplier",
+		"insert_after": "supplier",
+		"read_only": 1,
+		"description": "From whom we purchased"
 	}
 ]

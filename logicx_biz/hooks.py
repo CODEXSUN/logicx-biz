@@ -41,9 +41,27 @@ fixtures = [
 									["name", "in", ["TM Admin", "TM Accounts", "TM User"]],
 									]},
 	{"doctype": "Custom Field", "filters": [
-											["name", "in", ["Employee-cost_per_hour", "Item-crate"]],
+											["name", "in", [
+															"Employee-cost_per_hour",
+															"Item-crate",
+															"Batch-pricing_section",
+															"Batch-mrp",
+															"Batch-mop",
+															"Batch-pricing_column",
+															"Batch-min_selling_price",
+															"Batch-max_selling_price",
+															"Batch-vendor",
+															]],
 											]},
-	# {"doctype": "Property Setter"},
+	# Batch.supplier is a standard ERPNext field, so its overrides (editable
+	# instead of read-only, plus the description telling it apart from the
+	# custom Batch.vendor) go in as Property Setters rather than Custom Fields.
+	{"doctype": "Property Setter", "filters": [
+											["name", "in", [
+															"Batch-supplier-read_only",
+															"Batch-supplier-description",
+															]],
+											]},
 	# {"doctype": "Builder Page", "filters": [["name", "in", ["my-page-1", "my-page-2"]]]},
 ]
 

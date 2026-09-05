@@ -1,0 +1,12 @@
+[
+	{
+		"doctype": "Property Setter",
+		"name": "Batch-supplier-description",
+		"doctype_or_field": "DocField",
+		"doc_type": "Batch",
+		"field_name": "supplier",
+		"property": "description",
+		"property_type": "Text",
+		"value": "Who owns it, and returnable to whom"
+	}
+]
