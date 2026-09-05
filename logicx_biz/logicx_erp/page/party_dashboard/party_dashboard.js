@@ -180,7 +180,7 @@
 			</div>`;
 
 		return `
-			<div class="logicx-pd-card">
+			<div class="logicx-pd-card logicx-pd-filtercard">
 				<div class="logicx-pd-card-body">
 					<div class="logicx-pd-filters">
 						<div class="logicx-pd-filter" data-filter="party_type"></div>
@@ -216,6 +216,8 @@
 			df: {
 				fieldname: "party",
 				label: __("Party"),
+				// the label is off-screen, so the field names itself here instead
+				placeholder: __("Party"),
 				fieldtype: "Link",
 				options: PARTY_TYPES[0],
 				change: frappe.utils.debounce(function () {
@@ -820,11 +822,15 @@
 	}
 
 	const PAGE_STYLES = `
+		/* nothing inside draws a card outline along the page edge any more, so the
+		   page itself holds the content off it -- a little on the top and sides,
+		   more underneath so the last row of a statement is not flush with the
+		   bottom of the window */
 		.logicx-pd {
 			display: flex;
 			flex-direction: column;
-			gap: var(--margin-md);
-			padding-bottom: var(--padding-lg);
+			gap: var(--margin-sm);
+			padding: var(--padding-sm) var(--padding-md) var(--padding-lg);
 		}
 
 		.logicx-pd-card {
@@ -832,6 +838,24 @@
 			border: 1px solid var(--border-color);
 			border-radius: var(--border-radius-md);
 			box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+		}
+
+		/* the filter row and the tab strip below it read as one header for the
+		   page rather than as two boxes stacked on it, so both drop the card
+		   outline. the tiles and the datatables inside keep theirs. */
+		.logicx-pd-filtercard,
+		.logicx-pd-tabcard {
+			background-color: transparent;
+			border: none;
+			border-radius: 0;
+			box-shadow: none;
+		}
+
+		/* with no outline of its own the filter row needs no side inset, just a
+		   little clearance from the page header above it and from the tab strip
+		   below */
+		.logicx-pd-filtercard .logicx-pd-card-body {
+			padding: var(--padding-md) 0 var(--padding-xs);
 		}
 
 		.logicx-pd-card-head {
@@ -853,9 +877,15 @@
 			padding: var(--padding-md) var(--padding-lg);
 		}
 
-		/* the datatable brings its own padding, so its card body has none */
+		/* the datatable brings its own padding, so its card body has none. the tab
+		   card above it no longer draws an outline, so the body carries the one
+		   the statement is read inside, and clips the table to its corners. */
 		.logicx-pd-card-body.is-table {
 			padding: 0;
+			background-color: var(--card-bg);
+			border: 1px solid var(--border-color);
+			border-radius: var(--border-radius-md);
+			overflow: hidden;
 		}
 
 		.logicx-pd-filters {
@@ -870,19 +900,33 @@
 			max-width: 360px;
 		}
 
+		/* the party type is a two-option select, so it needs half the room the
+		   party name beside it does -- every width above, halved */
+		.logicx-pd-filter[data-filter="party_type"] {
+			flex: 1 1 120px;
+			min-width: 100px;
+			max-width: 180px;
+		}
+
 		/* frappe's control markup ships its own bottom margin; the flex gap above
 		   already spaces these, so drop it */
 		.logicx-pd-filter .frappe-control {
 			margin-bottom: 0;
 		}
 
+		/* the two filters are the only fields on the page and read plainly from the
+		   values in them, so their labels are dropped from the layout. they stay
+		   in the markup, off-screen, so each input keeps an accessible name. */
 		.logicx-pd-filter .control-label {
-			font-size: 11px;
-			font-weight: 600;
-			letter-spacing: 0.04em;
-			text-transform: uppercase;
-			color: var(--text-muted);
-			margin-bottom: var(--margin-xs);
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			margin: -1px;
+			padding: 0;
+			overflow: hidden;
+			clip: rect(0 0 0 0);
+			white-space: nowrap;
+			border: 0;
 		}
 
 		/* the tiles live inside the Dashboard tab now, so the spacing between the
@@ -893,6 +937,8 @@
 			display: flex;
 			flex-direction: column;
 			gap: var(--margin-md);
+			padding-left: 0;
+			padding-right: 0;
 		}
 
 		.logicx-pd-tiles .logicx-pd-tile {
@@ -1057,7 +1103,7 @@
 			align-items: center;
 			justify-content: space-between;
 			gap: var(--margin-md);
-			padding: 0 var(--padding-lg);
+			padding: 0;
 			border-bottom: 1px solid var(--border-color);
 		}
 
