@@ -85,5 +85,77 @@
 		"insert_after": "supplier",
 		"read_only": 1,
 		"description": "From whom we purchased"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Purchase Receipt Item-mrp",
+		"dt": "Purchase Receipt Item",
+		"fieldname": "mrp",
+		"label": "MRP",
+		"fieldtype": "Currency",
+		"insert_after": "amount"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Purchase Receipt Item-mop",
+		"dt": "Purchase Receipt Item",
+		"fieldname": "mop",
+		"label": "MOP",
+		"fieldtype": "Currency",
+		"insert_after": "mrp"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Purchase Receipt Item-min_selling_price",
+		"dt": "Purchase Receipt Item",
+		"fieldname": "min_selling_price",
+		"label": "Min Selling Price",
+		"fieldtype": "Currency",
+		"insert_after": "mop"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Purchase Receipt Item-max_selling_price",
+		"dt": "Purchase Receipt Item",
+		"fieldname": "max_selling_price",
+		"label": "Max Selling Price",
+		"fieldtype": "Currency",
+		"insert_after": "min_selling_price"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Purchase Invoice Item-mrp",
+		"dt": "Purchase Invoice Item",
+		"fieldname": "mrp",
+		"label": "MRP",
+		"fieldtype": "Currency",
+		"insert_after": "amount"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Purchase Invoice Item-mop",
+		"dt": "Purchase Invoice Item",
+		"fieldname": "mop",
+		"label": "MOP",
+		"fieldtype": "Currency",
+		"insert_after": "mrp"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Purchase Invoice Item-min_selling_price",
+		"dt": "Purchase Invoice Item",
+		"fieldname": "min_selling_price",
+		"label": "Min Selling Price",
+		"fieldtype": "Currency",
+		"insert_after": "mop"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Purchase Invoice Item-max_selling_price",
+		"dt": "Purchase Invoice Item",
+		"fieldname": "max_selling_price",
+		"label": "Max Selling Price",
+		"fieldtype": "Currency",
+		"insert_after": "min_selling_price"
 	}
 ]

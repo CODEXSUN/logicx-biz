@@ -1,4 +1,7 @@
-"""Fill in Batch.vendor -- "from whom we purchased" -- as a batch is created.
+"""Stamp a batch from the voucher that created it, as it is created.
+
+Two things are copied off that voucher: `vendor` -- "from whom we purchased" --
+and the pricing typed on the item row (MRP, MOP, the selling price band).
 
 `vendor` is read-only, so nothing in the UI can fill it. ERPNext creates
 batches from stock transactions (erpnext.stock.serial_batch_bundle passes only
@@ -49,3 +52,67 @@ def get_voucher_supplier(reference_doctype: str | None, reference_name: str | No
 		return None
 
 	return frappe.db.get_value(reference_doctype, reference_name, "supplier")
+
+
+# Purchase pricing carried from a voucher item row onto the batch it creates.
+# Both sides use these same fieldnames, so one tuple drives the copy.
+PRICING_FIELDS = ("mrp", "mop", "min_selling_price", "max_selling_price")
+
+# Vouchers that price a batch as it arrives, and the child table holding the
+# price. Stock Entry / Subcontracting Receipt rows have no purchase price to
+# read, so they only ever contribute a vendor (above).
+PRICING_SOURCES = {
+	"Purchase Receipt": "Purchase Receipt Item",
+	"Purchase Invoice": "Purchase Invoice Item",
+}
+
+
+def set_pricing(doc, method=None):
+	"""doc_events before_insert hook for Batch.
+
+	Runs before insert so the prices are seeded once, at creation; they stay
+	editable on the batch afterwards and are never rewritten from the voucher.
+	"""
+	row = get_voucher_item_pricing(
+		doc.get("reference_doctype"), doc.get("reference_name"), doc.get("item")
+	)
+	if not row:
+		return
+
+	for field in PRICING_FIELDS:
+		# anything already on the batch -- a price typed by hand, or one set by
+		# another hook -- is left as it is
+		if not doc.get(field):
+			doc.set(field, row.get(field))
+
+
+def get_voucher_item_pricing(
+	reference_doctype: str | None, reference_name: str | None, item_code: str | None
+) -> dict | None:
+	"""Pricing typed on the voucher row that brought `item_code` in, if any."""
+	child_doctype = PRICING_SOURCES.get(reference_doctype)
+	if not child_doctype or not reference_name or not item_code:
+		return None
+
+	# guards a site that has not migrated the custom field fixtures yet
+	meta = frappe.get_meta(child_doctype)
+	fields = [field for field in PRICING_FIELDS if meta.has_field(field)]
+	if not fields:
+		return None
+
+	rows = frappe.db.get_values(
+		child_doctype,
+		{"parent": reference_name, "parenttype": reference_doctype, "item_code": item_code},
+		fields,
+		as_dict=True,
+		order_by="idx asc",
+	)
+
+	# one voucher can list the same item on several rows, and a batch is not
+	# tied to any one of them; the first row that was actually priced is the
+	# best reading available
+	for row in rows:
+		if any(row.get(field) for field in fields):
+			return row
+
+	return None

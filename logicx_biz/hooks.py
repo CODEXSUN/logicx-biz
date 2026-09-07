@@ -51,6 +51,14 @@ fixtures = [
 															"Batch-min_selling_price",
 															"Batch-max_selling_price",
 															"Batch-vendor",
+															"Purchase Receipt Item-mrp",
+															"Purchase Receipt Item-mop",
+															"Purchase Receipt Item-min_selling_price",
+															"Purchase Receipt Item-max_selling_price",
+															"Purchase Invoice Item-mrp",
+															"Purchase Invoice Item-mop",
+															"Purchase Invoice Item-min_selling_price",
+															"Purchase Invoice Item-max_selling_price",
 															]],
 											]},
 	# Batch.supplier is a standard ERPNext field, so its overrides (editable
@@ -209,9 +217,14 @@ doc_events = {
 	"Contact": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
 	"Customer": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
 	"Supplier": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
-	# Batch.vendor is read-only, so it is stamped from the voucher that created
-	# the batch (see batch.py)
-	"Batch": {"before_insert": "logicx_biz.logicx_erp.batch.set_vendor"},
+	# Batch.vendor and the batch pricing are stamped from the voucher that
+	# created the batch (see batch.py)
+	"Batch": {
+		"before_insert": [
+			"logicx_biz.logicx_erp.batch.set_vendor",
+			"logicx_biz.logicx_erp.batch.set_pricing",
+		]
+	},
 }
 
 # Scheduled Tasks
