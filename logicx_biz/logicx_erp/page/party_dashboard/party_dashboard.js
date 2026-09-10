@@ -9,6 +9,7 @@
 	const PAYMENT_WISE_NON_RECONCILED_REPORT = "Party Payment-wise Non-Reconciled";
 	const LEDGER_STATEMENT_REPORT = "Party Statement";
 	const OUTSTANDING_DETAILED_REPORT = "Party Outstanding Detailed";
+	const VENDOR_STOCK_REPORT = "Vendor Stock";
 	const ACTIVITY_METHOD = "logicx_biz.logicx_erp.party_dashboard.get_party_activity";
 
 	// how many tiles a full row holds. drives both the grid and the offset a
@@ -113,7 +114,13 @@
 	// one request each, fired together whenever a party is picked. a source with
 	// `card: true` also fills the tab named after it; `ledger_totals` and
 	// `activity` only feed tiles. `derive` turns the response into the tiles it
-	// backs, and is pure -- it reads that response and nothing else.
+	// backs, and is pure -- it reads that response and nothing else; a source
+	// that backs no tile leaves it out.
+	//
+	// three optional keys shape a source that does not fit the party/party_type
+	// mould the statements share: `party_types` limits it to one side of the
+	// book, `filters` names the filters its report actually takes, and
+	// `omit_columns` drops columns the card is already scoped by.
 	const SOURCES = [
 		{
 			key: "bill_wise_statement",
@@ -137,6 +144,23 @@
 			report: LEDGER_STATEMENT_REPORT,
 			card: true,
 			derive: ledger_tiles,
+		},
+		{
+			// what we still hold of what this supplier sold us, by item. a
+			// purchase-side view with nothing to say about a Customer, so it is
+			// kept off the tab strip -- and off the wire -- on that side.
+			// backs no tile, hence no `derive`.
+			key: "vendor_stock",
+			title: __("Vendor Stock"),
+			report: VENDOR_STOCK_REPORT,
+			card: true,
+			party_types: ["Supplier"],
+			// Vendor Stock is filtered by vendor, not by the party/party_type
+			// pair the statements take
+			filters: (ctx) => ({ vendor: ctx.party, in_stock_only: 1 }),
+			// the card is already one vendor's, so its Vendor ID / Vendor Name
+			// columns would just repeat that down every row
+			omit_columns: ["vendor", "vendor_name"],
 		},
 		{
 			// the ledger totals behind the first three tiles. this report has no tab of its own -- it is the party-wise list the dashboard drills down from, narrowed here to the one party on screen.
@@ -287,25 +311,31 @@
 			this.party_type = party_type;
 			this.party = party;
 			this.results = {};
+			// before anything else, so a tab this party type does not have is off
+			// the strip -- and cannot still be the open one -- while it loads
+			this.apply_party_type(party_type);
 			this.update_open_report_link();
 			this.set_tile_labels(party_type);
 
+			const sources = SOURCES.filter((source) => applies_to(source, party_type));
+			const cards = CARDS.filter((card) => applies_to(card, party_type));
+
 			if (!party) {
 				this.set_tiles(blank(TILES));
-				CARDS.forEach((card) => this.show_note(card.key, __("Select a party to begin.")));
+				cards.forEach((card) => this.show_note(card.key, __("Select a party to begin.")));
 				return;
 			}
 
 			TILES.forEach((tile) => this.$tile(tile.key).addClass("is-loading"));
-			CARDS.forEach((card) => this.show_note(card.key, __("Loading...")));
+			cards.forEach((card) => this.show_note(card.key, __("Loading...")));
 
 			const ctx = { party_type: party_type, party: party };
-			SOURCES.forEach((source) => {
+			sources.forEach((source) => {
 				fetch_source(source, ctx)
 					.then((data) => {
 						if (seq !== this.seq) return;
 						if (source.card) this.set_card(source.key, data);
-						this.set_tiles(source.derive(data, ctx));
+						if (source.derive) this.set_tiles(source.derive(data, ctx));
 					})
 					.catch(() => {
 						if (seq !== this.seq) return;
@@ -373,11 +403,9 @@
 			this.$el.on("click", ".logicx-pd-open-report", (e) => {
 				e.preventDefault();
 				if (!this.party) return;
-				open_report_in_new_tab(
-					$(e.currentTarget).attr("data-report-name"),
-					this.party_type,
-					this.party
-				);
+				const card = CARDS.find((c) => c.key === $(e.currentTarget).attr("data-card"));
+				if (!card) return;
+				open_report_in_new_tab(card, { party_type: this.party_type, party: this.party });
 			});
 		}
 
@@ -390,6 +418,17 @@
 				return;
 			}
 			this.activate_tab($target.attr("data-tab"));
+		}
+
+		// tabs are rendered once, for every source, and shown or hidden per party
+		// type from here. a hidden tab that happens to be the open one hands the
+		// page back to the Dashboard, which both party types always have.
+		apply_party_type(party_type) {
+			TABS.forEach((tab) => {
+				const shown = applies_to(tab, party_type);
+				this.$el.find(`.logicx-pd-tab[data-tab="${tab.key}"]`).toggleClass("hidden", !shown);
+				if (!shown && this.active_tab === tab.key) this.activate_tab(DASHBOARD_TAB);
+			});
 		}
 
 		activate_tab(key) {
@@ -413,7 +452,9 @@
 		update_open_report_link() {
 			const card = CARDS.find((c) => c.key === this.active_tab);
 			const $link = this.$el.find(".logicx-pd-open-report");
-			if (card) $link.attr("data-report-name", card.report);
+			// the card key rather than the report name: the click handler needs the
+			// card itself to know which filters that report is opened on
+			if (card) $link.attr("data-card", card.key);
 			$link.toggleClass("hidden", !card || !this.party);
 		}
 
@@ -501,7 +542,7 @@
 		`;
 	}
 
-	// one "Open full report" link lives in the tab nav and is repointed at the active tab's report (see update_open_report_link); the click handler reads data-report-name at click time
+	// one "Open full report" link lives in the tab nav and is repointed at the active tab's card (see update_open_report_link); the click handler reads data-card at click time
 	function render_tabcard() {
 		const buttons = TABS.map(
 			(tab, i) => `
@@ -527,7 +568,7 @@
 				<div class="logicx-pd-tabnav">
 					<div class="logicx-pd-tabnav-tabs">${buttons}</div>
 					<a href="#" class="logicx-pd-open-report hidden"
-						data-report-name="${frappe.utils.escape_html(CARDS[0].report)}">
+						data-card="${frappe.utils.escape_html(CARDS[0].key)}">
 						${__("Open full report")} &#8599;
 					</a>
 				</div>
@@ -575,18 +616,46 @@
 
 	/* ====================================================================== data */
 
-	function fetch_source(source, ctx) {
-		return source.report ? run_report(source.report, ctx) : source.fetch(ctx);
+	// a source (and the tab it fills) can be limited to one side of the book;
+	// anything that does not name a party type belongs to both
+	function applies_to(entry, party_type) {
+		return !entry.party_types || entry.party_types.includes(party_type);
 	}
 
-	function run_report(report_name, ctx) {
+	// what the source's report is filtered by. the statements all take the same
+	// party/party_type pair, so only a source that takes something else says so.
+	// used for the request and for the "Open full report" URL alike, so the tab
+	// and the report it opens can never be looking at different things.
+	function source_filters(source, ctx) {
+		return source.filters
+			? source.filters(ctx)
+			: { party_type: ctx.party_type, party: ctx.party };
+	}
+
+	function fetch_source(source, ctx) {
+		if (!source.report) return source.fetch(ctx);
+		return run_report(source.report, source_filters(source, ctx)).then((data) =>
+			source.omit_columns ? without_columns(data, source.omit_columns) : data
+		);
+	}
+
+	// the rows keep the dropped fields; only the columns built from them go, so
+	// nothing that reads a row by fieldname has to know this happened
+	function without_columns(data, fieldnames) {
+		return {
+			columns: data.columns.filter((col) => !fieldnames.includes(col.fieldname)),
+			rows: data.rows,
+		};
+	}
+
+	function run_report(report_name, filters) {
 		return frappe
 			.call({
 				method: "frappe.desk.query_report.run",
 				type: "GET",
 				args: {
 					report_name: report_name,
-					filters: { party_type: ctx.party_type, party: ctx.party },
+					filters: filters,
 					ignore_prepared_report: 1,
 					are_default_filters: false,
 				},
@@ -843,7 +912,9 @@
 	function to_datatable_column(col) {
 		return {
 			id: col.fieldname,
-			name: col.label,
+			// a report may break a long label over two lines for its own page,
+			// which the fixed-height header of a card here would clip
+			name: String(col.label || "").replace(/<br\s*\/?>/gi, " "),
 			width: col.width || 120,
 			align: RIGHT_ALIGNED.includes(col.fieldtype) ? "right" : "left",
 			editable: false,
@@ -855,7 +926,7 @@
 	}
 
 	function format_cell(value, col, data) {
-		let html = frappe.format(value, col, { always_show_decimals: true }, data);
+		let html = format_value(value, col, data);
 		html = open_links_in_new_tab(html);
 		if (data && data.bold) {
 			html = `<span class="logicx-pd-bold">${html}</span>`;
@@ -867,6 +938,18 @@
 			html = `<span class="logicx-pd-age-alert">${html}</span>`;
 		}
 		return html;
+	}
+
+	// a Currency column that asks for no decimals is given none, so it reads here
+	// the way it does on its own report page. frappe reads a docfield's precision
+	// with `||`, so a precision of 0 would otherwise fall straight through to the
+	// site's currency precision -- and the decimals are asked for below.
+	function format_value(value, col, data) {
+		if (col.fieldtype === "Currency" && col.precision === 0) {
+			if (value === null || value === undefined || value === "") return "";
+			return format_currency(value, frappe.defaults.get_default("currency"), 0);
+		}
+		return frappe.format(value, col, { always_show_decimals: true }, data);
 	}
 
 	// same convention as commit 0b1967f: party links open in their own tab rather
@@ -891,13 +974,14 @@
 		});
 	}
 
-	// open `report_name` in a new browser tab with the current party prefilled.
-	// frappe.route_options can't survive window.open (a fresh document), so the
-	// filters ride along as URL query params instead -- party_type before party,
-	// the order the target report's party_type on_change depends on
-	function open_report_in_new_tab(report_name, party_type, party) {
-		const params = $.param({ party_type: party_type, party: party });
-		window.open("/app/query-report/" + encodeURIComponent(report_name) + "?" + params, "_blank");
+	// open a card's report in a new browser tab, on the same filters the card
+	// itself was built from. frappe.route_options can't survive window.open (a
+	// fresh document), so they ride along as URL query params instead -- $.param
+	// keeps their order, which is what puts party_type ahead of party, the order
+	// the target report's party_type on_change depends on
+	function open_report_in_new_tab(card, ctx) {
+		const params = $.param(source_filters(card, ctx));
+		window.open("/app/query-report/" + encodeURIComponent(card.report) + "?" + params, "_blank");
 	}
 
 	/* ==================================================================== styles */
@@ -1210,6 +1294,14 @@
 		}
 
 		.logicx-pd-tabpane.hidden {
+			display: none;
+		}
+
+		/* a tab the current party type does not have (see apply_party_type).
+		   frappe's desk CSS defines .hidden too, but a button is display: flex
+		   by default here, so this rule carries it rather than relying on that
+		   global staying put */
+		.logicx-pd-tab.hidden {
 			display: none;
 		}
 
