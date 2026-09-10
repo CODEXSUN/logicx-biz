@@ -1,7 +1,9 @@
 (function () {
 	const PAGE_NAME = "party-dashboard";
 	const PARTY_TYPES = ["Customer", "Supplier"];
-	const PARTY_DEBOUNCE_MS = 300;
+	// how long a filter -- the party at the top of the page, or a card's own --
+	// settles for before what it says is asked for
+	const FILTER_DEBOUNCE_MS = 300;
 	const STYLE_ID = "logicx-party-dashboard-styles";
 	const DASH = "&ndash;";
 
@@ -111,16 +113,65 @@
 	// exclusive -- the first overdue tile's cut-off, so the table agrees with it
 	const AGE_ALERT_DAYS = OVERDUE_TILES[0].overdue_days;
 
+	// Vendor Stock's own filters, shown above its table. the report's Vendor
+	// filter is not among them -- the party picked at the top of the page is the
+	// vendor -- and its Search accordingly drops the vendor from what it matches.
+	// labels are laid out off-screen (see the CSS), so each field names itself in
+	// its placeholder; a Check carries its own label and needs none.
+	const VENDOR_STOCK_FILTERS = [
+		{
+			fieldname: "search_text",
+			label: __("Search"),
+			fieldtype: "Data",
+			placeholder: __("Name | Group | Brand | Description"),
+		},
+		{
+			fieldname: "item_group",
+			label: __("Item Group"),
+			fieldtype: "Link",
+			options: "Item Group",
+			placeholder: __("Item Group"),
+		},
+		{
+			fieldname: "brand",
+			label: __("Brand"),
+			fieldtype: "Link",
+			options: "Brand",
+			placeholder: __("Brand"),
+		},
+		{
+			fieldname: "warehouse",
+			label: __("Warehouse"),
+			fieldtype: "Link",
+			options: "Warehouse",
+			placeholder: __("Warehouse"),
+		},
+		{
+			fieldname: "item_code",
+			label: __("Item"),
+			fieldtype: "Link",
+			options: "Item",
+			placeholder: __("Item"),
+		},
+		{
+			fieldname: "in_stock_only",
+			label: __("In Stock only"),
+			fieldtype: "Check",
+			default: 1,
+		},
+	];
+
 	// one request each, fired together whenever a party is picked. a source with
 	// `card: true` also fills the tab named after it; `ledger_totals` and
 	// `activity` only feed tiles. `derive` turns the response into the tiles it
 	// backs, and is pure -- it reads that response and nothing else; a source
 	// that backs no tile leaves it out.
 	//
-	// three optional keys shape a source that does not fit the party/party_type
+	// four optional keys shape a source that does not fit the party/party_type
 	// mould the statements share: `party_types` limits it to one side of the
-	// book, `filters` names the filters its report actually takes, and
-	// `omit_columns` drops columns the card is already scoped by.
+	// book, `filters` names the filters its report actually takes, `controls`
+	// puts filters of its own above its card, and `omit_columns` drops columns
+	// the card is already scoped by.
 	const SOURCES = [
 		{
 			key: "bill_wise_statement",
@@ -155,9 +206,12 @@
 			report: VENDOR_STOCK_REPORT,
 			card: true,
 			party_types: ["Supplier"],
+			// one vendor's stock is a long list, so the report's own filters come
+			// with it -- everything but Vendor, which the party already fixes
+			controls: VENDOR_STOCK_FILTERS,
 			// Vendor Stock is filtered by vendor, not by the party/party_type
-			// pair the statements take
-			filters: (ctx) => ({ vendor: ctx.party, in_stock_only: 1 }),
+			// pair the statements take, plus whatever those controls say
+			filters: (ctx) => Object.assign({ vendor: ctx.party }, ctx.controls),
 			// the card is already one vendor's, so its Vendor ID / Vendor Name
 			// columns would just repeat that down every row
 			omit_columns: ["vendor", "vendor_name"],
@@ -207,11 +261,16 @@
 
 			this.controls = {};
 			this.tables = {};
+			// the filter controls a card carries of its own, keyed by card
+			this.card_controls = {};
 			this.party_type = PARTY_TYPES[0];
 			this.party = "";
 			// bumped per load so a slow response for a party the user has already
 			// moved on from can be dropped instead of landing under the new name
 			this.seq = 0;
+			// and again per card, so a card reloaded on its own filters can drop a
+			// response the next change to them has already superseded
+			this.card_seq = {};
 			// the last result handed to each statement card, kept so switching
 			// tabs can build the datatable while its pane is actually visible --
 			// frappe-datatable sizes its columns wrong inside a hidden pane
@@ -223,6 +282,7 @@
 			this.datatable_ready = ensure_datatable();
 
 			this.setup_filters();
+			this.setup_card_filters();
 			this.setup_events();
 			this.load(this.party_type, "");
 		}
@@ -253,10 +313,58 @@
 					placeholder: __("Party"),
 					fieldtype: "Link",
 					options: PARTY_TYPES[0],
-					change: frappe.utils.debounce(() => this.reload(), PARTY_DEBOUNCE_MS),
+					change: frappe.utils.debounce(() => this.reload(), FILTER_DEBOUNCE_MS),
 				},
 				render_input: true,
 			});
+		}
+
+		// a card can carry filters of its own, above its table. they reload that
+		// one card rather than the page: the party has not moved, so nothing else
+		// on screen is out of date. they are built once and keep their values
+		// across parties, so the same view can be carried from one to the next.
+		setup_card_filters() {
+			CARDS.filter((card) => card.controls).forEach((card) => {
+				const $bar = this.$el.find(`[data-report="${card.key}"] .logicx-pd-card-filters`);
+				// one debounce for the whole bar: a change to any of these asks the
+				// same question, so two in quick succession need only one request
+				const reload = frappe.utils.debounce(() => this.reload_card(card.key), FILTER_DEBOUNCE_MS);
+
+				this.card_controls[card.key] = card.controls.map((df) => {
+					const control = frappe.ui.form.make_control({
+						parent: $(`<div class="logicx-pd-filter" data-filter="${df.fieldname}"></div>`).appendTo($bar),
+						df: Object.assign({}, df, { change: reload }),
+						render_input: true,
+					});
+					// setting a default fires the change above, which is harmless
+					// here -- no party is picked yet, so reload_card does nothing
+					if (df.default !== undefined) control.set_value(df.default);
+					return control;
+				});
+			});
+		}
+
+		// what a card's own filters currently say. a blank field is left out rather
+		// than sent as an empty string, so a filter only ever narrows what is
+		// asked for; an unticked checkbox is a 0, which does say something, so only
+		// blanks are dropped.
+		control_values(key) {
+			return (this.card_controls[key] || []).reduce((values, control) => {
+				const value = control.get_value();
+				if (value !== "" && value !== null && value !== undefined) {
+					values[control.df.fieldname] = value;
+				}
+				return values;
+			}, {});
+		}
+
+		// everything a source needs to name what it is asking for
+		ctx_for(source) {
+			return {
+				party_type: this.party_type,
+				party: this.party,
+				controls: this.control_values(source.key),
+			};
 		}
 
 		on_party_type_change() {
@@ -307,7 +415,9 @@
 		/* ------------------------------------------------------------- loading */
 
 		load(party_type, party) {
-			const seq = ++this.seq;
+			// every request below is stamped with this, and anything still in
+			// flight for the previous party is stale from here on
+			this.seq += 1;
 			this.party_type = party_type;
 			this.party = party;
 			this.results = {};
@@ -329,22 +439,55 @@
 			TILES.forEach((tile) => this.$tile(tile.key).addClass("is-loading"));
 			cards.forEach((card) => this.show_note(card.key, __("Loading...")));
 
-			const ctx = { party_type: party_type, party: party };
 			sources.forEach((source) => {
+				const ctx = this.ctx_for(source);
+				const stamp = this.stamp(source);
 				fetch_source(source, ctx)
 					.then((data) => {
-						if (seq !== this.seq) return;
+						if (this.stale(stamp)) return;
 						if (source.card) this.set_card(source.key, data);
 						if (source.derive) this.set_tiles(source.derive(data, ctx));
 					})
 					.catch(() => {
-						if (seq !== this.seq) return;
+						if (this.stale(stamp)) return;
 						if (source.card) {
 							this.show_note(source.key, __("Could not load this statement."), true);
 						}
 						this.set_tiles(blank(tiles_of(source.key)));
 					});
 			});
+		}
+
+		// one card's own filters changed: ask again for that card alone. the party
+		// has not moved, so the rest of the page is still current and `seq` stays
+		// where it is -- only this card's own counter advances.
+		reload_card(key) {
+			const source = CARDS.find((card) => card.key === key);
+			if (!source || !this.party) return;
+
+			const stamp = this.stamp(source);
+			this.show_note(key, __("Loading..."));
+
+			fetch_source(source, this.ctx_for(source))
+				.then((data) => {
+					if (this.stale(stamp)) return;
+					this.set_card(key, data);
+				})
+				.catch(() => {
+					if (this.stale(stamp)) return;
+					this.show_note(key, __("Could not load this statement."), true);
+				});
+		}
+
+		// a request is stamped as it goes out and checked as it lands, so a
+		// response is only used while it is still the answer to what is on screen
+		stamp(source) {
+			this.card_seq[source.key] = (this.card_seq[source.key] || 0) + 1;
+			return { key: source.key, seq: this.seq, card_seq: this.card_seq[source.key] };
+		}
+
+		stale(stamp) {
+			return stamp.seq !== this.seq || stamp.card_seq !== this.card_seq[stamp.key];
 		}
 
 		/* --------------------------------------------------------------- tiles */
@@ -405,7 +548,9 @@
 				if (!this.party) return;
 				const card = CARDS.find((c) => c.key === $(e.currentTarget).attr("data-card"));
 				if (!card) return;
-				open_report_in_new_tab(card, { party_type: this.party_type, party: this.party });
+				// ctx_for carries that card's own filters too, so the report opens
+				// on exactly what the card beneath it is showing
+				open_report_in_new_tab(card, this.ctx_for(card));
 			});
 		}
 
@@ -552,13 +697,15 @@
 			</button>`
 		).join("");
 
-		// the Dashboard pane holds the tiles; every other pane is an empty body a datatable is built into once its tab is on screen
+		// the Dashboard pane holds the tiles; every other pane is an empty body a datatable is built into once its tab is on screen,
+		// under an empty filter bar if that card carries filters of its own (setup_card_filters fills it)
 		const panes = TABS.map(
 			(tab, i) => `
 			<div class="logicx-pd-tabpane${i === 0 ? "" : " hidden"}" data-report="${tab.key}">
 				${tab.key === DASHBOARD_TAB
 					? `<div class="logicx-pd-card-body logicx-pd-tiles">${render_tile_rows()}</div>`
-					: `<div class="logicx-pd-card-body is-table"></div>`
+					: `${tab.controls ? '<div class="logicx-pd-card-filters"></div>' : ""}
+						<div class="logicx-pd-card-body is-table"></div>`
 				}
 			</div>`
 		).join("");
@@ -1077,6 +1224,51 @@
 		   already spaces these, so drop it */
 		.logicx-pd-filter .frappe-control {
 			margin-bottom: 0;
+		}
+
+		/* a card's own filters (see setup_card_filters), between the tab strip and
+		   the table they narrow. the same field wrappers as the page filters, so
+		   they inherit the hidden label and dropped margin above, but packed
+		   tighter -- there are more of them and they share one row. */
+		.logicx-pd-card-filters {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: var(--margin-sm);
+			padding: var(--padding-md) 0;
+		}
+
+		.logicx-pd-card-filters .logicx-pd-filter {
+			flex: 1 1 150px;
+			min-width: 130px;
+			max-width: 220px;
+		}
+
+		/* the search takes free text, so it reads longer than the links beside it */
+		.logicx-pd-card-filters .logicx-pd-filter[data-filter="search_text"] {
+			flex: 2 1 240px;
+			max-width: 340px;
+		}
+
+		/* a checkbox carries its own label and needs only the width that takes,
+		   rather than stretching to a field's */
+		.logicx-pd-card-filters .logicx-pd-filter[data-filter="in_stock_only"] {
+			flex: 0 0 auto;
+			min-width: 0;
+			max-width: none;
+		}
+
+		/* the fields above are named by their placeholders, which is why
+		   .logicx-pd-filter .control-label is laid out off-screen. a checkbox has
+		   no placeholder to be named by, so whatever label it does render is put
+		   back -- a no-op on a frappe that keeps a Check's label elsewhere. */
+		.logicx-pd-card-filters .logicx-pd-filter[data-filter="in_stock_only"] .control-label {
+			position: static;
+			width: auto;
+			height: auto;
+			margin: 0;
+			overflow: visible;
+			clip: auto;
 		}
 
 		/* the two filters are the only fields on the page and read plainly from the
