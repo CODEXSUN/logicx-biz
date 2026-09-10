@@ -26,8 +26,11 @@
 	//
 	// grouped by the row it is shown in on the Dashboard tab: the ledger reads
 	// left to right along the top -- what it opened at, what moved, where it
-	// stands -- then what is still open beneath it, and the last voucher on
-	// either side last, centred under the two full rows above.
+	// stands -- then what is still open beneath it, then what we are still
+	// holding of what a Supplier sold us, and the last voucher on either side
+	// last, centred under the full rows above. a row whose tiles all belong to
+	// the other side of the book goes with them (see apply_party_type), so a
+	// Customer still reads the three rows it always has.
 	const TILE_ROWS = [
 		[
 			{
@@ -91,6 +94,40 @@
 			},
 		],
 		[
+			// what we are still holding of what this Supplier sold us, read off
+			// the batch-wise tab -- so a Customer has none of this row
+			{
+				key: "stock_value",
+				label: __("Stock Value"),
+				source: "vendor_stock_batch_wise",
+				tab: "vendor_stock_batch_wise",
+			},
+			{
+				key: "stock_batches",
+				label: __("Batches in Stock"),
+				source: "vendor_stock_batch_wise",
+				tab: "vendor_stock_batch_wise",
+			},
+			// `aged_days` is the ageing cut-off the tile counts by, again
+			// exclusive. it is deliberately not called `overdue_days`: bill_tiles
+			// walks every tile carrying that, and a bill left open is not the
+			// same thing as stock left standing.
+			{
+				key: "stock_aged_90",
+				label: __("90 Days Aged Stock"),
+				source: "vendor_stock_batch_wise",
+				tab: "vendor_stock_batch_wise",
+				aged_days: 90,
+			},
+			{
+				key: "stock_aged_180",
+				label: __("180 Days Aged Stock"),
+				source: "vendor_stock_batch_wise",
+				tab: "vendor_stock_batch_wise",
+				aged_days: 180,
+			},
+		],
+		[
 			{
 				key: "last_invoice",
 				label: __("Last Invoice"),
@@ -109,6 +146,10 @@
 	// the same tiles as one list, for everything that treats them as a set
 	const TILES = TILE_ROWS.flat();
 	const OVERDUE_TILES = TILES.filter((tile) => tile.overdue_days);
+
+	// the stock-ageing equivalent: stock_tiles walks this the way bill_tiles
+	// walks the list above
+	const AGED_STOCK_TILES = TILES.filter((tile) => tile.aged_days);
 
 	// the Age column of a bill/payment row reads red past this many days, again
 	// exclusive -- the first overdue tile's cut-off, so the table agrees with it
@@ -261,6 +302,7 @@
 			filters: (ctx) => Object.assign({ vendor: ctx.party }, ctx.controls),
 			// one vendor's card, so the Vendor column would repeat down every row
 			omit_columns: ["vendor"],
+			derive: stock_tiles,
 		},
 		{
 			// the ledger totals behind the first three tiles. this report has no tab of its own -- it is the party-wise list the dashboard drills down from, narrowed here to the one party on screen.
@@ -511,17 +553,23 @@
 			const source = CARDS.find((card) => card.key === key);
 			if (!source || !this.party) return;
 
+			const ctx = this.ctx_for(source);
 			const stamp = this.stamp(source);
 			this.show_note(key, __("Loading..."));
 
-			fetch_source(source, this.ctx_for(source))
+			fetch_source(source, ctx)
 				.then((data) => {
 					if (this.stale(stamp)) return;
 					this.set_card(key, data);
+					// the tiles this card backs read the same rows it does, so they
+					// are re-derived here too -- otherwise they would still be
+					// answering the question the filters asked before this one
+					if (source.derive) this.set_tiles(source.derive(data, ctx));
 				})
 				.catch(() => {
 					if (this.stale(stamp)) return;
 					this.show_note(key, __("Could not load this statement."), true);
+					this.set_tiles(blank(tiles_of(key)));
 				});
 		}
 
@@ -619,6 +667,17 @@
 				const shown = applies_to(tab, party_type);
 				this.$el.find(`.logicx-pd-tab[data-tab="${tab.key}"]`).toggleClass("hidden", !shown);
 				if (!shown && this.active_tab === tab.key) this.activate_tab(DASHBOARD_TAB);
+			});
+
+			// the tiles go the same way, by the source each is read off. a row
+			// with nothing left in it goes too, rather than standing empty and
+			// taking the gap above and below it with it.
+			TILE_ROWS.forEach((row, index) => {
+				const shown = row.map((tile) => tile_applies_to(tile, party_type));
+				row.forEach((tile, i) => this.$tile(tile.key).toggleClass("hidden", !shown[i]));
+				this.$el
+					.find(`[data-tile-row="${index}"]`)
+					.toggleClass("hidden", !shown.includes(true));
 			});
 		}
 
@@ -774,7 +833,7 @@
 
 	// a grid of its own per row, so a row that does not fill its columns can be centred under the ones that do without disturbing them
 	function render_tile_rows() {
-		return TILE_ROWS.map((row) => {
+		return TILE_ROWS.map((row, index) => {
 			// the column this row's first tile starts at: the first for a row
 			// that fills the grid, further in for a short one, which leaves the
 			// same empty column at either end of it
@@ -785,7 +844,7 @@
 					: `class="logicx-pd-stats"`;
 
 			return `
-			<div ${attrs}>
+			<div ${attrs} data-tile-row="${index}">
 				${row.map(render_tile).join("")}
 			</div>`;
 		}).join("");
@@ -822,6 +881,14 @@
 	// party/party_type pair, so only a source that takes something else says so.
 	// used for the request and for the "Open full report" URL alike, so the tab
 	// and the report it opens can never be looking at different things.
+	// a tile belongs to whichever side of the book its source does -- the stock
+	// tiles summarise a purchase-side tab and have nothing to say about a
+	// Customer. every tile names a source, so this needs no list of its own.
+	function tile_applies_to(tile, party_type) {
+		const source = SOURCES.find((entry) => entry.key === tile.source);
+		return !source || applies_to(source, party_type);
+	}
+
 	function source_filters(source, ctx) {
 		return source.filters
 			? source.filters(ctx)
@@ -930,7 +997,7 @@
 					value: currency(sum(overdue, "outstanding_value")),
 					// the caption goes through .text(), so it is plain rather
 					// than the marked-up figure `counted` builds for a value
-					caption: `${overdue.length} ${overdue.length === 1 ? __("bill") : __("bills")}`,
+					caption: counted_text(overdue.length, __("bill"), __("bills")),
 					// money this old is worth flagging whatever the party type
 					negative: true,
 				}
@@ -962,6 +1029,74 @@
 				negative: true,
 			},
 		};
+	}
+
+	// what we are still holding of what this vendor sold us: what it is worth,
+	// how many lots it sits in, and how much of it has been standing too long.
+	//
+	// read off the batch-wise card, filters and all, so the tiles and the table
+	// beneath them can never be looking at different stock (see reload_card).
+	function stock_tiles({ rows }) {
+		// only rows that still have stock, and only real ones: a report set to
+		// add a total row hands one back with the figures summed and the rest of
+		// the fields blank, and counting that as a batch would double everything.
+		// every real row names an item, so that is what tells the two apart --
+		// no reading of a "Total" label that translation would move.
+		const stock = rows.filter((row) => row.item_code && (row.balance_qty || 0) > 0);
+
+		if (!stock.length) {
+			return tiles_of("vendor_stock_batch_wise").reduce((views, tile) => {
+				views[tile.key] = { caption: __("nothing in stock") };
+				return views;
+			}, {});
+		}
+
+		const items = new Set(stock.map((row) => row.item_code));
+		const oldest = oldest_age(stock);
+
+		const views = {
+			stock_value: {
+				value: currency(sum(stock, "balance_value")),
+				caption: counted_text(items.size, __("item"), __("items")),
+			},
+			stock_batches: {
+				// the card is one vendor's, and a vendor is only ever known from
+				// the batch it was stamped on, so every row here has one -- which
+				// makes the row count the batch count
+				value: pair(
+					counted(stock.length, __("batch"), __("batches")),
+					measured(sum(stock, "balance_qty"), __("nos"))
+				),
+				// the lot the two ageing tiles beside it are cut out of
+				caption:
+					oldest === null
+						? ""
+						: __("oldest {0}", [counted_text(oldest, __("day"), __("days"))]),
+			},
+		};
+
+		AGED_STOCK_TILES.forEach((tile) => {
+			// a batch with no manufacturing date has no age to go by, and falls to
+			// 0 here rather than being counted as old on no evidence
+			const aged = stock.filter((row) => (row.age || 0) > tile.aged_days);
+			views[tile.key] = aged.length
+				? {
+					value: currency(sum(aged, "balance_value")),
+					caption: counted_text(aged.length, __("batch"), __("batches")),
+					// stock standing this long is worth flagging whatever it is worth
+					negative: true,
+				}
+				: { caption: __("none this old") };
+		});
+
+		return views;
+	}
+
+	// how long the oldest lot still on the shelf has been standing, or null when
+	// nothing in stock carries a manufacturing date to be aged from
+	function oldest_age(stock) {
+		const ages = stock.map((row) => row.age).filter((age) => age !== null && age !== undefined);
+		return ages.length ? ages.reduce((oldest, age) => (age > oldest ? age : oldest)) : null;
 	}
 
 	// the ledger's own closing balance rather than the bill-wise total, so
@@ -1064,13 +1199,26 @@
 		);
 	}
 
+	// the plain-text twin of counted(), for the captions -- which are written
+	// with .text() and so carry no markup
+	function counted_text(count, singular, plural) {
+		return `${count} ${count === 1 ? singular : plural}`;
+	}
+
 	// "6 bills", "1 day" -- the unit word steps down beside the figure it counts
 	function counted(count, singular, plural) {
-		const noun = count === 1 ? singular : plural;
-		return (
-			`${frappe.utils.escape_html(String(count))} ` +
-			`<span class="logicx-pd-unit">${frappe.utils.escape_html(noun)}</span>`
-		);
+		return `${frappe.utils.escape_html(String(count))} ${unit(count === 1 ? singular : plural)}`;
+	}
+
+	// "29 nos" -- a quantity measured rather than a count of things, so the
+	// figure is grouped the way an amount is and the word does not inflect with it
+	function measured(value, word) {
+		return `${plain_amount(value)} ${unit(word)}`;
+	}
+
+	// the stepped-down word that names what the figure beside it is in
+	function unit(word) {
+		return `<span class="logicx-pd-unit">${frappe.utils.escape_html(word)}</span>`;
 	}
 
 	// written as literals so the translation extractor still sees Dr and Cr
@@ -1357,6 +1505,15 @@
 
 		.logicx-pd-tiles .logicx-pd-tile {
 			box-shadow: none;
+		}
+
+		/* a tile, or a whole row of them, the current party type does not have
+		   (see apply_party_type). frappe's desk CSS defines .hidden too, but both
+		   of these are laid out by the grid, so these rules carry it rather than
+		   relying on that global staying put */
+		.logicx-pd-tile.hidden,
+		.logicx-pd-stats.hidden {
+			display: none;
 		}
 
 		/* as many across as a full row carries -- the width the currency figures
