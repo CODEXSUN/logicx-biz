@@ -1,16 +1,23 @@
-"""Stock on hand split by the vendor we bought it from.
+"""Vendor Stock, one row per batch instead of one per item.
 
-Batch.vendor (see logicx_biz/logicx_erp/batch.py) records who a batch was
-purchased from, so every batched stock movement can be attributed to a vendor.
-This report rolls the stock ledger up to one row per vendor + item.
+The Vendor Stock report rolls the stock ledger up to vendor + item; this one
+stops a level earlier, at vendor + item + batch, so a vendor's stock can be read
+as the individual lots it arrived in -- and, with Batch.manufacturing_date, how
+long each of those lots has been sitting.
 
-Stock that carries no vendor -- non-batched items, and batches created before
-the vendor stamp existed -- is still reported, under a blank Vendor, so the
-totals reconcile with the plain stock reports instead of silently losing rows.
+`get_batch_ledger` is shared with that report (see vendor_stock.py) so both see
+the stock ledger the same way; only the GROUP BY below differs.
+
+Stock that carries no batch -- non-batched items, and any ledger entry written
+before the batch was stamped -- is still reported, under a blank Batch and a
+blank Vendor, so the totals reconcile with Vendor Stock and the plain stock
+reports instead of silently losing rows.
 """
 
 import frappe
 from frappe import _
+
+from logicx_biz.logicx_erp.report.vendor_stock.vendor_stock import get_batch_ledger
 
 
 def execute(filters=None):
@@ -21,17 +28,11 @@ def execute(filters=None):
 def get_columns():
 	return [
 		{
-			"label": _("Vendor ID"),
+			"label": _("Vendor"),
 			"fieldname": "vendor",
 			"fieldtype": "Link",
 			"options": "Supplier",
 			"width": 90,
-		},
-		{
-			"label": _("Vendor Name"),
-			"fieldname": "vendor_name",
-			"fieldtype": "Data",
-			"width": 200,
 		},
 		{
 			"label": _("Item Group"),
@@ -59,6 +60,23 @@ def get_columns():
 			"fieldname": "item_name",
 			"fieldtype": "Data",
 			"width": 260,
+		},
+		{
+			"label": _("Batch"),
+			"fieldname": "batch_no",
+			"fieldtype": "Link",
+			"options": "Batch",
+			"width": 140,
+		},
+		{
+			# days since the batch was made, not since it arrived: manufacturing_date
+			# is what Batch records, and batch.py seeds nothing else that dates a lot
+			"label": _("Age"),
+			"fieldname": "age",
+			"fieldtype": "Int",
+			# a column of day counts has no meaningful sum
+			"disable_total": 1,
+			"width": 60,
 		},
 		{
 			"label": "Inward<br>Qty",
@@ -132,7 +150,13 @@ def get_data(filters):
 		conditions.append("it.name = %(item_code)s")
 		params["item_code"] = filters["item_code"]
 
-	# every word must match, but each word may match any of the six fields
+	# the batch is part of what the ledger is grouped by, so narrowing it out here
+	# drops whole rows without disturbing what the rest of them add up to
+	if filters.get("batch_no"):
+		conditions.append("stk.batch_no = %(batch_no)s")
+		params["batch_no"] = filters["batch_no"]
+
+	# every word must match, but each word may match any of the seven fields
 	for idx, word in enumerate(filters.get("search_text", "").split(), start=1):
 		key = f"search_word_{idx}"
 		conditions.append(
@@ -141,6 +165,7 @@ def get_data(filters):
 				OR it.item_name LIKE %({key})s
 				OR it.item_group LIKE %({key})s
 				OR it.brand LIKE %({key})s
+				OR stk.batch_no LIKE %({key})s
 				OR it.description LIKE %({key})s)"""
 		)
 		params[key] = f"%{word}%"
@@ -149,7 +174,7 @@ def get_data(filters):
 	if filters.get("in_stock_only"):
 		conditions.append("stk.balance_qty > 0")
 
-	# warehouse must be applied inside the ledger sub-selects, not the outer WHERE, so it narrows what is aggregated per vendor rather than dropping whole rows afterwards
+	# warehouse must be applied inside the ledger sub-selects, not the outer WHERE, so it narrows what is aggregated per batch rather than dropping whole rows afterwards
 	# Warehouse is a nested-set tree, so picking a group node must include its descendants (plain = would silently return nothing for a group warehouse):
 	warehouse_condition = ""
 	if filters.get("warehouse"):
@@ -164,14 +189,17 @@ def get_data(filters):
 	# degrade to NULL instead of failing the query when that app isn't installed
 	tax_rate_select = "itt.gst_rate" if frappe.db.has_column("Item Tax Template", "gst_rate") else "NULL"
 
+	# Batch is named by its batch_id, so the tabBatch join below can only ever
+	# match one row -- it narrows nothing and multiplies nothing
 	query = f"""
 		SELECT
 			stk.vendor AS vendor,
-			sup.supplier_name AS vendor_name,
 			it.item_group AS item_group,
 			it.brand AS brand,
 			it.name AS item_code,
 			it.item_name AS item_name,
+			stk.batch_no AS batch_no,
+			DATEDIFF(CURDATE(), bat.manufacturing_date) AS age,
 			NULLIF(stk.inward_qty, 0) AS inward_qty,
 			stk.balance_qty AS balance_qty,
 			NULLIF(ROUND(stk.balance_value, 0), 0) AS balance_value,
@@ -183,12 +211,15 @@ def get_data(filters):
 			SELECT
 				led.vendor AS vendor,
 				led.item_code AS item_code,
+				led.batch_no AS batch_no,
 				SUM(CASE WHEN led.qty > 0 THEN led.qty ELSE 0 END) AS inward_qty,
 				SUM(led.qty) AS balance_qty,
 				SUM(led.value) AS balance_value
 			FROM ({get_batch_ledger(warehouse_condition)}) led
-			GROUP BY led.vendor, led.item_code
+			GROUP BY led.vendor, led.item_code, led.batch_no
 		) stk ON stk.item_code = it.name
+
+		LEFT JOIN `tabBatch` bat ON bat.name = stk.batch_no
 
 		LEFT JOIN `tabSupplier` sup ON sup.name = stk.vendor
 
@@ -202,79 +233,8 @@ def get_data(filters):
 
 		WHERE {" AND ".join(conditions)}
 
-		ORDER BY stk.vendor IS NULL, stk.vendor, it.item_group, it.item_name, it.name
+		ORDER BY stk.vendor IS NULL, stk.vendor, it.item_group, it.item_name, it.name,
+			bat.manufacturing_date IS NULL, bat.manufacturing_date, stk.batch_no
 		"""
 
 	return frappe.db.sql(query, params, as_dict=True)
-
-
-def get_batch_ledger(warehouse_condition: str) -> str:
-	"""Stock ledger flattened to (vendor, item_code, batch_no, qty, value) rows.
-
-	ERPNext writes a movement's batch either onto the ledger entry itself
-	(Stock Ledger Entry.batch_no) or, since v15, into a Serial and Batch Bundle
-	whose child rows carry one batch each. Both shapes have to be read to see
-	every batch's movements, so each becomes one branch of a UNION ALL.
-
-	Shared with the Vendor Stock Batch-wise report, which groups these same rows
-	one level finer -- which is why batch_no is selected here even though this
-	report groups it away. Both reports must see stock the same way, so the
-	version-probing below has one home rather than two that can drift apart.
-	"""
-	has_bundle = frappe.db.has_column(
-		"Stock Ledger Entry", "serial_and_batch_bundle"
-	) and frappe.db.table_exists("Serial and Batch Entry")
-
-	# a bundle is wholly inward or wholly outward, so take the direction off the
-	# ledger entry rather than trusting the sign a given version stores on the
-	# child row (outward rows are negative in v15, but is_outward has also been
-	# used to carry the direction beside a positive qty)
-	bundle_qty = "CASE WHEN sle.actual_qty < 0 THEN -ABS(sbe.qty) ELSE ABS(sbe.qty) END"
-
-	# the ledger entry holds the whole voucher line's value, so a bundle row's
-	# share of it comes off the child row when ERPNext stored it there -- which
-	# keeps batches bought at different rates apart -- and is otherwise
-	# apportioned by quantity
-	bundle_value = f"({bundle_qty}) * sle.stock_value_difference / NULLIF(sle.actual_qty, 0)"
-	if has_bundle and frappe.db.has_column("Serial and Batch Entry", "stock_value_difference"):
-		bundle_value = f"COALESCE(sbe.stock_value_difference, {bundle_value})"
-
-	# entries with neither a batch nor a bundle -- non-batched items -- come
-	# through this branch too, with a NULL vendor from the LEFT JOIN
-	branches = [
-		f"""
-			SELECT
-				b.vendor AS vendor,
-				sle.item_code AS item_code,
-				sle.batch_no AS batch_no,
-				sle.actual_qty AS qty,
-				sle.stock_value_difference AS value
-			FROM `tabStock Ledger Entry` sle
-			LEFT JOIN `tabBatch` b ON b.name = sle.batch_no
-			WHERE sle.is_cancelled = 0
-				AND sle.docstatus = 1
-				{"AND COALESCE(sle.serial_and_batch_bundle, '') = ''" if has_bundle else ""}
-				{warehouse_condition}
-		"""
-	]
-
-	if has_bundle:
-		branches.append(
-			f"""
-			SELECT
-				b.vendor AS vendor,
-				sle.item_code AS item_code,
-				sbe.batch_no AS batch_no,
-				{bundle_qty} AS qty,
-				{bundle_value} AS value
-			FROM `tabStock Ledger Entry` sle
-			JOIN `tabSerial and Batch Entry` sbe ON sbe.parent = sle.serial_and_batch_bundle
-			LEFT JOIN `tabBatch` b ON b.name = sbe.batch_no
-			WHERE sle.is_cancelled = 0
-				AND sle.docstatus = 1
-				AND COALESCE(sle.serial_and_batch_bundle, '') <> ''
-				{warehouse_condition}
-		"""
-		)
-
-	return " UNION ALL ".join(branches)

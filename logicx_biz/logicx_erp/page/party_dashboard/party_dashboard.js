@@ -12,6 +12,7 @@
 	const LEDGER_STATEMENT_REPORT = "Party Statement";
 	const OUTSTANDING_DETAILED_REPORT = "Party Outstanding Detailed";
 	const VENDOR_STOCK_REPORT = "Vendor Stock";
+	const VENDOR_STOCK_BATCH_WISE_REPORT = "Vendor Stock Batch-wise";
 	const ACTIVITY_METHOD = "logicx_biz.logicx_erp.party_dashboard.get_party_activity";
 
 	// how many tiles a full row holds. drives both the grid and the offset a
@@ -161,23 +162,52 @@
 		},
 	];
 
+	// the batch-wise card takes the same filters plus the batch itself, kept
+	// where its own report's filter bar keeps it -- after Brand. its Search
+	// matches the batch too, so it says so; the rest of the fields are the same
+	// objects, which setup_card_filters copies rather than mutates.
+	const VENDOR_STOCK_BATCH_WISE_FILTERS = VENDOR_STOCK_FILTERS.flatMap((df) => {
+		if (df.fieldname === "search_text") {
+			return [
+				Object.assign({}, df, {
+					placeholder: __("Name | Group | Brand | Batch | Description"),
+				}),
+			];
+		}
+		if (df.fieldname === "brand") {
+			return [
+				df,
+				{
+					fieldname: "batch_no",
+					label: __("Batch"),
+					fieldtype: "Link",
+					options: "Batch",
+					placeholder: __("Batch"),
+				},
+			];
+		}
+		return [df];
+	});
+
 	// one request each, fired together whenever a party is picked. a source with
 	// `card: true` also fills the tab named after it; `ledger_totals` and
 	// `activity` only feed tiles. `derive` turns the response into the tiles it
 	// backs, and is pure -- it reads that response and nothing else; a source
 	// that backs no tile leaves it out.
 	//
-	// four optional keys shape a source that does not fit the party/party_type
+	// five optional keys shape a source that does not fit the party/party_type
 	// mould the statements share: `party_types` limits it to one side of the
 	// book, `filters` names the filters its report actually takes, `controls`
-	// puts filters of its own above its card, and `omit_columns` drops columns
-	// the card is already scoped by.
+	// puts filters of its own above its card, `omit_columns` drops columns
+	// the card is already scoped by, and `age_alert` says its Age column counts
+	// days a bill has been left open -- and so reads red once it is overdue.
 	const SOURCES = [
 		{
 			key: "bill_wise_statement",
 			title: __("UnReconciled Bills"),
 			report: BILL_WISE_STATEMENT_REPORT,
 			card: true,
+			age_alert: true,
 			derive: bill_tiles,
 		},
 		{
@@ -187,6 +217,7 @@
 			title: __("UnReconciled Payments"),
 			report: PAYMENT_WISE_NON_RECONCILED_REPORT,
 			card: true,
+			age_alert: true,
 			derive: payment_tiles,
 		},
 		{
@@ -215,6 +246,21 @@
 			// the card is already one vendor's, so its Vendor ID / Vendor Name
 			// columns would just repeat that down every row
 			omit_columns: ["vendor", "vendor_name"],
+		},
+		{
+			// the same stock as the tab before it, split into the batches it
+			// arrived in and aged from each batch's manufacturing date. a
+			// purchase-side view, so Supplier-only like its sibling.
+			key: "vendor_stock_batch_wise",
+			title: __("Vendor Stock Batch-wise"),
+			report: VENDOR_STOCK_BATCH_WISE_REPORT,
+			card: true,
+			age_alert: true,
+			party_types: ["Supplier"],
+			controls: VENDOR_STOCK_BATCH_WISE_FILTERS,
+			filters: (ctx) => Object.assign({ vendor: ctx.party }, ctx.controls),
+			// one vendor's card, so the Vendor column would repeat down every row
+			omit_columns: ["vendor"],
 		},
 		{
 			// the ledger totals behind the first three tiles. this report has no tab of its own -- it is the party-wise list the dashboard drills down from, narrowed here to the one party on screen.
@@ -641,8 +687,11 @@
 			this.destroy_table(key);
 			$body.empty();
 
+			// the card a column belongs to decides how some of them read; see format_cell
+			const card = CARDS.find((c) => c.key === key);
+
 			this.tables[key] = new DataTableClass($body.get(0), {
-				columns: result.columns.map(to_datatable_column),
+				columns: result.columns.map((col) => to_datatable_column(col, card)),
 				data: result.rows,
 				layout: "fluid",
 				inlineFilters: true,
@@ -1056,7 +1105,7 @@
 
 	const RIGHT_ALIGNED = ["Currency", "Float", "Int", "Percent"];
 
-	function to_datatable_column(col) {
+	function to_datatable_column(col, card) {
 		return {
 			id: col.fieldname,
 			// a report may break a long label over two lines for its own page,
@@ -1068,11 +1117,11 @@
 			focusable: false,
 			dropdown: true, // sortable
 			sortable: true, // sortable
-			format: (value, row, column, data) => format_cell(value, col, data),
+			format: (value, row, column, data) => format_cell(value, col, data, card),
 		};
 	}
 
-	function format_cell(value, col, data) {
+	function format_cell(value, col, data, card) {
 		let html = format_value(value, col, data);
 		html = open_links_in_new_tab(html);
 		if (data && data.bold) {
@@ -1080,8 +1129,10 @@
 		}
 		// the two statements carrying an Age column flag a stale row in red, on
 		// the same cut-off the "21 Days Overdue" tile counts by and the report
-		// pages colour by, so the card agrees with both
-		if (col.fieldname === "age" && (value || 0) > AGE_ALERT_DAYS) {
+		// pages colour by, so the card agrees with both. only those two: Vendor
+		// Stock Batch-wise ages a batch rather than a bill, and stock older than
+		// three weeks is ordinary rather than something to flag.
+		if (card && card.age_alert && col.fieldname === "age" && (value || 0) > AGE_ALERT_DAYS) {
 			html = `<span class="logicx-pd-age-alert">${html}</span>`;
 		}
 		return html;
