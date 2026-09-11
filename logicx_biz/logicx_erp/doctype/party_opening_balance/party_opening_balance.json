@@ -1,0 +1,188 @@
+{
+	"doctype": "DocType",
+	"name": "Party Opening Balance",
+	"module": "LogicX ERP",
+	"autoname": "POB-.#",
+	"track_changes": 1,
+	"track_views": 1,
+	"is_submittable": 1,
+	"allow_rename": 0,
+	"allow_import": 1,
+	"title_field": "party_name",
+	"show_title_field_in_link": 1,
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"index_web_pages_for_search": 1,
+	"grid_page_length": 50,
+	"fields": [
+		{
+			"fieldname": "section1",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Party Type",
+			"fieldname": "party_type",
+			"fieldtype": "Link",
+			"options": "Party Type",
+			"reqd": 1,
+			"remember_last_selected_value": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"label": "Party",
+			"fieldname": "party",
+			"fieldtype": "Dynamic Link",
+			"options": "party_type",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"label": "Party Name",
+			"fieldname": "party_name",
+			"fieldtype": "Data",
+			"read_only": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "section1_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Posting Date",
+			"fieldname": "posting_date",
+			"fieldtype": "Date",
+			"description": "Start of the fiscal year the balance is opened in.",
+			"read_only": 1,
+			"reqd": 1,
+			"no_copy": 1,
+			"in_list_view": 1
+		},
+		{
+			"label": "Company",
+			"fieldname": "company",
+			"fieldtype": "Link",
+			"options": "Company",
+			"read_only": 1,
+			"reqd": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"label": "Opening Balance",
+			"fieldname": "section2",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Debit",
+			"fieldname": "debit",
+			"fieldtype": "Currency",
+			"options": "Company:company:default_currency",
+			"default": "0",
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "section2_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Credit",
+			"fieldname": "credit",
+			"fieldtype": "Currency",
+			"options": "Company:company:default_currency",
+			"default": "0",
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "section2_column3",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "section2_column4",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "section3",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Amended From",
+			"fieldname": "amended_from",
+			"fieldtype": "Link",
+			"options": "Party Opening Balance",
+			"read_only": 1,
+			"no_copy": 1,
+			"print_hide": 1
+		}
+	],
+	"permissions": [
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM User",
+			"read": 1,
+			"create": 0,
+			"write": 0,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Accounts",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 1,
+			"mask": 0,
+			"submit": 1,
+			"cancel": 1,
+			"amend": 1
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Admin",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 1,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 1,
+			"mask": 1,
+			"submit": 1,
+			"cancel": 1,
+			"amend": 1
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 1,
+			"role": "TM Admin",
+			"read": 1,
+			"write": 1,
+			"mask": 1
+		}
+	]
+}

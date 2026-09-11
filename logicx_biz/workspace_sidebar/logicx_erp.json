@@ -177,6 +177,14 @@
 			"link_type": "DocType",
 			"link_to": "Crate",
 			"child": 1
+		},
+		{
+			"idx": 23,
+			"label": "Party Opening Balance",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "Party Opening Balance",
+			"child": 1
 		}
 	]
 }

@@ -1,0 +1,1 @@
+"""Party Opening Balance DocType."""
