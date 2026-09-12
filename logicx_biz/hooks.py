@@ -220,6 +220,9 @@ doc_events = {
 	"Contact": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
 	"Customer": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
 	"Supplier": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
+	# one opening Journal Entry per party and company, whether it comes from a
+	# Party Opening Balance or is keyed in directly (see journal_entry.py)
+	"Journal Entry": {"validate": "logicx_biz.logicx_erp.journal_entry.validate_opening_party"},
 	# Batch.vendor and the batch pricing are stamped from the voucher that
 	# created the batch (see batch.py)
 	"Batch": {

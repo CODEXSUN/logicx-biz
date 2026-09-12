@@ -3,6 +3,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, get_link_to_form, nowdate
 
+from logicx_biz.logicx_erp.journal_entry import get_opening_journal_entry
+
 # an opening balance is only meaningful for a party that runs a ledger with us:
 # a Customer who owes us, or a Supplier we owe. the form's party_type picker is
 # filtered to these two, and validate holds the same line for imports and the API
@@ -24,6 +26,7 @@ class PartyOpeningBalance(Document):
 		self.party_name = _party_name(self.party_type, self.party)
 		self.validate_amount()
 		self.validate_duplicate()
+		self.validate_opening_journal_entry()
 
 	def after_insert(self):
 		# there is no draft stage: the balance is on the books the moment it is
@@ -80,6 +83,30 @@ class PartyOpeningBalance(Document):
 					frappe.bold(self.party_name or self.party),
 					self.company,
 					get_link_to_form("Party Opening Balance", duplicate),
+				),
+				frappe.DuplicateEntryError,
+				title=_("Duplicate Opening Balance"),
+			)
+
+	def validate_opening_journal_entry(self):
+		"""The one opening Journal a party may carry must be this entry's own.
+
+		Someone may have keyed an opening entry straight into Journal Entry;
+		this balance would then book the party a second time.
+		"""
+		if not (self.company and self.party_type and self.party):
+			return
+
+		existing = get_opening_journal_entry(
+			self.company, self.party_type, self.party, exclude=self.journal_entry
+		)
+		if existing:
+			frappe.throw(
+				_("{0} {1} already has an opening Journal Entry in {2}: {3}").format(
+					self.party_type,
+					frappe.bold(self.party_name or self.party),
+					self.company,
+					get_link_to_form("Journal Entry", existing),
 				),
 				frappe.DuplicateEntryError,
 				title=_("Duplicate Opening Balance"),
