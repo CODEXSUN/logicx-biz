@@ -844,16 +844,16 @@
 	// picked. the menu is shown and hidden by hand (see setup_events) rather
 	// than by bootstrap's data attributes, so it works the same whichever
 	// bootstrap the desk ships; only the .dropdown-menu look and its .show
-	// state are borrowed. the "+" is a bold glyph rather than the icon sprite,
-	// whose stroke weight is fixed inside the symbol and cannot be thickened.
+	// state are borrowed. the "+" is drawn in css (see .logicx-pd-add-btn) rather
+	// than set as a glyph or the icon sprite: a glyph sits on a text baseline
+	// and never quite centres in a disc, and the sprite's stroke weight is
+	// fixed inside the symbol. the button's aria-label names it.
 	function render_add_menu() {
 		return `
 			<div class="logicx-pd-filter logicx-pd-add" data-filter="add">
 				<button type="button" class="btn btn-primary logicx-pd-add-btn"
 					title="${__("New")}" aria-label="${__("New")}"
-					aria-haspopup="true" aria-expanded="false">
-					<span aria-hidden="true">+</span>
-				</button>
+					aria-haspopup="true" aria-expanded="false"></button>
 				<div class="dropdown-menu logicx-pd-add-menu">
 					<a class="dropdown-item" href="#" data-action="opening-balance">
 						${__("Opening Balance")}
@@ -1508,20 +1508,48 @@
 
 		/* .btn-primary gives it the desk's action-button colours -- dark face,
 		   light glyph, and the matching hover -- so it follows the theme rather
-		   than fixing a colour of its own. a touch taller than the 32px inputs
-		   beside it, with the glyph sized and weighted to fill the disc. */
+		   than fixing a colour of its own. deliberately taller than the 32px
+		   inputs beside it -- it is the one thing on the bar that is not a
+		   filter. */
 		.logicx-pd-add-btn {
-			width: 36px;
-			height: 36px;
+			position: relative;
+			width: 44px;
+			height: 44px;
 			padding: 0;
 			border-radius: 50%;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 24px;
-			font-weight: 700;
-			line-height: 1;
 			box-shadow: var(--shadow-sm);
+		}
+
+		/* the "+" itself: two bars crossing at the exact centre of the disc, in
+		   the button's text colour. 22px across at 2px is a regular-weight plus
+		   that leaves the disc some room; width is its size and height its
+		   weight, should either change. */
+		.logicx-pd-add-btn::before,
+		.logicx-pd-add-btn::after {
+			content: "";
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 22px;
+			height: 2px;
+			border-radius: 1px;
+			background-color: currentColor;
+			transform: translate(-50%, -50%);
+		}
+
+		.logicx-pd-add-btn::after {
+			transform: translate(-50%, -50%) rotate(90deg);
+		}
+
+		/* light grey rather than the white .btn-primary gives it, so the "+" sits
+		   a little softer on the dark disc. !important because frappe's
+		   .btn-primary sets its colour on hover and focus too, and the grey
+		   should hold through both. */
+		.logicx-pd-add-btn,
+		.logicx-pd-add-btn:hover,
+		.logicx-pd-add-btn:focus,
+		.logicx-pd-add-btn:active {
+			color: var(--gray-300) !important;
 		}
 
 		/* .dropdown-menu is display:none until .show, in either bootstrap; the
