@@ -87,6 +87,9 @@ app_include_css = [
 app_include_js = [
 	"/assets/logicx_biz/js/logicx_item_view_1.js",
 	"/assets/logicx_biz/js/logicx_item_view_2.js",
+	# quick entry classes are looked up by doctype name at desk boot, and quick
+	# entry is raised from the list view and awesomebar, not just the form
+	"/assets/logicx_biz/js/party_opening_balance_quick_entry.js",
 ]
 
 # include js, css files in header of web template

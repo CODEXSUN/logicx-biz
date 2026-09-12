@@ -25,6 +25,14 @@ class PartyOpeningBalance(Document):
 		self.validate_amount()
 		self.validate_duplicate()
 
+	def after_insert(self):
+		# there is no draft stage: the balance is on the books the moment it is
+		# entered. done here, on the server, so the form, quick entry, import and
+		# the API all behave the same. the row is already in the table by now, so
+		# submit() takes the normal update path (validate, before_submit, on_submit)
+		# with the submit permission checked like any other submit
+		self.submit()
+
 	def validate_party_type(self):
 		if self.party_type not in PARTY_TYPES:
 			frappe.throw(_("Party Type must be Customer or Supplier."))
