@@ -646,6 +646,49 @@
 				// on exactly what the card beneath it is showing
 				open_report_in_new_tab(card, this.ctx_for(card));
 			});
+
+			// the "+" menu: the button toggles it, a click anywhere else closes it
+			this.$el.on("click", ".logicx-pd-add-btn", (e) => {
+				e.stopPropagation();
+				this.toggle_add_menu();
+			});
+			this.$el.on("click", ".logicx-pd-add-menu [data-action]", (e) => {
+				e.preventDefault();
+				this.toggle_add_menu(false);
+				this.on_add_action($(e.currentTarget).attr("data-action"));
+			});
+			// namespaced so a reload of the page script does not stack a second one
+			$(document).off("click.logicx-pd-add").on("click.logicx-pd-add", () => this.toggle_add_menu(false));
+		}
+
+		toggle_add_menu(open) {
+			const $menu = this.$el.find(".logicx-pd-add-menu");
+			const show = open === undefined ? !$menu.hasClass("show") : open;
+			$menu.toggleClass("show", show);
+			this.$el.find(".logicx-pd-add-btn").attr("aria-expanded", show ? "true" : "false");
+		}
+
+		on_add_action(action) {
+			if (action === "opening-balance") this.new_opening_balance();
+		}
+
+		// opens Party Opening Balance's quick entry with the party at the top of
+		// the page already in it. read off the controls rather than this.party,
+		// which lags the picker by the debounce -- "current" here means what the
+		// user can see in the box
+		new_opening_balance() {
+			const party_type = this.selected_party_type();
+			const party = (this.controls.party.get_value() || "").trim();
+			frappe.new_doc("Party Opening Balance", { party_type, party }, (dialog) => {
+				// frappe's own prefill from the options above is by fieldtype, and
+				// Party is a Dynamic Link, so it is put in here as well should
+				// that pass have skipped it. Party Type is a plain Link and always
+				// lands, and setting it here instead would clear Party (see the
+				// quick entry class). no dialog means it fell back to the full
+				// form, which the same options already filled.
+				if (!party || !dialog || !dialog.get_value || dialog.get_value("party")) return;
+				dialog.set_value("party", party);
+			});
 		}
 
 		// an activity tile stands for one document, so it opens that document instead of the tab it would otherwise switch to
@@ -788,10 +831,35 @@
 					<div class="logicx-pd-filters">
 						<div class="logicx-pd-filter" data-filter="party_type"></div>
 						<div class="logicx-pd-filter" data-filter="party"></div>
+						${render_add_menu()}
 					</div>
 				</div>
 			</div>
 			${render_tabcard()}
+		`;
+	}
+
+	// the round "+" at the right end of the filter bar, where a page's action
+	// button sits, and the menu of documents it can open against the party
+	// picked. the menu is shown and hidden by hand (see setup_events) rather
+	// than by bootstrap's data attributes, so it works the same whichever
+	// bootstrap the desk ships; only the .dropdown-menu look and its .show
+	// state are borrowed. the "+" is a bold glyph rather than the icon sprite,
+	// whose stroke weight is fixed inside the symbol and cannot be thickened.
+	function render_add_menu() {
+		return `
+			<div class="logicx-pd-filter logicx-pd-add" data-filter="add">
+				<button type="button" class="btn btn-primary logicx-pd-add-btn"
+					title="${__("New")}" aria-label="${__("New")}"
+					aria-haspopup="true" aria-expanded="false">
+					<span aria-hidden="true">+</span>
+				</button>
+				<div class="dropdown-menu logicx-pd-add-menu">
+					<a class="dropdown-item" href="#" data-action="opening-balance">
+						${__("Opening Balance")}
+					</a>
+				</div>
+			</div>
 		`;
 	}
 
@@ -1423,6 +1491,52 @@
 		   already spaces these, so drop it */
 		.logicx-pd-filter .frappe-control {
 			margin-bottom: 0;
+		}
+
+		/* the "+" takes only the room a round button needs, pushed to the far
+		   right of the bar where a page's action button sits, and anchors the
+		   menu that drops from it */
+		.logicx-pd-filter[data-filter="add"] {
+			position: relative;
+			flex: 0 0 auto;
+			min-width: 0;
+			max-width: none;
+			margin-left: auto;
+			display: flex;
+			align-items: center;
+		}
+
+		/* .btn-primary gives it the desk's action-button colours -- dark face,
+		   light glyph, and the matching hover -- so it follows the theme rather
+		   than fixing a colour of its own. a touch taller than the 32px inputs
+		   beside it, with the glyph sized and weighted to fill the disc. */
+		.logicx-pd-add-btn {
+			width: 36px;
+			height: 36px;
+			padding: 0;
+			border-radius: 50%;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 24px;
+			font-weight: 700;
+			line-height: 1;
+			box-shadow: var(--shadow-sm);
+		}
+
+		/* .dropdown-menu is display:none until .show, in either bootstrap; the
+		   rest pins it under the button's right edge, so it opens inward from
+		   the page edge rather than off it */
+		.logicx-pd-add-menu {
+			top: 100%;
+			right: 0;
+			left: auto;
+			margin-top: 4px;
+			min-width: 180px;
+		}
+
+		.logicx-pd-add-menu.show {
+			display: block;
 		}
 
 		/* a card's own filters (see setup_card_filters), between the tab strip and
