@@ -108,6 +108,20 @@
 			"fieldtype": "Section Break"
 		},
 		{
+			"label": "Journal Entry",
+			"fieldname": "journal_entry",
+			"fieldtype": "Link",
+			"options": "Journal Entry",
+			"description": "Opening Entry that books this balance in the party ledger.",
+			"read_only": 1,
+			"no_copy": 1,
+			"print_hide": 1
+		},
+		{
+			"fieldname": "section3_column2",
+			"fieldtype": "Column Break"
+		},
+		{
 			"label": "Amended From",
 			"fieldname": "amended_from",
 			"fieldtype": "Link",

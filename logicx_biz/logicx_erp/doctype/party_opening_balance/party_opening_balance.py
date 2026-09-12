@@ -33,6 +33,16 @@ class PartyOpeningBalance(Document):
 		# with the submit permission checked like any other submit
 		self.submit()
 
+	def before_submit(self):
+		# runs ahead of the row being written, so the link lands in the same save
+		self.journal_entry = self.make_journal_entry().name
+
+	def on_cancel(self):
+		# after our own row is marked cancelled: the Journal refuses to cancel
+		# while a submitted document still links to it, and until this point
+		# that document is us
+		self.cancel_journal_entry()
+
 	def validate_party_type(self):
 		if self.party_type not in PARTY_TYPES:
 			frappe.throw(_("Party Type must be Customer or Supplier."))
@@ -74,6 +84,62 @@ class PartyOpeningBalance(Document):
 				frappe.DuplicateEntryError,
 				title=_("Duplicate Opening Balance"),
 			)
+
+	def make_journal_entry(self):
+		"""Book the balance in the party's ledger, against the Temporary Opening account.
+
+		A Customer's balance goes to the receivable (Debtors) account and a
+		Supplier's to the payable (Creditors) account -- whichever the party or
+		the company is set up with. The second line mirrors it on Temporary
+		Opening, so the Journal balances and the figure reaches the General
+		Ledger and the party's outstanding from the fiscal year's first day.
+		"""
+		from erpnext.accounts.doctype.opening_invoice_creation_tool.opening_invoice_creation_tool import (
+			get_temporary_opening_account,
+		)
+		from erpnext.accounts.party import get_party_account
+
+		debit, credit = flt(self.debit), flt(self.credit)
+		journal_entry = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"voucher_type": "Opening Entry",
+				"is_opening": "Yes",
+				"company": self.company,
+				"posting_date": self.posting_date,
+				"user_remark": _("Opening balance of {0} {1} ({2})").format(
+					self.party_type, self.party_name or self.party, self.name
+				),
+				"accounts": [
+					{
+						"account": get_party_account(self.party_type, self.party, self.company),
+						"party_type": self.party_type,
+						"party": self.party,
+						"debit_in_account_currency": debit,
+						"credit_in_account_currency": credit,
+					},
+					{
+						"account": get_temporary_opening_account(self.company),
+						"debit_in_account_currency": credit,
+						"credit_in_account_currency": debit,
+					},
+				],
+			}
+		)
+		# the right to submit an opening balance is the right to post its Journal:
+		# TM Accounts need not hold Journal Entry permissions of their own
+		journal_entry.flags.ignore_permissions = True
+		journal_entry.submit()
+		return journal_entry
+
+	def cancel_journal_entry(self):
+		if not self.journal_entry:
+			return
+		journal_entry = frappe.get_doc("Journal Entry", self.journal_entry)
+		if journal_entry.docstatus != 1:
+			return
+		journal_entry.flags.ignore_permissions = True
+		journal_entry.cancel()
 
 
 def get_default_company() -> str | None:
