@@ -6,6 +6,10 @@ const DOCTYPE_PATH = 'logicx_biz.logicx_erp.doctype.party_opening_balance.party_
 // only the two parties that carry a ledger balance with us open one here
 const PARTY_TYPES = ['Customer', 'Supplier'];
 
+// an opening balance sits on one side of the ledger, so the other side is
+// always nil -- shown blank rather than as a 0.00 that reads like a figure
+const AMOUNT_FIELDS = ['debit', 'credit'];
+
 frappe.ui.form.on('Party Opening Balance', {
 
 	setup: function (frm) {
@@ -18,6 +22,12 @@ frappe.ui.form.on('Party Opening Balance', {
 		if (frm.is_new()) {
 			set_opening_defaults(frm);
 		}
+	},
+
+	refresh: function (frm) {
+		AMOUNT_FIELDS.forEach(function (fieldname) {
+			frm.set_df_property(fieldname, 'formatter', currency_or_blank);
+		});
 	},
 
 	party_type: function (frm) {
@@ -58,4 +68,12 @@ function set_party_name(frm) {
 			frm.set_value('party_name', r.message || frm.doc.party);
 		},
 	});
+}
+
+// the stock Currency formatter, except that a nil amount comes out empty
+function currency_or_blank(value, df, options, doc) {
+	if (!flt(value)) {
+		return '';
+	}
+	return frappe.form.formatters.Currency(value, df, options, doc);
 }
