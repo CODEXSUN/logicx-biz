@@ -86,6 +86,13 @@
 		},
 		{
 			"idx": 12,
+			"label": "Apparel Dashboard",
+			"type": "Link",
+			"link_type": "Page",
+			"link_to": "apparel-dashboard"
+		},
+		{
+			"idx": 13,
 			"label": "Masters",
 			"type": "Section Break",
 			"icon": "file-text",
@@ -95,7 +102,7 @@
 			"child": 0
 		},
 		{
-			"idx": 13,
+			"idx": 14,
 			"label": "Enquiry Group",
 			"type": "Link",
 			"link_type": "DocType",
@@ -103,7 +110,7 @@
 			"child": 1
 		},
 		{
-			"idx": 14,
+			"idx": 15,
 			"label": "Enquiry Status",
 			"type": "Link",
 			"link_type": "DocType",
@@ -111,7 +118,7 @@
 			"child": 1
 		},
 		{
-			"idx": 15,
+			"idx": 16,
 			"label": "Reports",
 			"type": "Section Break",
 			"icon": "file-text",
@@ -121,7 +128,7 @@
 			"child": 0
 		},
 		{
-			"idx": 16,
+			"idx": 17,
 			"label": "Enquiry List-In wise Status",
 			"type": "Link",
 			"link_type": "Report",
@@ -129,7 +136,7 @@
 			"child": 1
 		},
 		{
-			"idx": 17,
+			"idx": 18,
 			"label": "Enquiry Owner wise Status",
 			"type": "Link",
 			"link_type": "Report",
