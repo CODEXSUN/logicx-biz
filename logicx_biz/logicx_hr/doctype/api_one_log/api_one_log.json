@@ -1,0 +1,157 @@
+{
+	"doctype": "DocType",
+	"name": "API One Log",
+	"module": "LogicX HR",
+	"autoname": "APILOG.#",
+	"in_create": 1,
+	"track_changes": 0,
+	"is_submittable": 0,
+	"allow_rename": 0,
+	"allow_import": 0,
+	"title_field": "api_path",
+	"sort_field": "creation",
+	"sort_order": "DESC",
+	"grid_page_length": 50,
+	"fields": [
+		{
+			"fieldname": "section_request",
+			"fieldtype": "Section Break",
+			"label": "Request"
+		},
+		{
+			"label": "API Path",
+			"fieldname": "api_path",
+			"fieldtype": "Data",
+			"read_only": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Request Method",
+			"fieldname": "request_method",
+			"fieldtype": "Data",
+			"read_only": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"label": "Request Query",
+			"fieldname": "request_query",
+			"fieldtype": "Small Text",
+			"read_only": 1
+		},
+		{
+			"fieldname": "section_request_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "User",
+			"fieldname": "user",
+			"fieldtype": "Link",
+			"options": "User",
+			"read_only": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"label": "IP Address",
+			"fieldname": "ip_address",
+			"fieldtype": "Data",
+			"read_only": 1
+		},
+		{
+			"label": "Duration (ms)",
+			"fieldname": "duration_ms",
+			"fieldtype": "Int",
+			"read_only": 1,
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "section_request_payload",
+			"fieldtype": "Section Break",
+			"label": "Request Payload"
+		},
+		{
+			"label": "Request Header",
+			"fieldname": "request_header",
+			"fieldtype": "Code",
+			"options": "JSON",
+			"read_only": 1
+		},
+		{
+			"label": "Request Content",
+			"fieldname": "request_content",
+			"fieldtype": "Code",
+			"read_only": 1
+		},
+		{
+			"fieldname": "section_response",
+			"fieldtype": "Section Break",
+			"label": "Response"
+		},
+		{
+			"label": "Response Status Code",
+			"fieldname": "response_status_code",
+			"fieldtype": "Int",
+			"read_only": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"label": "Response Header",
+			"fieldname": "response_header",
+			"fieldtype": "Code",
+			"options": "JSON",
+			"read_only": 1
+		},
+		{
+			"label": "Response Content",
+			"fieldname": "response_content",
+			"fieldtype": "Code",
+			"read_only": 1
+		}
+	],
+	"permissions": [
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "System Manager",
+			"read": 1,
+			"create": 0,
+			"write": 0,
+			"delete": 1,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 0,
+			"print": 0,
+			"share": 0,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Admin",
+			"read": 1,
+			"create": 0,
+			"write": 0,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 0,
+			"email": 0,
+			"print": 0,
+			"share": 0,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		}
+	]
+}

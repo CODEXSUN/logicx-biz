@@ -1,0 +1,122 @@
+# API One / API One Log -- VS Code REST Client examples
+#
+# Set in your REST Client environment (settings.json -> "rest-client.environmentVariables"):
+#   baseUrl : e.g. http://site.localhost:8000
+#   token   : "<api_key>:<api_secret>" of a user (User -> API Access -> Generate Keys)
+# Never put a real token in this file; it is committed.
+#
+# Requires: bench --site <site> set-config server_script_enabled true
+#           bench --site <site> migrate   (creates the sample "echo" endpoint: POST only)
+
+
+### 1. echo via /api/method  -> 200, message.method == "POST", query has a=1
+POST {{baseUrl}}/api/method/echo?a=1
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"hello": "world"
+}
+
+# {
+#   "message": {
+#     "method": "POST",
+#     "query": { "a": "1", "hello": "world" },
+#     "user": "<your user id>"
+#   }
+# }
+
+
+
+### 2. echo via /api/v2/method  -> 200, same payload under "data"
+POST {{baseUrl}}/api/v2/method/echo?a=2
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"hello": "v2"
+}
+
+
+
+### 3. wrong verb  -> 405 Method Not Allowed (Allow: POST); still logged
+GET {{baseUrl}}/api/method/echo?a=3
+Authorization: token {{token}}
+
+
+
+### 4. no token  -> 401/403 (Server Script is never guest-callable); logged with user = Guest
+POST {{baseUrl}}/api/method/echo?a=4
+Content-Type: application/json
+
+{
+	"hello": "guest"
+}
+
+
+
+### 5. the API One Log rows written by 1-4 (newest first)
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"doctype": "API One Log",
+	"fields": ["name", "creation", "api_path", "request_method", "request_query", "response_status_code", "user", "ip_address", "duration_ms"],
+	"filters": [["api_path", "=", "echo"]],
+	"order_by": "creation desc",
+	"limit": 10
+}
+
+
+
+### 6. one API One Log row in full (replace APILOG2)
+GET {{baseUrl}}/api/v2/document/API One Log/APILOG2
+Authorization: token {{token}}
+
+
+
+### 7. the registered endpoints
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"doctype": "API One",
+	"fields": ["name", "api_path", "request_method", "enabled", "server_script"],
+	"order_by": "creation desc"
+}
+
+
+
+### 8. define a new endpoint over REST (caller needs the Script Manager role)
+POST {{baseUrl}}/api/v2/document/API One
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"api_path": "my_open_enquiries",
+	"request_method": "GET",
+	"enabled": 1,
+	"script": "frappe.response['message'] = frappe.get_list('Enquiry', filters={'status': ['not in', ['Won', 'Lost']]}, fields=['name', 'date', 'status', 'enquiry_details'], order_by='creation desc', limit=20)"
+}
+
+# then:
+#   GET {{baseUrl}}/api/method/my_open_enquiries
+#   Authorization: token {{token}}
+# Posting the same api_path again -> 409 Duplicate API Path.
+
+
+
+### 9. disable the sample endpoint (replace API1) -> subsequent calls return 404 and are logged
+PUT {{baseUrl}}/api/v2/document/API One/API1
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"enabled": 0
+}
+
+
+
+###

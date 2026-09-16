@@ -9,3 +9,4 @@ logicx_biz.patches.create_enquiry_groups
 logicx_biz.patches.create_enquiry_statuses
 logicx_biz.patches.delete_stock_details_search_report
 logicx_biz.patches.set_batch_vendor
+logicx_biz.patches.create_api_one_echo

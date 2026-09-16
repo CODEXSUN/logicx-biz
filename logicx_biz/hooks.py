@@ -292,8 +292,10 @@ doc_events = {
 
 # Request Events
 # ----------------
-# before_request = ["logicx_biz.utils.before_request"]
-# after_request = ["logicx_biz.utils.after_request"]
+# API One endpoints: enforce the registered HTTP method (405) / enabled flag (404)
+# before the call, write an API One Log row after it (see logicx_hr/api_one_hooks.py)
+before_request = ["logicx_biz.logicx_hr.api_one_hooks.before_request"]
+after_request = ["logicx_biz.logicx_hr.api_one_hooks.after_request"]
 
 # Job Events
 # ----------

@@ -5,6 +5,37 @@ All notable changes to **logicx-biz** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-09-16
+
+### Added
+
+- **API One DocType** (`LogicX HR`) -- define a REST endpoint by saving a record:
+  `API Path` (unique), `Request Method` (GET/POST/PUT/PATCH/DELETE), `Enabled`
+  and a Python `Script`. Each row manages one Frappe **Server Script (API type)**
+  (`allow_guest = 0`), so Frappe serves the endpoint at `/api/method/<path>` and
+  `/api/v2/method/<path>` for token/session-authenticated callers and runs the
+  script in its sandbox. Saving errors when the path already exists as another
+  API One, as a Server Script, or as a real Python method; the linked Server
+  Script is re-synced on every save and deleted with the row. Named `API.#`.
+  Permissions: `System Manager` / `Script Manager` full, `TM Admin` read
+  (Server Script requires the saver to hold `Script Manager`). Requires
+  `server_script_enabled` in the site config.
+- **API One Log DocType** (`LogicX HR`) -- one row per call to an API One endpoint:
+  path, method, query string, request headers (`Authorization` / `Cookie` /
+  CSRF token redacted) and body, response status / headers / body (bodies
+  truncated at 100 000 chars), plus `User`, `IP Address` and `Duration (ms)`.
+  System-written only (`in_create`); named `APILOG.#`.
+- **`before_request` / `after_request` hooks** (`logicx_hr/api_one_hooks.py`) --
+  recognise calls to registered API One paths via a cached path map (no DB
+  access for other requests), return 404 for disabled endpoints and 405 for a
+  wrong HTTP verb, and write the API One Log row after every recognised call,
+  including rejected ones.
+- **`create_api_one_echo` patch** -- seeds a sample `POST /api/method/echo`
+  endpoint that returns the request method, query and user. Skips with a notice
+  when server scripts are disabled (re-run with `bench execute`).
+- `API-One.MD` design document and `Frappe.Api.ApiOne.rest` REST Client
+  examples (variables only, no committed token).
+
 ## [0.1.5] - 2026-08-21
 
 ### Added

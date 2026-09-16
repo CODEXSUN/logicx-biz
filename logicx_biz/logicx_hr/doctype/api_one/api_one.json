@@ -1,0 +1,138 @@
+{
+	"doctype": "DocType",
+	"name": "API One",
+	"module": "LogicX HR",
+	"autoname": "API.#",
+	"track_changes": 1,
+	"is_submittable": 0,
+	"allow_rename": 0,
+	"allow_import": 0,
+	"title_field": "api_path",
+	"sort_field": "creation",
+	"sort_order": "DESC",
+	"grid_page_length": 50,
+	"fields": [
+		{
+			"fieldname": "section_endpoint",
+			"fieldtype": "Section Break",
+			"label": "Endpoint"
+		},
+		{
+			"label": "API Path",
+			"fieldname": "api_path",
+			"fieldtype": "Data",
+			"reqd": 1,
+			"unique": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1,
+			"description": "Becomes <code>/api/method/&lt;path&gt;</code> (also <code>/api/v2/method/&lt;path&gt;</code>). Letters, digits, underscore, dot and hyphen only; no slashes. Must not clash with an existing method or Server Script."
+		},
+		{
+			"label": "Request Method",
+			"fieldname": "request_method",
+			"fieldtype": "Select",
+			"options": "GET\nPOST\nPUT\nPATCH\nDELETE",
+			"default": "GET",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"fieldname": "section_endpoint_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Enabled",
+			"fieldname": "enabled",
+			"fieldtype": "Check",
+			"default": "1",
+			"in_list_view": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"fieldname": "section_script",
+			"fieldtype": "Section Break",
+			"label": "Script"
+		},
+		{
+			"label": "Script",
+			"fieldname": "script",
+			"fieldtype": "Code",
+			"options": "Python",
+			"reqd": 1,
+			"description": "Runs in Frappe's Server Script sandbox as the authenticated caller. Put the result in <code>frappe.response[\"message\"]</code>. Available: <code>frappe.request</code>, <code>frappe.form_dict</code>, <code>frappe.session.user</code>, <code>frappe.get_list</code>, <code>frappe.get_doc</code>, <code>frappe.db.get_value</code> ..."
+		},
+		{
+			"label": "Server Script",
+			"fieldname": "server_script",
+			"fieldtype": "Link",
+			"options": "Server Script",
+			"read_only": 1,
+			"no_copy": 1,
+			"description": "Managed by API One: overwritten on every save, deleted with this row. Do not edit directly."
+		}
+	],
+	"permissions": [
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "System Manager",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 1,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 0,
+			"print": 0,
+			"share": 1,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "Script Manager",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 1,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 0,
+			"print": 0,
+			"share": 1,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Admin",
+			"read": 1,
+			"create": 0,
+			"write": 0,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 0,
+			"email": 0,
+			"print": 0,
+			"share": 0,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		}
+	]
+}
