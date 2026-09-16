@@ -1,6 +1,6 @@
 ### Read List
 POST {{baseUrl}}/api/v2/method/frappe.client.get_list
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -16,12 +16,12 @@ Content-Type: application/json
 ### Read Staff Request by ID.
 
 GET {{baseUrl}}/api/v2/document/Staff Request/REQUEST5
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 
 
 ### Create
 POST {{baseUrl}}/api/v2/document/Staff Request
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {

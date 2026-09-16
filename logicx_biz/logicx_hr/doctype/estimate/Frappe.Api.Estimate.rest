@@ -1,7 +1,7 @@
 
 ### Read List
 POST {{baseUrl}}/api/v2/method/frappe.client.get_list
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -24,13 +24,13 @@ Content-Type: application/json
 ### Read by ID
 
 GET {{baseUrl}}/api/v2/document/Estimate/ESTIMATE1
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 
 
 
 ### Create
 POST {{baseUrl}}/api/v2/document/Estimate
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -45,7 +45,7 @@ Content-Type: application/json
 
 ### Update
 PUT {{baseUrl}}/api/v2/document/Estimate/ESTIMATE1
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {

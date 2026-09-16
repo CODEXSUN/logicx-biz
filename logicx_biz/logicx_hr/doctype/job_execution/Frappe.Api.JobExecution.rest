@@ -3,7 +3,7 @@
 	# If one row exists, then show the details with "Stop" & "Cancel" button
 	# If more than one row found, throw error.
 POST {{baseUrl}}/api/v2/method/frappe.client.get_list
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -33,13 +33,13 @@ Content-Type: application/json
 ### Read Job Execution by ID.
 
 GET {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 
 
 
 ### On Start Button Click
 POST {{baseUrl}}/api/v2/document/Job Execution
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -52,7 +52,7 @@ Content-Type: application/json
 
 ### On Stop Button Click
 PUT {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -64,7 +64,7 @@ Content-Type: application/json
 
 ### On Cancel Button Click
 PUT {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {

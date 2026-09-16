@@ -9,6 +9,20 @@
 #           bench --site <site> migrate   (creates the sample "echo" endpoint: POST only)
 
 
+### 0.
+POST {{baseUrl}}/api/method/apparel-log
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"reading": "1234"
+}
+
+### 0.
+GET {{baseUrl}}/api/method/apparel-command
+Authorization: token {{token}}
+
+
 ### 1. echo via /api/method  -> 200, message.method == "POST", query has a=1
 POST {{baseUrl}}/api/method/echo?a=1
 Authorization: token {{token}}

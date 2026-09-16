@@ -1,7 +1,7 @@
 
 ### get user-id by api-token
 GET {{baseUrl}}/api/v2/method/frappe.auth.get_logged_user
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 
 # {
 #   "message": "karthik@techmedia.in"
@@ -12,7 +12,7 @@ Authorization: token 2676688c2ba5d43:bab959c6d549ca8
 
 ### get user-id & name by user-id.
 POST {{baseUrl}}/api/v2/method/frappe.client.get_value
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -42,7 +42,7 @@ Content-Type: application/json
 
 ### get employee-id & name by user-id.
 POST {{baseUrl}}/api/v2/method/frappe.client.get_value
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -62,7 +62,7 @@ Content-Type: application/json
 
 ### Enquiry: Assigned to Me
 POST {{baseUrl}}/api/v2/method/frappe.client.get_list
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -88,7 +88,7 @@ Content-Type: application/json
 
 ### Enquiry: Created by Me
 POST {{baseUrl}}/api/v2/method/frappe.client.get_list
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -114,7 +114,7 @@ Content-Type: application/json
 
 ### Enquiry: Open / Un-assigned
 POST {{baseUrl}}/api/v2/method/frappe.client.get_list
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -141,7 +141,7 @@ Content-Type: application/json
 
 ### Group(List-In) aggregates
 POST {{baseUrl}}/api/v2/method/frappe.client.get_list
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -186,13 +186,13 @@ Content-Type: application/json
 ### Read Enquiry with Messages(Comment) for viewing or editing.
 
 GET {{baseUrl}}/api/v2/document/Enquiry/ENQ796
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 
 
 
 ### Create Enquiry
 POST {{baseUrl}}/api/v2/document/Enquiry
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -210,7 +210,7 @@ Content-Type: application/json
 
 ### Update Enquiry
 PUT {{baseUrl}}/api/v2/document/Enquiry/ENQ699
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
@@ -228,7 +228,7 @@ Content-Type: application/json
 
 ### Add Messages(Comment) "with existing ones"
 PUT {{baseUrl}}/api/v2/document/Enquiry/ENQ699
-Authorization: token 2676688c2ba5d43:bab959c6d549ca8
+Authorization: token {{token}}
 Content-Type: application/json
 
 {
