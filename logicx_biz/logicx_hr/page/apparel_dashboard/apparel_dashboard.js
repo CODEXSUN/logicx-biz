@@ -7,15 +7,18 @@
 	const LOG_DOCTYPE = "API One Log";
 	const LOG_ORDER_BY = "creation desc";
 	const LOG_LIMIT = 1000;
+	// how a card's header shows when it was logged: the user's own date
+	// format, then a 12-hour clock (moment tokens; "A" is AM/PM)
+	const LOG_TIME_FORMAT = "hh:mm A";
 
-	// the api_path the Commands tab's table is narrowed to
+	// the api_path the Commands tab's log is narrowed to
 	const COMMAND_API_PATH = "apparel-command";
 
 	// the tab strip. a tab with an `api_path` is a log tab: an empty body a
-	// datatable of API One Log rows is built into once the tab is on screen,
+	// card per API One Log row is rendered into once the tab is on screen,
 	// showing the log field named by `content` -- what the device sent for a
 	// log, what the endpoint answered for a command. `composer` puts the
-	// command box above that table.
+	// command box above those cards.
 	const DASHBOARD_TAB = "dashboard";
 	const TABS = [
 		{ key: DASHBOARD_TAB, title: __("Dashboard") },
@@ -55,14 +58,10 @@
 			this.$el = $('<div class="logicx-ad"></div>').appendTo(this.page.main).html(render_scaffold());
 
 			this.controls = {};
-			this.tables = {};
 			// bumped per tab per load so a slow response the next load has
 			// already superseded can be dropped instead of landing over it
 			this.seq = {};
 			this.active_tab = TABS[0].key;
-			// frappe lazy-loads the datatable bundle; the report views await this
-			// same call before constructing one, so the page does too
-			this.datatable_ready = ensure_datatable();
 
 			this.setup_composer();
 			this.setup_events();
@@ -141,8 +140,8 @@
 				$(this).toggleClass("hidden", $(this).attr("data-tab-pane") !== key);
 			});
 
-			// load now that the pane is visible -- frappe-datatable sizes its
-			// columns wrong inside a hidden pane, so nothing is built ahead of time
+			// loaded on first sight rather than ahead of time, so a tab the user
+			// never opens never fetches its thousand rows
 			this.load_tab(key);
 		}
 
@@ -150,7 +149,7 @@
 			this.load_tab(this.active_tab);
 		}
 
-		/* -------------------------------------------------------------- tables */
+		/* ---------------------------------------------------------------- logs */
 
 		load_tab(key) {
 			const tab = LOG_TABS.find((t) => t.key === key);
@@ -159,14 +158,14 @@
 			const seq = (this.seq[key] = (this.seq[key] || 0) + 1);
 			this.show_note(key, __("Loading..."));
 
-			Promise.all([fetch_log_rows(tab), this.datatable_ready])
-				.then(([rows]) => {
+			fetch_log_rows(tab)
+				.then((rows) => {
 					if (seq !== this.seq[key]) return;
 					if (!rows.length) {
 						this.show_note(key, __("No records"));
 						return;
 					}
-					this.build_table(tab, rows);
+					this.render_log(tab, rows);
 				})
 				.catch((error) => {
 					if (seq !== this.seq[key]) return;
@@ -175,45 +174,21 @@
 				});
 		}
 
-		build_table(tab, rows) {
-			const key = tab.key;
-			const DataTableClass = frappe.DataTable || window.DataTable;
-			if (!DataTableClass) {
-				this.show_note(key, __("Could not load these records."), true);
-				return;
-			}
-
-			const $body = this.$table_body(key);
-			this.destroy_table(key);
-			$body.empty();
-
-			this.tables[key] = new DataTableClass($body.get(0), {
-				columns: log_columns(tab),
-				data: rows,
-				layout: "fluid",
-				inlineFilters: true,
-				serialNoColumn: false,
-				checkboxColumn: false,
-				disableReorderColumn: true,
-				dynamicRowHeight: true,
-				noDataMessage: __("No records"),
-			});
+		// one card per row, newest first as fetched. the whole list is built as
+		// a string and set at once; a thousand appends would reflow a thousand
+		// times.
+		render_log(tab, rows) {
+			const cards = rows.map((row) => render_log_card(row[tab.content], row.creation)).join("");
+			this.$log_body(tab.key).html(`<div class="logicx-ad-log">${cards}</div>`);
 		}
 
-		destroy_table(key) {
-			const table = this.tables[key];
-			if (table && typeof table.destroy === "function") table.destroy();
-			this.tables[key] = null;
-		}
-
-		$table_body(key) {
-			return this.$el.find(`[data-tab-pane="${key}"] .logicx-ad-card-body.is-table`);
+		$log_body(key) {
+			return this.$el.find(`[data-tab-pane="${key}"] .logicx-ad-card-body.is-log`);
 		}
 
 		show_note(key, text, is_error) {
-			this.destroy_table(key);
 			const css_class = is_error ? "logicx-ad-note is-error" : "logicx-ad-note";
-			this.$table_body(key).html(`<div class="${css_class}">${frappe.utils.escape_html(text)}</div>`);
+			this.$log_body(key).html(`<div class="${css_class}">${frappe.utils.escape_html(text)}</div>`);
 		}
 	}
 
@@ -228,36 +203,6 @@
 		});
 	}
 
-	/* ================================================================= columns */
-
-	// the body is what the row is for, so it takes the room; the time beside it
-	// is a fixed width. newlines in the body are kept (see the
-	// .logicx-ad-content rule) so a JSON payload reads as it was sent.
-	const CONTENT_LABELS = {
-		request_content: __("Request Content"),
-		response_content: __("Response Content"),
-	};
-
-	function log_columns(tab) {
-		return [
-			{
-				id: tab.content,
-				name: CONTENT_LABELS[tab.content] || tab.content,
-				editable: false,
-				format: (value) => `<div class="logicx-ad-content">${frappe.utils.escape_html(value || "")}</div>`,
-			},
-			{
-				id: "creation",
-				name: __("Time"),
-				width: 170,
-				editable: false,
-				align: "left",
-				// the desk's own Datetime formatter, so it reads as it does in the list view
-				format: (value) => (value ? frappe.format(value, { fieldtype: "Datetime" }) : ""),
-			},
-		];
-	}
-
 	/* ================================================================== markup */
 
 	function render_scaffold() {
@@ -269,15 +214,15 @@
 			</button>`
 		).join("");
 
-		// the Dashboard pane is empty for now; every log pane is an empty body a
-		// datatable is built into once its tab is on screen, under the command
-		// box if the tab carries one
+		// the Dashboard pane is empty for now; every log pane is an empty body
+		// the cards are rendered into once its tab is on screen, under the
+		// command box if the tab carries one
 		const panes = TABS.map(
 			(tab, i) => `
 			<div class="logicx-ad-tabpane${i === 0 ? "" : " hidden"}" data-tab-pane="${tab.key}">
 				${tab.api_path
 					? `${tab.composer ? render_composer() : ""}
-						<div class="logicx-ad-card-body is-table"></div>`
+						<div class="logicx-ad-card-body is-log"></div>`
 					: `<div class="logicx-ad-card-body logicx-ad-empty"></div>`
 				}
 			</div>`
@@ -303,19 +248,43 @@
 			</div>`;
 	}
 
-	function ensure_datatable() {
-		if (frappe.DataTable || window.DataTable) return Promise.resolve();
-		// frappe.require has taken a callback in some versions and returned a
-		// promise in others, so settle on whichever one this build offers --
-		// this promise must always resolve or the tables hang on "Loading..."
-		return new Promise(function (resolve) {
-			try {
-				const loading = frappe.require("data_table.bundle.js", resolve);
-				if (loading && typeof loading.then === "function") loading.then(resolve, resolve);
-			} catch (e) {
-				resolve();
-			}
-		});
+	// a log entry: when it was logged on the left of the header, how big the
+	// body is on the right, and the body itself beneath -- newlines kept so a
+	// JSON payload reads as it was sent. the card grows to whatever the body
+	// needs, which is the point of a card over a table row.
+	function render_log_card(content, creation) {
+		const text = content || "";
+		const time = creation ? format_log_time(creation) : "";
+		const body = text
+			? `<pre class="logicx-ad-entry-body">${frappe.utils.escape_html(text)}</pre>`
+			: `<div class="logicx-ad-entry-body is-empty">${__("Empty")}</div>`;
+
+		return `
+			<article class="logicx-ad-entry">
+				<header class="logicx-ad-entry-head">
+					<span class="logicx-ad-entry-time">${time}</span>
+					<span class="logicx-ad-entry-size">${format_bytes(text)}</span>
+				</header>
+				${body}
+			</article>`;
+	}
+
+	// `creation` is stored in the system time zone; shifted to the user's, as
+	// the desk's own Datetime formatter does, then laid out in the user's date
+	// format with LOG_TIME_FORMAT after it
+	function format_log_time(creation) {
+		const at = frappe.datetime.convert_to_user_tz(creation, false);
+		const date_format = frappe.datetime.get_user_date_fmt().toUpperCase();
+		return at.format(`${date_format} ${LOG_TIME_FORMAT}`);
+	}
+
+	// the body's size on the wire, not its character count: the log stores
+	// what came in as UTF-8, so a non-ASCII byte counts as what it cost.
+	// format_number rather than frappe.format's Int, which wraps the figure in
+	// a right-aligned block and pushes the unit onto its own line
+	function format_bytes(text) {
+		const bytes = new TextEncoder().encode(text).length;
+		return `${format_number(bytes, null, 0)} B`;
 	}
 
 	/* ================================================================== styles */
@@ -343,7 +312,7 @@
 		}
 
 		/* the tab strip reads as the page's header rather than as a box on it,
-		   so it draws no outline; the table inside keeps its own */
+		   so it draws no outline; the cards beneath keep their own */
 		.logicx-ad-tabcard {
 			background-color: transparent;
 			border: none;
@@ -355,12 +324,12 @@
 			padding: var(--padding-md) var(--padding-lg);
 		}
 
-		.logicx-ad-card-body.is-table {
+		/* the log scrolls inside its own pane instead of stretching the page.
+		   max-height rather than height so a short result still shrinks to fit. */
+		.logicx-ad-card-body.is-log {
 			padding: 0;
-			background-color: var(--card-bg);
-			border: 1px solid var(--border-color);
-			border-radius: var(--border-radius-md);
-			overflow: hidden;
+			max-height: 70vh;
+			overflow-y: auto;
 		}
 
 		.logicx-ad-empty {
@@ -439,7 +408,7 @@
 		}
 
 		/* frappe's control markup ships its own bottom margin; the composer's
-		   own padding already spaces it from the table, so drop it */
+		   own padding already spaces it from the log, so drop it */
 		.logicx-ad-field .frappe-control {
 			margin-bottom: 0;
 		}
@@ -455,7 +424,7 @@
 			margin-bottom: 22px;
 		}
 
-		/* inline empty / error / loading line inside a table card */
+		/* inline empty / error / loading line inside a log pane */
 		.logicx-ad-note {
 			padding: var(--padding-lg);
 			font-size: var(--text-md);
@@ -467,53 +436,77 @@
 			color: var(--red-500);
 		}
 
-		/* a body keeps its line breaks and wraps long ones rather than being
-		   cut to one line by the cell */
-		.logicx-ad-content {
+		/* one card per log entry, stacked newest first */
+		.logicx-ad-log {
+			display: flex;
+			flex-direction: column;
+			gap: var(--margin-sm);
+			padding: var(--padding-sm) 0;
+		}
+
+		.logicx-ad-entry {
+			background-color: var(--card-bg);
+			border: 1px solid var(--border-color);
+			border-radius: var(--border-radius-md);
+			overflow: hidden;
+		}
+
+		/* time on the left, size on the right, on a band the body sits under.
+		   two steps darker than the body's --control-bg tint (the desk maps
+		   both --subtle-fg and --control-bg to the same grey), so the two read
+		   as two surfaces. the band is dark enough that muted text would sink
+		   into it, so both figures take the full text colour. */
+		.logicx-ad-entry-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--margin-md);
+			padding: var(--padding-xs) var(--padding-md);
+			background-color: var(--bg-dark-gray, var(--gray-300));
+			border-bottom: 1px solid var(--border-color);
+			font-size: var(--text-sm);
+			color: var(--text-color);
+		}
+
+		/* the time gives way first when the band is narrow; the size never
+		   shrinks or breaks, so it always reads as one figure on one line */
+		.logicx-ad-entry-time {
+			flex: 1 1 auto;
+			min-width: 0;
+			font-weight: 600;
+			color: var(--text-color);
+		}
+
+		.logicx-ad-entry-size {
+			flex: 0 0 auto;
+			min-width: 7ch;
+			text-align: right;
+			font-variant-numeric: tabular-nums;
+			white-space: nowrap;
+		}
+
+		/* the body keeps its line breaks and wraps long ones rather than
+		   scrolling sideways; a <pre> with the desk's own styling reset. it
+		   sits on the same mild tint the desk gives its inputs, so the payload
+		   stands off the white page instead of floating on it */
+		.logicx-ad-entry-body {
+			margin: 0;
+			padding: var(--padding-sm) var(--padding-md);
+			background-color: var(--control-bg, var(--bg-light-gray));
+			border: none;
+			border-radius: 0;
 			white-space: pre-wrap;
 			overflow-wrap: anywhere;
 			font-family: var(--font-stack-mono, monospace);
 			font-size: var(--text-sm);
 			line-height: 1.4;
+			color: var(--text-color);
 		}
 
-		/* frappe-datatable fixes every body row to one line -- a set height on
-		   the row and cell, and overflow: hidden with an ellipsis on the content
-		   inside -- and dynamicRowHeight alone does not undo all of it. let the
-		   row grow to whatever its tallest cell needs instead; the row is a
-		   flex line, so the time cell beside a long body stretches with it and
-		   the borders stay in step. !important because datatable sets these
-		   inline and in its own stylesheet. the header keeps its one line. */
-		.logicx-ad-card-body.is-table .dt-body .dt-row,
-		.logicx-ad-card-body.is-table .dt-body .dt-cell {
-			height: auto !important;
-			min-height: var(--dt-cell-height, 38px);
-		}
-
-		.logicx-ad-card-body.is-table .dt-body .dt-cell__content {
-			height: auto !important;
-			max-height: none !important;
-			white-space: pre-wrap !important;
-			overflow: visible !important;
-			text-overflow: clip;
-			overflow-wrap: anywhere;
-		}
-
-		/* frappe-datatable draws its own borders; the card already supplies the
-		   outer one, and the rounded bottom corners need to clip the last row */
-		.logicx-ad-card-body.is-table .datatable {
-			border: none;
-			border-bottom-left-radius: var(--border-radius-md);
-			border-bottom-right-radius: var(--border-radius-md);
-			overflow: hidden;
-		}
-
-		/* the table scrolls inside its own card instead of stretching the page.
-		   max-height rather than height so a short result still shrinks to fit;
-		   !important because frappe-datatable sets its own height inline. */
-		.logicx-ad-card-body.is-table .dt-scrollable {
-			max-height: 70vh !important;
-			overflow-y: auto !important;
+		.logicx-ad-entry-body.is-empty {
+			font-family: inherit;
+			font-style: italic;
+			color: var(--text-muted);
 		}
 	`;
 })();
