@@ -13,6 +13,9 @@
 
 	// the api_path the Commands tab's log is narrowed to
 	const COMMAND_API_PATH = "apparel-command";
+	// where Send puts the command: the server keeps it until the device's
+	// next poll of COMMAND_API_PATH collects it (see apparel_dashboard.py)
+	const SET_COMMAND_METHOD = "logicx_biz.logicx_hr.apparel_dashboard.set_command";
 
 	// the tab strip. a tab with an `api_path` is a log tab: an empty body a
 	// card per API One Log row is rendered into once the tab is on screen,
@@ -98,16 +101,36 @@
 			return (this.controls.command.get_value() || "").trim();
 		}
 
-		// TODO: sending is not implemented yet. the button and Ctrl+Enter both
-		// land here, so this is the one place to wire it up when it is.
+		// the button and Ctrl+Enter both land here. the command is handed to
+		// the server, which holds it for the device; the box is cleared only
+		// once that has succeeded, so a failed send leaves the text to retry.
+		// the log beneath is not reloaded: its row appears when the device
+		// polls, not now.
 		send_command() {
 			const command = this.command_text();
 			if (!command) return;
+			if (this.sending) return;
 
-			frappe.show_alert({
-				message: __("Sending commands is not implemented yet."),
-				indicator: "orange",
-			});
+			this.sending = true;
+			const $send = this.$el.find('[data-action="send"]').prop("disabled", true);
+
+			frappe
+				.xcall(SET_COMMAND_METHOD, { command })
+				.then(() => {
+					this.controls.command.set_value("");
+					frappe.show_alert({
+						message: __("Command queued for the device's next poll."),
+						indicator: "green",
+					});
+				})
+				.catch((error) => {
+					console.error(error);
+					frappe.show_alert({ message: __("Could not send the command."), indicator: "red" });
+				})
+				.finally(() => {
+					this.sending = false;
+					$send.prop("disabled", false);
+				});
 		}
 
 		/* -------------------------------------------------------------- events */

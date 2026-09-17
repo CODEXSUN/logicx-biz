@@ -18,9 +18,13 @@ Content-Type: application/json
 	"reading": "1234"
 }
 
-### 0.
+### 0. the device's poll: answers the command last sent from the Apparel Dashboard
+###    (script: logicx_biz.logicx_hr.apparel_dashboard.COMMAND_SCRIPT), then empties it,
+###    so a second call right after returns "command": ""
 GET {{baseUrl}}/api/method/apparel-command
 Authorization: token {{token}}
+
+# { "message": { "command": "<what was typed in the Commands tab>" } }
 
 
 ### 1. echo via /api/method  -> 200, message.method == "POST", query has a=1
