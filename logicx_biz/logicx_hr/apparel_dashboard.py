@@ -55,14 +55,32 @@ def set_command(command: str) -> None:
 
 
 @frappe.whitelist()
-def get_command() -> str:
-	"""The queued command, or "" when there is none -- left in place.
+def get_state(api_paths) -> dict:
+	"""What the dashboard polls every few seconds: the queued command (left in
+	place; only the device's poll empties it) and, per api_path, when the
+	newest API One Log row was written.
 
-	Backs the "Sending command ..." line under the dashboard's command box;
-	only the device's poll (pop_command) empties the slot.
+	Enough for the page to tell whether the cards it shows are stale without
+	fetching them: one Redis read and one GROUP BY, no row bodies.
 	"""
 	frappe.only_for(PAGE_ROLES)
-	return frappe.cache.get_value(COMMAND_CACHE_KEY) or ""
+
+	api_paths = frappe.parse_json(api_paths) if isinstance(api_paths, str) else api_paths
+	# get_list rather than get_all so the same read permission applies as to
+	# the page's own fetch of the rows
+	rows = frappe.get_list(
+		"API One Log",
+		# the aggregate as a dict: this frappe rejects "max(creation)" as a string
+		fields=["api_path", {"MAX": "creation", "as": "latest"}],
+		filters={"api_path": ("in", list(api_paths or []))},
+		group_by="api_path",
+	)
+
+	return {
+		"command": frappe.cache.get_value(COMMAND_CACHE_KEY) or "",
+		# str: the page compares it with the creation strings get_list gives it
+		"latest": {row.api_path: str(row.latest) for row in rows},
+	}
 
 
 @frappe.whitelist()

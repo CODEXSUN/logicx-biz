@@ -16,8 +16,11 @@
 	// where Send puts the command: the server keeps it until the device's
 	// next poll of COMMAND_API_PATH collects it (see apparel_dashboard.py)
 	const SET_COMMAND_METHOD = "logicx_biz.logicx_hr.apparel_dashboard.set_command";
-	// what is still waiting there, for the line under the box
-	const GET_COMMAND_METHOD = "logicx_biz.logicx_hr.apparel_dashboard.get_command";
+	// what the page polls: the command still waiting there (for the line under
+	// the box) and when each log's newest row was written, so the cards are
+	// re-fetched only once something has actually changed
+	const GET_STATE_METHOD = "logicx_biz.logicx_hr.apparel_dashboard.get_state";
+	const POLL_MS = 4000;
 
 	// the tab strip. a tab with an `api_path` is a log tab: an empty body a
 	// card per API One Log row is rendered into once the tab is on screen,
@@ -66,10 +69,61 @@
 			// bumped per tab per load so a slow response the next load has
 			// already superseded can be dropped instead of landing over it
 			this.seq = {};
+			// per log tab, the creation of the newest row on screen: what a
+			// poll's answer is held against to decide whether to re-fetch
+			this.latest = {};
 			this.active_tab = TABS[0].key;
 
 			this.setup_composer();
 			this.setup_events();
+			this.setup_poll();
+		}
+
+		/* ---------------------------------------------------------------- poll */
+
+		// a setTimeout chain rather than setInterval: the next tick is booked
+		// only once this one has answered, so a slow response is never
+		// overtaken by the next request
+		setup_poll() {
+			this.schedule_poll();
+		}
+
+		schedule_poll() {
+			setTimeout(() => this.poll(), POLL_MS);
+		}
+
+		poll() {
+			// nothing to keep current while the browser tab is in the background
+			// or the user is on another desk page
+			if (document.hidden || frappe.get_route_str() !== PAGE_NAME) {
+				this.schedule_poll();
+				return;
+			}
+
+			const seq = this.next_pending_seq();
+			frappe
+				.xcall(GET_STATE_METHOD, { api_paths: LOG_TABS.map((t) => t.api_path) })
+				.then((state) => this.apply_state(state, seq))
+				// a failed tick is skipped; the next one asks again
+				.catch((error) => console.error(error))
+				.finally(() => this.schedule_poll());
+		}
+
+		apply_state(state, seq) {
+			// a Send since this poll went out owns the line now
+			if (seq === this.pending_seq) this.show_pending(state.command);
+
+			// only the tab on screen; the others reload when switched to
+			const tab = LOG_TABS.find((t) => t.key === this.active_tab);
+			if (!tab || !(tab.key in this.latest)) return;
+			const latest = (state.latest || {})[tab.api_path] || "";
+			if (latest !== this.latest[tab.key]) this.load_tab(tab.key, { quiet: true });
+		}
+
+		// bumped by whatever takes over the pending line, so a get_state that
+		// was already in flight cannot land over it afterwards
+		next_pending_seq() {
+			return (this.pending_seq = (this.pending_seq || 0) + 1);
 		}
 
 		/* ------------------------------------------------------------ composer */
@@ -117,10 +171,9 @@
 			const $send = this.$el.find('[data-action="send"]').prop("disabled", true);
 
 			// the line shows the moment Send is clicked, not when the server
-			// answers; and a get_command a Refresh fired just before this click
-			// would answer "" after the fact and blank it, so that read is
-			// disowned here
-			this.pending_seq = (this.pending_seq || 0) + 1;
+			// answers; and a poll that went out just before this click would
+			// answer "" after the fact and blank it, so that read is disowned
+			this.next_pending_seq();
 			this.show_pending(command);
 
 			frappe
@@ -135,8 +188,7 @@
 				.catch((error) => {
 					console.error(error);
 					frappe.show_alert({ message: __("Could not send the command."), indicator: "red" });
-					// back to whatever the server actually holds
-					this.load_pending();
+					// the next poll puts the line back to whatever the server holds
 				})
 				.finally(() => {
 					this.sending = false;
@@ -144,22 +196,9 @@
 				});
 		}
 
-		// the line under the box: the command the device has not collected
-		// yet, or a dash once it has (or the command expired). a failed read
-		// leaves the line as it was; the next Refresh reads again.
-		load_pending() {
-			const seq = (this.pending_seq = (this.pending_seq || 0) + 1);
-			frappe
-				.xcall(GET_COMMAND_METHOD)
-				.then((command) => {
-					if (seq !== this.pending_seq) return;
-					this.show_pending(command);
-				})
-				.catch((error) => console.error(error));
-		}
-
-		// always on screen: a dash when nothing is waiting, so the slot being
-		// empty is itself visible
+		// the line under the box, always on screen: the command the device has
+		// not collected yet, or a dash once it has (or the command expired).
+		// kept current by the poll; set directly on Send.
 		show_pending(command) {
 			this.$el.find('[data-field="pending"]').text(pending_text(command));
 		}
@@ -205,19 +244,22 @@
 
 		/* ---------------------------------------------------------------- logs */
 
-		load_tab(key) {
+		// `quiet` is a reload the poll asked for because a newer row exists:
+		// the cards on screen stay put until the replacement arrives, and are
+		// left alone if it does not. a user-driven load shows "Loading..." and
+		// an error note, so Refresh visibly does something.
+		load_tab(key, { quiet = false } = {}) {
 			const tab = LOG_TABS.find((t) => t.key === key);
 			if (!tab) return;
 
 			const seq = (this.seq[key] = (this.seq[key] || 0) + 1);
-			this.show_note(key, __("Loading..."));
-			// the pending line is refreshed with the log: a poll since the last
-			// look would have both emptied the slot and added a card
-			if (tab.composer) this.load_pending();
+			if (!quiet) this.show_note(key, __("Loading..."));
 
 			fetch_log_rows(tab)
 				.then((rows) => {
 					if (seq !== this.seq[key]) return;
+					// rows come newest first, so the first is the newest on screen
+					this.latest[key] = rows.length ? String(rows[0].creation) : "";
 					if (!rows.length) {
 						this.show_note(key, __("No records"));
 						return;
@@ -227,6 +269,7 @@
 				.catch((error) => {
 					if (seq !== this.seq[key]) return;
 					console.error(error);
+					if (quiet) return;
 					this.show_note(key, __("Could not load these records."), true);
 				});
 		}

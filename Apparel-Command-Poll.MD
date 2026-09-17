@@ -33,9 +33,9 @@ frappe.xcall set_command(command) ---+         |
 1. **Send** on the Commands tab calls the whitelisted `set_command(command)`. It trims the text,
    rejects an empty one, and writes it to the site's Redis cache under `apparel_command`.
    The box is cleared only after the call succeeds, so a failed send leaves the text to retry.
-   A line under the box, `Sending command ... <text>`, shows what is still waiting for the
-   device; it is fed by the non-destructive `get_command()` (on tab open, Refresh, and right
-   after a send). It is always on screen; with the slot empty it reads `-`.
+   A line beside the Send button, `Sending command ... <text>`, shows what is still waiting for
+   the device: set the moment Send is clicked, then kept current by the page's poll of
+   `get_state()` (below). It is always on screen; with the slot empty it reads `-`.
 2. The device polls `GET /api/method/apparel-command`. That is an API One endpoint, so the
    `before_request` / `after_request` hooks apply: wrong verb -> 405, disabled -> 404, and
    every poll is written to **API One Log** -- which is what the Commands tab lists beneath the
@@ -53,9 +53,14 @@ frappe.xcall set_command(command) ---+         |
   that window the key lapses and the poll gets `""`. The TTL is the constant at the top of
   `apparel_dashboard.py`.
 - **No log row on send.** API One Log rows are written by the device's poll, not by Send, so
-  a new card appears in the Commands tab only once the device has collected the command
-  (then Refresh). Refresh reloads the open tab's cards and, on the Commands tab, the
-  "Sending command ..." line too.
+  a new card appears in the Commands tab only once the device has collected the command.
+- **The page keeps itself current with a lightweight poll.** Every 4 s (`POLL_MS`) it calls
+  `get_state(api_paths)`, which answers with the pending command and, per `api_path`, the
+  `creation` of the newest API One Log row -- one Redis read and one `GROUP BY`, no row bodies.
+  The "Sending command ..." line is set from that answer, and the open tab's cards are
+  re-fetched only when its newest `creation` differs from the newest card on screen (quietly:
+  no "Loading..." flash). The poll pauses while the browser tab is hidden or another desk page
+  is open. Refresh still forces an immediate reload.
 - **Who may do what.** `set_command` is held to the page's roles (System Manager, TM Admin).
   `pop_command` is open when called from inside a Server Script (`frappe.flags.in_safe_exec`,
   which the sandbox sets), i.e. through the endpoint the device is authorised to hit; a direct
@@ -95,8 +100,8 @@ frappe.response["message"] = {
 
 | File | Role |
 |------|------|
-| `logicx_biz/logicx_hr/apparel_dashboard.py` | `set_command()`, `get_command()`, `pop_command()`, `COMMAND_CACHE_KEY`, `COMMAND_TTL_SEC`, `PAGE_ROLES`, `COMMAND_SCRIPT` |
-| `logicx_biz/logicx_hr/page/apparel_dashboard/apparel_dashboard.js` | `send_command()` -> `frappe.xcall(SET_COMMAND_METHOD)`; Commands tab lists the `apparel-command` API One Log |
+| `logicx_biz/logicx_hr/apparel_dashboard.py` | `set_command()`, `get_state()`, `pop_command()`, `COMMAND_CACHE_KEY`, `COMMAND_TTL_SEC`, `PAGE_ROLES`, `COMMAND_SCRIPT` |
+| `logicx_biz/logicx_hr/page/apparel_dashboard/apparel_dashboard.js` | `send_command()` -> `frappe.xcall(SET_COMMAND_METHOD)`; `poll()` / `apply_state()` every `POLL_MS`; Commands tab lists the `apparel-command` API One Log |
 | `logicx_biz/logicx_hr/page/apparel_dashboard/apparel_dashboard.json` | Page roles: System Manager, TM Admin |
 | `logicx_biz/logicx_hr/doctype/api_one/Frappe.Api.ApiOne.rest` | REST Client request for the poll (`### 0. GET apparel-command`) |
 
@@ -105,7 +110,9 @@ frappe.response["message"] = {
 1. Make sure server scripts are enabled and the `apparel-command` API One row exists with the
    script above (`bench restart` after pulling `apparel_dashboard.py` for the first time).
 2. Desk -> Apparel Dashboard -> Commands: type something, Send. Alert: "Command queued for the
-   device's next poll."
+   device's next poll."; the line beside Send reads `Sending command ... <text>`.
 3. In `Frappe.Api.ApiOne.rest`, run `GET {{baseUrl}}/api/method/apparel-command` -> the text you
    typed. Run it again -> `"command": ""`.
-4. Refresh the Commands tab: two new cards, one per poll, showing each response.
+4. Within about 4 s the line drops to `-` and two new cards, one per poll, show up at the top
+   of the Commands tab by themselves (the Network tab shows one `get_state` per tick and a
+   `get_list` only on the tick that saw the change).
