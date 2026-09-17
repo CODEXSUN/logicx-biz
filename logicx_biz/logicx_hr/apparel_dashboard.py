@@ -55,6 +55,17 @@ def set_command(command: str) -> None:
 
 
 @frappe.whitelist()
+def get_command() -> str:
+	"""The queued command, or "" when there is none -- left in place.
+
+	Backs the "Sending command ..." line under the dashboard's command box;
+	only the device's poll (pop_command) empties the slot.
+	"""
+	frappe.only_for(PAGE_ROLES)
+	return frappe.cache.get_value(COMMAND_CACHE_KEY) or ""
+
+
+@frappe.whitelist()
 def pop_command() -> str:
 	"""The queued command, or "" when there is none -- and the slot emptied.
 

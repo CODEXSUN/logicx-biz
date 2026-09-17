@@ -16,6 +16,8 @@
 	// where Send puts the command: the server keeps it until the device's
 	// next poll of COMMAND_API_PATH collects it (see apparel_dashboard.py)
 	const SET_COMMAND_METHOD = "logicx_biz.logicx_hr.apparel_dashboard.set_command";
+	// what is still waiting there, for the line under the box
+	const GET_COMMAND_METHOD = "logicx_biz.logicx_hr.apparel_dashboard.get_command";
 
 	// the tab strip. a tab with an `api_path` is a log tab: an empty body a
 	// card per API One Log row is rendered into once the tab is on screen,
@@ -114,6 +116,13 @@
 			this.sending = true;
 			const $send = this.$el.find('[data-action="send"]').prop("disabled", true);
 
+			// the line shows the moment Send is clicked, not when the server
+			// answers; and a get_command a Refresh fired just before this click
+			// would answer "" after the fact and blank it, so that read is
+			// disowned here
+			this.pending_seq = (this.pending_seq || 0) + 1;
+			this.show_pending(command);
+
 			frappe
 				.xcall(SET_COMMAND_METHOD, { command })
 				.then(() => {
@@ -126,11 +135,33 @@
 				.catch((error) => {
 					console.error(error);
 					frappe.show_alert({ message: __("Could not send the command."), indicator: "red" });
+					// back to whatever the server actually holds
+					this.load_pending();
 				})
 				.finally(() => {
 					this.sending = false;
 					$send.prop("disabled", false);
 				});
+		}
+
+		// the line under the box: the command the device has not collected
+		// yet, or a dash once it has (or the command expired). a failed read
+		// leaves the line as it was; the next Refresh reads again.
+		load_pending() {
+			const seq = (this.pending_seq = (this.pending_seq || 0) + 1);
+			frappe
+				.xcall(GET_COMMAND_METHOD)
+				.then((command) => {
+					if (seq !== this.pending_seq) return;
+					this.show_pending(command);
+				})
+				.catch((error) => console.error(error));
+		}
+
+		// always on screen: a dash when nothing is waiting, so the slot being
+		// empty is itself visible
+		show_pending(command) {
+			this.$el.find('[data-field="pending"]').text(pending_text(command));
 		}
 
 		/* -------------------------------------------------------------- events */
@@ -180,6 +211,9 @@
 
 			const seq = (this.seq[key] = (this.seq[key] || 0) + 1);
 			this.show_note(key, __("Loading..."));
+			// the pending line is refreshed with the log: a poll since the last
+			// look would have both emptied the slot and added a card
+			if (tab.composer) this.load_pending();
 
 			fetch_log_rows(tab)
 				.then((rows) => {
@@ -265,10 +299,19 @@
 		return `
 			<div class="logicx-ad-composer">
 				<div class="logicx-ad-field" data-field="command"></div>
-				<button type="button" class="btn btn-primary btn-sm logicx-ad-send" data-action="send">
-					${__("Send")}
-				</button>
+				<div class="logicx-ad-composer-foot">
+					<button type="button" class="btn btn-primary btn-sm logicx-ad-send" data-action="send">
+						${__("Send")}
+					</button>
+					<div class="logicx-ad-pending" data-field="pending">${frappe.utils.escape_html(pending_text(""))}</div>
+				</div>
 			</div>`;
+	}
+
+	// what the line under the box says for a given pending command
+	function pending_text(command) {
+		const text = (command || "").trim();
+		return text ? __("Sending command ... {0}", [text]) : "-";
 	}
 
 	// a log entry: when it was logged on the left of the header, how big the
@@ -415,23 +458,18 @@
 			text-decoration: none;
 		}
 
-		/* the command box and its Send button, between the tab strip and the
-		   history beneath. the button sits on the box's bottom edge, under the
-		   "Ctrl+Enter to send" hint the control draws for itself. */
+		/* the command box, and under it a row with the Send button on the left
+		   and the pending line flowing to its right; between the tab strip and
+		   the history beneath */
 		.logicx-ad-composer {
 			display: flex;
-			align-items: flex-end;
-			gap: var(--margin-md);
+			flex-direction: column;
+			gap: var(--margin-sm);
 			padding: var(--padding-md) 0;
 		}
 
-		.logicx-ad-field {
-			flex: 1 1 auto;
-			min-width: 0;
-		}
-
 		/* frappe's control markup ships its own bottom margin; the composer's
-		   own padding already spaces it from the log, so drop it */
+		   own gap already spaces the box from the row under it, so drop it */
 		.logicx-ad-field .frappe-control {
 			margin-bottom: 0;
 		}
@@ -441,10 +479,30 @@
 			font-family: var(--font-stack-mono, monospace);
 		}
 
+		.logicx-ad-composer-foot {
+			display: flex;
+			align-items: flex-start;
+			gap: var(--margin-md);
+		}
+
 		.logicx-ad-send {
 			flex: 0 0 auto;
-			/* line up with the textarea's bottom edge, above the hint under it */
-			margin-bottom: 22px;
+		}
+
+		/* the command still waiting for the device, beside the button. the text
+		   is whatever was typed, so it keeps its line breaks and wraps like a
+		   log entry does; a long one grows downward, the button stays put.
+		   always shown; a dash when nothing is waiting. the top padding sits
+		   the first line on the button's text baseline. */
+		.logicx-ad-pending {
+			flex: 1 1 auto;
+			min-width: 0;
+			padding-top: 5px;
+			font-size: var(--text-sm);
+			font-family: var(--font-stack-mono, monospace);
+			color: var(--text-muted);
+			white-space: pre-wrap;
+			overflow-wrap: anywhere;
 		}
 
 		/* inline empty / error / loading line inside a log pane */
