@@ -93,6 +93,13 @@
 		},
 		{
 			"idx": 13,
+			"label": "Loom Dashboard",
+			"type": "Link",
+			"link_type": "Page",
+			"link_to": "loom-dashboard"
+		},
+		{
+			"idx": 14,
 			"label": "Masters",
 			"type": "Section Break",
 			"icon": "file-text",
@@ -102,7 +109,7 @@
 			"child": 0
 		},
 		{
-			"idx": 14,
+			"idx": 15,
 			"label": "Enquiry Group",
 			"type": "Link",
 			"link_type": "DocType",
@@ -110,7 +117,7 @@
 			"child": 1
 		},
 		{
-			"idx": 15,
+			"idx": 16,
 			"label": "Enquiry Status",
 			"type": "Link",
 			"link_type": "DocType",
@@ -118,7 +125,7 @@
 			"child": 1
 		},
 		{
-			"idx": 16,
+			"idx": 17,
 			"label": "Reports",
 			"type": "Section Break",
 			"icon": "file-text",
@@ -128,7 +135,7 @@
 			"child": 0
 		},
 		{
-			"idx": 17,
+			"idx": 18,
 			"label": "Enquiry List-In wise Status",
 			"type": "Link",
 			"link_type": "Report",
@@ -136,7 +143,7 @@
 			"child": 1
 		},
 		{
-			"idx": 18,
+			"idx": 19,
 			"label": "Enquiry Owner wise Status",
 			"type": "Link",
 			"link_type": "Report",
