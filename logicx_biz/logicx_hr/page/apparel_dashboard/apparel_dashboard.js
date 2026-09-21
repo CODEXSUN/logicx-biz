@@ -9,7 +9,7 @@
 	const LOG_LIMIT = 1000;
 	// how a card's header shows when it was logged: the user's own date
 	// format, then a 12-hour clock (moment tokens; "A" is AM/PM)
-	const LOG_TIME_FORMAT = "hh:mm A";
+	const LOG_TIME_FORMAT = "hh:mm.ss a";
 
 	// the api_path the Commands tab's log is narrowed to
 	const COMMAND_API_PATH = "apparel-command";

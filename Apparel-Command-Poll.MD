@@ -76,8 +76,13 @@ in that row (database), and a copy is kept as `COMMAND_SCRIPT` in `apparel_dashb
 # (logicx_biz.logicx_hr.apparel_dashboard.set_command) and empties the slot,
 # so the same command is never delivered twice. pop_command does both: the
 # sandbox has no frappe.cache of its own.
+frappe.response["command"] = frappe.call("logicx_biz.logicx_hr.apparel_dashboard.pop_command")
+
+# or #
+
 frappe.response["message"] = {
 	"command": frappe.call("logicx_biz.logicx_hr.apparel_dashboard.pop_command"),
+	"user": frappe.session.user,
 }
 ```
 
