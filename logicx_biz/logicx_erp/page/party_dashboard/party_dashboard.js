@@ -13,6 +13,8 @@
 	const OUTSTANDING_DETAILED_REPORT = "Party Outstanding Detailed";
 	const VENDOR_STOCK_REPORT = "Vendor Stock";
 	const VENDOR_STOCK_BATCH_WISE_REPORT = "Vendor Stock Batch-wise";
+	const GENERAL_LEDGER_REPORT = "General Ledger";
+	const PAYMENT_RECONCILIATION = "Payment Reconciliation";
 	const ACTIVITY_METHOD = "logicx_biz.logicx_erp.party_dashboard.get_party_activity";
 	const GET_COMMENTS_METHOD = "logicx_biz.logicx_erp.party_dashboard.get_party_comments";
 	const SET_COMMENTS_METHOD = "logicx_biz.logicx_erp.party_dashboard.set_party_comments";
@@ -329,6 +331,58 @@
 	const TABS = [{ key: DASHBOARD_TAB, title: __("Dashboard") }]
 		.concat(CARDS)
 		.concat([{ key: COMMENTS_TAB, title: __("Comments") }]);
+
+	// the "+" menu, top to bottom. an entry naming `party_types` is shown for
+	// that side of the book only, the way a source is (see applies_to): a
+	// Customer is sold and delivered to, a Supplier bought and received from.
+	// `open` is handed the party picked at the top of the page (see
+	// picked_party) and opens the entry on it.
+	const ADD_ACTIONS = [
+		{
+			key: "sales-invoice",
+			label: __("New Sales Invoice"),
+			party_types: ["Customer"],
+			open: (pick) => new_party_doc("Sales Invoice", "customer", pick),
+		},
+		{
+			key: "purchase-invoice",
+			label: __("New Purchase Invoice"),
+			party_types: ["Supplier"],
+			open: (pick) => new_party_doc("Purchase Invoice", "supplier", pick),
+		},
+		{
+			key: "delivery-note",
+			label: __("New Delivery Note"),
+			party_types: ["Customer"],
+			open: (pick) => new_party_doc("Delivery Note", "customer", pick),
+		},
+		{
+			key: "purchase-receipt",
+			label: __("New Purchase Receipt"),
+			party_types: ["Supplier"],
+			open: (pick) => new_party_doc("Purchase Receipt", "supplier", pick),
+		},
+		{
+			key: "payment-entry",
+			label: __("New Payment Entry"),
+			open: new_payment_entry,
+		},
+		{
+			key: "payment-reconciliation",
+			label: __("Payment Reconciliation"),
+			open: open_payment_reconciliation,
+		},
+		{
+			key: "opening-balance",
+			label: __("Opening Balance"),
+			open: new_opening_balance,
+		},
+		{
+			key: "general-ledger",
+			label: __("General Ledger"),
+			open: open_general_ledger,
+		},
+	];
 
 	// held across on_page_load / on_page_show, which frappe calls separately
 	let dashboard = null;
@@ -720,27 +774,22 @@
 			this.$el.find(".logicx-pd-add-btn").attr("aria-expanded", show ? "true" : "false");
 		}
 
-		on_add_action(action) {
-			if (action === "opening-balance") this.new_opening_balance();
+		on_add_action(key) {
+			const action = ADD_ACTIONS.find((entry) => entry.key === key);
+			const pick = this.picked_party();
+			// an entry for the other side of the book is hidden (see
+			// apply_party_type), so this only turns away a click on a stale menu
+			if (action && applies_to(action, pick.party_type)) action.open(pick);
 		}
 
-		// opens Party Opening Balance's quick entry with the party at the top of
-		// the page already in it. read off the controls rather than this.party,
-		// which lags the picker by the debounce -- "current" here means what the
-		// user can see in the box
-		new_opening_balance() {
-			const party_type = this.selected_party_type();
-			const party = (this.controls.party.get_value() || "").trim();
-			frappe.new_doc("Party Opening Balance", { party_type, party }, (dialog) => {
-				// frappe's own prefill from the options above is by fieldtype, and
-				// Party is a Dynamic Link, so it is put in here as well should
-				// that pass have skipped it. Party Type is a plain Link and always
-				// lands, and setting it here instead would clear Party (see the
-				// quick entry class). no dialog means it fell back to the full
-				// form, which the same options already filled.
-				if (!party || !dialog || !dialog.get_value || dialog.get_value("party")) return;
-				dialog.set_value("party", party);
-			});
+		// the party the "+" menu opens things on. read off the controls rather
+		// than this.party, which lags the picker by the debounce -- "current"
+		// here means what the user can see in the box
+		picked_party() {
+			return {
+				party_type: this.selected_party_type(),
+				party: (this.controls.party.get_value() || "").trim(),
+			};
 		}
 
 		// an activity tile stands for one document, so it opens that document instead of the tab it would otherwise switch to
@@ -773,6 +822,13 @@
 				this.$el
 					.find(`[data-tile-row="${index}"]`)
 					.toggleClass("hidden", !shown.includes(true));
+			});
+
+			// and the "+" menu keeps only what this side of the book can open
+			ADD_ACTIONS.forEach((action) => {
+				this.$el
+					.find(`.logicx-pd-add-menu [data-action="${action.key}"]`)
+					.toggleClass("hidden", !applies_to(action, party_type));
 			});
 		}
 
@@ -1026,8 +1082,8 @@
 	}
 
 	// the round "+" at the right end of the filter bar, where a page's action
-	// button sits, and the menu of documents it can open against the party
-	// picked. the menu is shown and hidden by hand (see setup_events) rather
+	// button sits, and the menu of what it can open against the party picked
+	// (see ADD_ACTIONS). it is shown and hidden by hand (see setup_events) rather
 	// than by bootstrap's data attributes, so it works the same whichever
 	// bootstrap the desk ships; only the .dropdown-menu look and its .show
 	// state are borrowed. the "+" is drawn in css (see .logicx-pd-add-btn) rather
@@ -1035,15 +1091,19 @@
 	// and never quite centres in a disc, and the sprite's stroke weight is
 	// fixed inside the symbol. the button's aria-label names it.
 	function render_add_menu() {
+		const items = ADD_ACTIONS.map(
+			(action) => `
+					<a class="dropdown-item" href="#" data-action="${action.key}">
+						${frappe.utils.escape_html(action.label)}
+					</a>`
+		).join("");
+
 		return `
 			<div class="logicx-pd-filter logicx-pd-add" data-filter="add">
 				<button type="button" class="btn btn-primary logicx-pd-add-btn"
 					title="${__("New")}" aria-label="${__("New")}"
 					aria-haspopup="true" aria-expanded="false"></button>
-				<div class="dropdown-menu logicx-pd-add-menu">
-					<a class="dropdown-item" href="#" data-action="opening-balance">
-						${__("Opening Balance")}
-					</a>
+				<div class="dropdown-menu logicx-pd-add-menu">${items}
 				</div>
 			</div>
 		`;
@@ -1161,6 +1221,77 @@
 	// a tab title may carry a line break; escape_html would print a literal "<br>", so escape each line and join them with a real one
 	function escape_lines(text) {
 		return String(text).split("\n").map(frappe.utils.escape_html).join("<br>");
+	}
+
+	/* ================================================================== add menu */
+
+	// a new selling or buying document with the party already in it: frappe
+	// copies the options into the new form, whose Customer / Supplier trigger
+	// then fetches the party's address, price list and the rest as if it had
+	// been picked by hand
+	function new_party_doc(doctype, party_field, { party }) {
+		frappe.new_doc(doctype, party ? { [party_field]: party } : {});
+	}
+
+	// opens Party Opening Balance's quick entry with the party already in it
+	function new_opening_balance({ party_type, party }) {
+		frappe.new_doc("Party Opening Balance", { party_type, party }, (dialog) => {
+			// frappe's own prefill from the options above is by fieldtype, and
+			// Party is a Dynamic Link, so it is put in here as well should
+			// that pass have skipped it. Party Type is a plain Link and always
+			// lands, and setting it here instead would clear Party (see the
+			// quick entry class). no dialog means it fell back to the full
+			// form, which the same options already filled.
+			if (!party || !dialog || !dialog.get_value || dialog.get_value("party")) return;
+			dialog.set_value("party", party);
+		});
+	}
+
+	// money in from a Customer, out to a Supplier. Party Type goes in with the
+	// new form, but Party has to wait for it to load: Payment Entry clears its
+	// party whenever Party Type is set, and setting Party is what fetches the
+	// party's account, name and bank details.
+	function new_payment_entry({ party_type, party }) {
+		if (party) {
+			after_form_load("Payment Entry", (frm) => frm.is_new() && frm.set_value("party", party));
+		}
+		frappe.new_doc("Payment Entry", {
+			payment_type: party_type === "Supplier" ? "Pay" : "Receive",
+			party_type,
+		});
+	}
+
+	// Payment Reconciliation is a single, which frappe copies no options into,
+	// and it clears its own party as it loads besides -- so the party goes in
+	// once the form has loaded. Party Type first, since setting it clears
+	// Party; setting Party is then what fetches the receivable / payable
+	// account that "Get Unreconciled Entries" needs.
+	function open_payment_reconciliation({ party_type, party }) {
+		after_form_load(PAYMENT_RECONCILIATION, (frm) =>
+			frm.set_value("party_type", party_type).then(() => party && frm.set_value("party", party))
+		);
+		frappe.set_route("Form", PAYMENT_RECONCILIATION);
+	}
+
+	// General Ledger filtered on the party, as the Customer and Supplier forms
+	// open it. Party there is a multi-select, so it goes as a list of one; the
+	// report fills in the party's name itself, and its dates and company keep
+	// their own defaults.
+	function open_general_ledger({ party_type, party }) {
+		const filters = { party_type };
+		if (party) filters.party = [party];
+		frappe.set_route("query-report", GENERAL_LEDGER_REPORT, filters);
+	}
+
+	// runs `callback` on the next form frappe loads, once its own scripts have
+	// had their say. the hook is frappe's, and fires for whichever form comes
+	// next, so it checks that it is the one it was set for; and it waits out
+	// any request still in flight, so whatever those scripts are still busy
+	// clearing is cleared before the callback sets it, not after.
+	function after_form_load(doctype, callback) {
+		frappe.route_hooks.after_load = (frm) => {
+			if (frm.doctype === doctype) frappe.after_ajax(() => callback(frm));
+		};
 	}
 
 	/* ====================================================================== data */
