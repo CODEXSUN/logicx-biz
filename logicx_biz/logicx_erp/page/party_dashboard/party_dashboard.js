@@ -899,6 +899,7 @@
 		load_comments() {
 			this.comments = null;
 			this.set_comments_editing(false);
+			this.show_dashboard_comments();
 
 			if (!this.party) {
 				this.show_comments_note(__("Select a party to begin."));
@@ -939,6 +940,19 @@
 						: note_html(__("No comments yet."))
 				);
 			this.set_comments_editing(false);
+			this.show_dashboard_comments();
+		}
+
+		// the same comments at the foot of the Dashboard tab, to read without
+		// leaving the tiles: read-only and unlabelled, and there only while
+		// there are some to show -- not before a party is picked, while they
+		// load, if they could not be, or when there are none
+		show_dashboard_comments() {
+			const text = (this.comments && this.comments.text) || "";
+			this.$el
+				.find(".logicx-pd-dash-comments")
+				.toggleClass("hidden", !text.trim())
+				.html(text ? `<div class="logicx-pd-comments-text">${frappe.utils.escape_html(text)}</div>` : "");
 		}
 
 		show_comments_note(text, is_error) {
@@ -1065,12 +1079,16 @@
 			</div>`;
 	}
 
-	// the Dashboard pane holds the tiles and the Comments pane the party's own comments; every other pane is an empty body a
-	// datatable is built into once its tab is on screen, under an empty filter bar if that card carries filters of its own
-	// (setup_card_filters fills it)
+	// the Dashboard pane holds the tiles, with the party's comments under them (show_dashboard_comments fills and shows them),
+	// and the Comments pane the same comments to edit; every other pane is an empty body a datatable is built into once its
+	// tab is on screen, under an empty filter bar if that card carries filters of its own (setup_card_filters fills it)
 	function render_pane(tab) {
 		if (tab.key === DASHBOARD_TAB) {
-			return `<div class="logicx-pd-card-body logicx-pd-tiles">${render_tile_rows()}</div>`;
+			return `
+				<div class="logicx-pd-card-body logicx-pd-tiles">
+					${render_tile_rows()}
+					<div class="logicx-pd-card logicx-pd-dash-comments hidden"></div>
+				</div>`;
 		}
 		if (tab.key === COMMENTS_TAB) return render_comments();
 		return `${tab.controls ? '<div class="logicx-pd-card-filters"></div>' : ""}
@@ -1714,33 +1732,31 @@
 			align-items: center;
 		}
 
-		/* .btn-primary gives it the desk's action-button colours -- dark face,
-		   light glyph, and the matching hover -- so it follows the theme rather
-		   than fixing a colour of its own. deliberately taller than the 32px
-		   inputs beside it -- it is the one thing on the bar that is not a
-		   filter. */
+		/* .btn-primary gives it the desk's action-button shape and transitions;
+		   its colours are softened below. a touch taller than the 32px inputs
+		   beside it -- it is the one thing on the bar that is not a filter. */
 		.logicx-pd-add-btn {
 			position: relative;
-			width: 44px;
-			height: 44px;
+			width: 34px;
+			height: 34px;
 			padding: 0;
 			border-radius: 50%;
 			box-shadow: var(--shadow-sm);
 		}
 
 		/* the "+" itself: two bars crossing at the exact centre of the disc, in
-		   the button's text colour. 22px across at 2px is a regular-weight plus
-		   that leaves the disc some room; width is its size and height its
-		   weight, should either change. */
+		   the button's text colour. 16px across at 3px is a semi-bold plus that
+		   leaves the disc some room; width is its size and height its weight,
+		   should either change. */
 		.logicx-pd-add-btn::before,
 		.logicx-pd-add-btn::after {
 			content: "";
 			position: absolute;
 			top: 50%;
 			left: 50%;
-			width: 22px;
-			height: 2px;
-			border-radius: 1px;
+			width: 16px;
+			height: 3px;
+			border-radius: 1.5px;
 			background-color: currentColor;
 			transform: translate(-50%, -50%);
 		}
@@ -1749,15 +1765,24 @@
 			transform: translate(-50%, -50%) rotate(90deg);
 		}
 
-		/* light grey rather than the white .btn-primary gives it, so the "+" sits
-		   a little softer on the dark disc. !important because frappe's
-		   .btn-primary sets its colour on hover and focus too, and the grey
-		   should hold through both. */
+		/* a mid-grey disc rather than the near-black .btn-primary gives it, with
+		   a light grey "+" rather than white, so the button sits a little softer
+		   on the bar; hover and press go one step darker. !important because
+		   frappe's .btn-primary sets its colours on hover, focus and active too,
+		   and these should hold through all of them. */
 		.logicx-pd-add-btn,
-		.logicx-pd-add-btn:hover,
-		.logicx-pd-add-btn:focus,
-		.logicx-pd-add-btn:active {
+		.logicx-pd-add-btn:focus {
 			color: var(--gray-300) !important;
+			background-color: var(--gray-700) !important;
+			border-color: var(--gray-700) !important;
+		}
+
+		.logicx-pd-add-btn:hover,
+		.logicx-pd-add-btn:active,
+		.logicx-pd-add-btn[aria-expanded="true"] {
+			color: var(--gray-300) !important;
+			background-color: var(--gray-800) !important;
+			border-color: var(--gray-800) !important;
 		}
 
 		/* .dropdown-menu is display:none until .show, in either bootstrap; the
@@ -2113,6 +2138,19 @@
 		   shows never depends on that global staying put -- a .btn would
 		   otherwise hold its own display */
 		.logicx-pd-comments .hidden {
+			display: none;
+		}
+
+		/* the comments again at the foot of the Dashboard tab, the full width of
+		   the tile rows and outlined as a tile is, but not one to press. the text
+		   inside reads as it does in the Comments tab (.logicx-pd-comments-text). */
+		.logicx-pd-dash-comments {
+			box-shadow: none;
+		}
+
+		/* frappe's desk CSS defines .hidden too; repeated here so the block's
+		   visibility never depends on that global staying put */
+		.logicx-pd-dash-comments.hidden {
 			display: none;
 		}
 

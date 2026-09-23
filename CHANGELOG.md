@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   back to the Customer / Supplier through a normal document save, so the edit
   gets the form's validation and version history. Picking another party drops
   an unsaved edit.
+- **Party Dashboard: comments on the Dashboard tab** -- the selected party's
+  Party Comments, read-only and unlabelled, at the foot of the tiles for a quick
+  read without switching tabs. Shown only when the party has comments, and
+  updated as soon as an edit is saved in the Comments tab.
 
 ## [0.1.6] - 2026-09-16
 
