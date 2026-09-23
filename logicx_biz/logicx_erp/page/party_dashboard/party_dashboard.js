@@ -14,6 +14,8 @@
 	const VENDOR_STOCK_REPORT = "Vendor Stock";
 	const VENDOR_STOCK_BATCH_WISE_REPORT = "Vendor Stock Batch-wise";
 	const ACTIVITY_METHOD = "logicx_biz.logicx_erp.party_dashboard.get_party_activity";
+	const GET_COMMENTS_METHOD = "logicx_biz.logicx_erp.party_dashboard.get_party_comments";
+	const SET_COMMENTS_METHOD = "logicx_biz.logicx_erp.party_dashboard.set_party_comments";
 
 	// how many tiles a full row holds. drives both the grid and the offset a
 	// short row is centred by, so the two cannot drift apart.
@@ -319,10 +321,14 @@
 
 	const CARDS = SOURCES.filter((source) => source.card);
 
-	// the tab strip: the tiles lead in a Dashboard tab of their own, and each statement card follows in the tab named after it.
-	// the Dashboard tab has no report behind it, which is what tells the rest of the page it is not a card.
+	// the tab strip: the tiles lead in a Dashboard tab of their own, each statement card follows in the tab named after it,
+	// and the party's own Comments close it. neither the Dashboard nor the Comments tab has a report behind it, which is
+	// what tells the rest of the page they are not cards.
 	const DASHBOARD_TAB = "dashboard";
-	const TABS = [{ key: DASHBOARD_TAB, title: __("Dashboard") }].concat(CARDS);
+	const COMMENTS_TAB = "comments";
+	const TABS = [{ key: DASHBOARD_TAB, title: __("Dashboard") }]
+		.concat(CARDS)
+		.concat([{ key: COMMENTS_TAB, title: __("Comments") }]);
 
 	// held across on_page_load / on_page_show, which frappe calls separately
 	let dashboard = null;
@@ -364,6 +370,11 @@
 			// frappe-datatable sizes its columns wrong inside a hidden pane
 			this.results = {};
 			this.active_tab = TABS[0].key;
+			// the Party Comments on screen and whose they are, so Cancel can put
+			// them back and Save knows which party it writes to. replaced, not
+			// updated, on every load -- which is how a save that lands after the
+			// party has changed can tell (see save_comments)
+			this.comments = null;
 			// the URL is left alone until the first show has read it: the load
 			// below would otherwise wipe the very party a refresh is meant to
 			// bring back (see write_url_params)
@@ -374,6 +385,7 @@
 
 			this.setup_filters();
 			this.setup_card_filters();
+			this.setup_comments_editor();
 			this.setup_events();
 			this.load(this.party_type, "");
 		}
@@ -549,6 +561,7 @@
 			this.apply_party_type(party_type);
 			this.update_open_report_link();
 			this.set_tile_labels(party_type);
+			this.load_comments();
 
 			const sources = SOURCES.filter((source) => applies_to(source, party_type));
 			const cards = CARDS.filter((card) => applies_to(card, party_type));
@@ -694,6 +707,10 @@
 			});
 			// namespaced so a reload of the page script does not stack a second one
 			$(document).off("click.logicx-pd-add").on("click.logicx-pd-add", () => this.toggle_add_menu(false));
+
+			this.$el.on("click", ".logicx-pd-comments-edit", () => this.edit_comments());
+			this.$el.on("click", ".logicx-pd-comments-cancel", () => this.show_comments());
+			this.$el.on("click", ".logicx-pd-comments-save", () => this.save_comments());
 		}
 
 		toggle_add_menu(open) {
@@ -852,8 +869,128 @@
 
 		show_note(key, text, is_error) {
 			this.destroy_table(key);
-			const css_class = is_error ? "logicx-pd-note is-error" : "logicx-pd-note";
-			this.$card_body(key).html(`<div class="${css_class}">${frappe.utils.escape_html(text)}</div>`);
+			this.$card_body(key).html(note_html(text, is_error));
+		}
+
+		/* ------------------------------------------------------------ comments */
+
+		// the Long Text box the Comments tab edits in: built once, shown only
+		// while editing. its label stays in the markup, off-screen, as the
+		// filters' do (see the CSS)
+		setup_comments_editor() {
+			this.controls.comments = frappe.ui.form.make_control({
+				parent: this.$comments().find(".logicx-pd-comments-editor"),
+				df: {
+					fieldname: "party_comments",
+					label: __("Party Comments"),
+					fieldtype: "Long Text",
+				},
+				render_input: true,
+			});
+		}
+
+		$comments() {
+			return this.$el.find(`[data-report="${COMMENTS_TAB}"]`);
+		}
+
+		// fetched with everything else whenever a party is picked. an edit still
+		// open is dropped with the party it was for: whatever is in the box
+		// belongs to the one that has just gone.
+		load_comments() {
+			this.comments = null;
+			this.set_comments_editing(false);
+
+			if (!this.party) {
+				this.show_comments_note(__("Select a party to begin."));
+				return;
+			}
+
+			const target = { party_type: this.party_type, party: this.party };
+			const stamp = this.stamp({ key: COMMENTS_TAB });
+			this.show_comments_note(__("Loading..."));
+
+			frappe
+				.call({ method: GET_COMMENTS_METHOD, args: target })
+				.then((r) => {
+					if (this.stale(stamp)) return;
+					const message = (r && r.message) || {};
+					this.comments = Object.assign(target, {
+						text: message.comments || "",
+						can_edit: !!message.can_edit,
+					});
+					this.show_comments();
+				})
+				.catch(() => {
+					if (this.stale(stamp)) return;
+					this.show_comments_note(__("Could not load the comments."), true);
+				});
+		}
+
+		// read-only, as written -- line breaks and all (see the CSS) -- under an
+		// Edit button. also what Cancel returns to, dropping whatever was typed.
+		show_comments() {
+			if (!this.comments) return;
+			const text = this.comments.text;
+			this.$comments()
+				.find(".logicx-pd-comments-view")
+				.html(
+					text
+						? `<div class="logicx-pd-comments-text">${frappe.utils.escape_html(text)}</div>`
+						: note_html(__("No comments yet."))
+				);
+			this.set_comments_editing(false);
+		}
+
+		show_comments_note(text, is_error) {
+			this.$comments().find(".logicx-pd-comments-view").html(note_html(text, is_error));
+		}
+
+		// set_input rather than set_value: it fills the box there and then, where
+		// set_value skips a value the control already holds -- which, after a
+		// Cancel, need not be what the box is showing
+		edit_comments() {
+			if (!this.comments || !this.comments.can_edit) return;
+			this.controls.comments.set_input(this.comments.text);
+			this.set_comments_editing(true);
+			this.controls.comments.$input.trigger("focus");
+		}
+
+		// the edit is sent for the party it was opened on, which load_comments
+		// guarantees is still the one on screen when Save is pressed
+		save_comments() {
+			const comments = this.comments;
+			if (!comments) return;
+			const text = this.controls.comments.get_value() || "";
+
+			frappe
+				.call({
+					method: SET_COMMENTS_METHOD,
+					args: { party_type: comments.party_type, party: comments.party, comments: text },
+					// disabled while the save is in flight, so it cannot go twice
+					btn: this.$comments().find(".logicx-pd-comments-save"),
+				})
+				.then((r) => {
+					frappe.show_alert({ message: __("Comments saved"), indicator: "green" });
+					// saved either way, but only shown if that party is still on screen
+					if (this.comments !== comments) return;
+					comments.text = r && typeof r.message === "string" ? r.message : text;
+					this.show_comments();
+				})
+				// frappe has already shown the server's reason; the box stays open,
+				// so nothing typed is lost
+				.catch(() => {});
+		}
+
+		// one of two faces: the comments read-only under Edit, or the Long Text
+		// box under Cancel and Save. Edit shows only once there are comments the
+		// user may change -- not before a party is picked, nor while they load.
+		set_comments_editing(editing) {
+			const can_edit = !!(this.comments && this.comments.can_edit);
+			const $pane = this.$comments();
+			$pane.find(".logicx-pd-comments-view").toggleClass("hidden", editing);
+			$pane.find(".logicx-pd-comments-editor").toggleClass("hidden", !editing);
+			$pane.find(".logicx-pd-comments-edit").toggleClass("hidden", editing || !can_edit);
+			$pane.find(".logicx-pd-comments-cancel, .logicx-pd-comments-save").toggleClass("hidden", !editing);
 		}
 	}
 
@@ -908,16 +1045,10 @@
 			</button>`
 		).join("");
 
-		// the Dashboard pane holds the tiles; every other pane is an empty body a datatable is built into once its tab is on screen,
-		// under an empty filter bar if that card carries filters of its own (setup_card_filters fills it)
 		const panes = TABS.map(
 			(tab, i) => `
 			<div class="logicx-pd-tabpane${i === 0 ? "" : " hidden"}" data-report="${tab.key}">
-				${tab.key === DASHBOARD_TAB
-					? `<div class="logicx-pd-card-body logicx-pd-tiles">${render_tile_rows()}</div>`
-					: `${tab.controls ? '<div class="logicx-pd-card-filters"></div>' : ""}
-						<div class="logicx-pd-card-body is-table"></div>`
-				}
+				${render_pane(tab)}
 			</div>`
 		).join("");
 
@@ -932,6 +1063,48 @@
 				</div>
 				${panes}
 			</div>`;
+	}
+
+	// the Dashboard pane holds the tiles and the Comments pane the party's own comments; every other pane is an empty body a
+	// datatable is built into once its tab is on screen, under an empty filter bar if that card carries filters of its own
+	// (setup_card_filters fills it)
+	function render_pane(tab) {
+		if (tab.key === DASHBOARD_TAB) {
+			return `<div class="logicx-pd-card-body logicx-pd-tiles">${render_tile_rows()}</div>`;
+		}
+		if (tab.key === COMMENTS_TAB) return render_comments();
+		return `${tab.controls ? '<div class="logicx-pd-card-filters"></div>' : ""}
+			<div class="logicx-pd-card-body is-table"></div>`;
+	}
+
+	// the party's Party Comments, read-only, with Edit at the top right. Edit
+	// swaps them for the Long Text box (setup_comments_editor fills it) and
+	// itself for Cancel and Save; which of these shows is set_comments_editing's
+	// call, so all of them start hidden.
+	function render_comments() {
+		return `
+			<div class="logicx-pd-comments">
+				<div class="logicx-pd-comments-actions">
+					<button type="button" class="btn btn-default btn-sm logicx-pd-comments-edit hidden">
+						${__("Edit")}
+					</button>
+					<button type="button" class="btn btn-default btn-sm logicx-pd-comments-cancel hidden">
+						${__("Cancel")}
+					</button>
+					<button type="button" class="btn btn-primary btn-sm logicx-pd-comments-save hidden">
+						${__("Save")}
+					</button>
+				</div>
+				<div class="logicx-pd-comments-view"></div>
+				<div class="logicx-pd-comments-editor hidden"></div>
+			</div>`;
+	}
+
+	// the muted line a table card or the comments show in place of their
+	// content: while loading, when empty, or in red when the request failed
+	function note_html(text, is_error) {
+		const css_class = is_error ? "logicx-pd-note is-error" : "logicx-pd-note";
+		return `<div class="${css_class}">${frappe.utils.escape_html(text)}</div>`;
 	}
 
 	// a grid of its own per row, so a row that does not fill its columns can be centred under the ones that do without disturbing them
@@ -1647,10 +1820,12 @@
 			clip: auto;
 		}
 
-		/* the two filters are the only fields on the page and read plainly from the
-		   values in them, so their labels are dropped from the layout. they stay
-		   in the markup, off-screen, so each input keeps an accessible name. */
-		.logicx-pd-filter .control-label {
+		/* the filters read plainly from the values in them, and the comments box
+		   sits in a tab named after what it holds, so their labels are dropped
+		   from the layout. they stay in the markup, off-screen, so each input
+		   keeps an accessible name. */
+		.logicx-pd-filter .control-label,
+		.logicx-pd-comments-editor .control-label {
 			position: absolute;
 			width: 1px;
 			height: 1px;
@@ -1896,6 +2071,48 @@
 		/* frappe's desk CSS defines .hidden too; repeated here so the link's
 		   visibility never depends on that global staying put */
 		.logicx-pd-open-report.hidden {
+			display: none;
+		}
+
+		/* the Comments tab: its buttons at the top right, over the comments --
+		   read inside the same outline a statement is -- or the box they are
+		   edited in */
+		.logicx-pd-comments {
+			padding: var(--padding-md) 0;
+		}
+
+		.logicx-pd-comments-actions {
+			display: flex;
+			justify-content: flex-end;
+			gap: var(--margin-sm);
+			margin-bottom: var(--margin-sm);
+		}
+
+		.logicx-pd-comments-view {
+			background-color: var(--card-bg);
+			border: 1px solid var(--border-color);
+			border-radius: var(--border-radius-md);
+		}
+
+		/* as typed: the line breaks kept, and a long unbroken word wrapped rather
+		   than pushed past the edge */
+		.logicx-pd-comments-text {
+			padding: var(--padding-md) var(--padding-lg);
+			font-size: var(--text-md);
+			line-height: 1.6;
+			color: var(--text-color);
+			white-space: pre-wrap;
+			overflow-wrap: anywhere;
+		}
+
+		.logicx-pd-comments-editor .frappe-control {
+			margin-bottom: 0;
+		}
+
+		/* frappe's desk CSS defines .hidden too; repeated here so what the tab
+		   shows never depends on that global staying put -- a .btn would
+		   otherwise hold its own display */
+		.logicx-pd-comments .hidden {
 			display: none;
 		}
 

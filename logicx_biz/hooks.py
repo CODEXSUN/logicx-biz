@@ -59,6 +59,13 @@ fixtures = [
 															"Purchase Invoice Item-mop",
 															"Purchase Invoice Item-min_selling_price",
 															"Purchase Invoice Item-max_selling_price",
+															# a Comments tab after More Info, just ahead of
+															# Connections; the Party Dashboard's own Comments
+															# tab reads and edits the same field
+															"Customer-comments_tab",
+															"Customer-party_comments",
+															"Supplier-comments_tab",
+															"Supplier-party_comments",
 															]],
 											]},
 	# Batch.supplier is a standard ERPNext field, so its overrides (editable

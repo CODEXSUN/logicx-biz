@@ -29,6 +29,10 @@ SELF_PAID_FLAG = {
 INVOICE_SIDE = {"Customer": "debit", "Supplier": "credit"}
 PAYMENT_SIDE = {"Customer": "credit", "Supplier": "debit"}
 
+# the Long Text custom field both party doctypes carry in their Comments tab
+# (see fixtures/custom_field.json), which the dashboard's Comments tab shows
+COMMENTS_FIELD = "party_comments"
+
 
 @frappe.whitelist()
 def get_party_activity(party_type: str, party: str) -> dict:
@@ -46,10 +50,7 @@ def get_party_activity(party_type: str, party: str) -> dict:
 	fetches, which keeps that report's outstanding SQL the single source of
 	truth for both the tile and the table below it.
 	"""
-	if party_type not in INVOICE_VOUCHER_TYPE:
-		frappe.throw(_("Party Type must be Customer or Supplier."))
-	if not party:
-		frappe.throw(_("Party is mandatory"))
+	_validate_party(party_type, party)
 
 	# the page is a ledger view, so gate it on the doctype every party report
 	# declares as its ref_doctype
@@ -59,6 +60,47 @@ def get_party_activity(party_type: str, party: str) -> dict:
 	activity.update(_as_tile("last_invoice", _last_invoice(party_type, party)))
 	activity.update(_as_tile("last_payment", _last_payment(party_type, party)))
 	return activity
+
+
+@frappe.whitelist()
+def get_party_comments(party_type: str, party: str) -> dict:
+	"""The party's Party Comments, for the dashboard's Comments tab.
+
+	Gated on the party itself rather than on GL Entry: the comments are part of
+	the Customer / Supplier, not of its ledger. `can_edit` says whether the tab
+	should offer its Edit button at all.
+	"""
+	_validate_party(party_type, party)
+
+	doc = frappe.get_doc(party_type, party)
+	doc.check_permission("read")
+	return {
+		"comments": doc.get(COMMENTS_FIELD) or "",
+		"can_edit": doc.has_permission("write"),
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def set_party_comments(party_type: str, party: str, comments: str | None = None) -> str:
+	"""Save the Comments tab's edit back to the party, and return what was stored.
+
+	A full save rather than a db_set, so the edit goes through the same write
+	permission check, validation and version history as one made on the party's
+	own form.
+	"""
+	_validate_party(party_type, party)
+
+	doc = frappe.get_doc(party_type, party)
+	doc.set(COMMENTS_FIELD, comments or "")
+	doc.save()
+	return doc.get(COMMENTS_FIELD) or ""
+
+
+def _validate_party(party_type: str, party: str) -> None:
+	if party_type not in INVOICE_VOUCHER_TYPE:
+		frappe.throw(_("Party Type must be Customer or Supplier."))
+	if not party:
+		frappe.throw(_("Party is mandatory"))
 
 
 def _last_invoice(party_type: str, party: str) -> dict | None:

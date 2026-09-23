@@ -5,7 +5,7 @@ All notable changes to **logicx-biz** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.7] - 2026-09-23
 
 ### Added
 
@@ -38,6 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Job Attachment shortcut** on the LogicX HR Home workspace, next to Job Location.
 - `Frappe.Api.JobAttachment.rest` REST Client examples: list for an Enquiry, read,
   upload a file, create the record for it, open a private file with the API token.
+- **Party Comments** on Customer and Supplier -- a `Party Comments` Long Text
+  field in a new `Comments` tab, after More Info and just ahead of Connections.
+  Shipped as Custom Field fixtures, so `bench migrate` adds it.
+- **Party Dashboard: Comments tab** (last in the tab strip, for both party
+  types) -- the selected party's Party Comments, read-only and unlabelled, with
+  line breaks kept. `Edit` at the top right (shown only to users who can write
+  to the party) swaps in a Long Text box with `Cancel` / `Save`; Save writes it
+  back to the Customer / Supplier through a normal document save, so the edit
+  gets the form's validation and version history. Picking another party drops
+  an unsaved edit.
 
 ## [0.1.6] - 2026-09-16
 

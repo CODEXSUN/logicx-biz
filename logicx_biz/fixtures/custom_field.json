@@ -157,5 +157,41 @@
 		"label": "Max Selling Price",
 		"fieldtype": "Currency",
 		"insert_after": "min_selling_price"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Customer-comments_tab",
+		"dt": "Customer",
+		"fieldname": "comments_tab",
+		"label": "Comments",
+		"fieldtype": "Tab Break",
+		"insert_after": "supplier_numbers"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Customer-party_comments",
+		"dt": "Customer",
+		"fieldname": "party_comments",
+		"label": "Party Comments",
+		"fieldtype": "Long Text",
+		"insert_after": "comments_tab"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Supplier-comments_tab",
+		"dt": "Supplier",
+		"fieldname": "comments_tab",
+		"label": "Comments",
+		"fieldtype": "Tab Break",
+		"insert_after": "customer_numbers"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Supplier-party_comments",
+		"dt": "Supplier",
+		"fieldname": "party_comments",
+		"label": "Party Comments",
+		"fieldtype": "Long Text",
+		"insert_after": "comments_tab"
 	}
 ]
