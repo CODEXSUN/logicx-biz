@@ -1,0 +1,78 @@
+### Job Attachment: list for an Enquiry, newest first.
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"doctype": "Job Attachment",
+	"filters": [
+		[ "enquiry", "=", "ENQ109" ]
+	],
+	"order_by": "creation desc",
+	"fields": [
+		"name",
+		"creation",
+		"enquiry",
+		"date",
+		"time",
+		"employee",
+		"employee.employee_name",
+		"document",
+		"is_photo"
+	]
+}
+
+
+
+### Read Job Attachment by ID.
+
+GET {{baseUrl}}/api/v2/document/Job Attachment/JOBATT1
+Authorization: token {{token}}
+
+
+
+### Create, step 1: upload the file.
+	# Take "file_url" from the response for step 2: the server may rename the file, or reuse an identical one.
+	# "is_private" = 1: only logged-in users who can read the Job Attachment can open the file.
+	# Send no "doctype" / "docname": saving the Job Attachment in step 2 links the file to it.
+	# The file is read from next to this .rest file.
+POST {{baseUrl}}/api/v2/method/frappe.handler.upload_file
+Authorization: token {{token}}
+Content-Type: multipart/form-data; boundary=----LogicXBoundary
+
+------LogicXBoundary
+Content-Disposition: form-data; name="is_private"
+
+1
+------LogicXBoundary
+Content-Disposition: form-data; name="file"; filename="IMG_20260923_131500.jpg"
+Content-Type: image/jpeg
+
+< ./IMG_20260923_131500.jpg
+------LogicXBoundary--
+
+
+
+### Create, step 2: the Job Attachment for the uploaded file.
+	# "date" / "time" are optional: they default to the server's today / now.
+	# "is_photo": 1 for a photo, 0 (the default) for a document.
+	# A "Photo attached by ..." row, with a link to the file, is added to the Enquiry's Messages.
+POST {{baseUrl}}/api/v2/document/Job Attachment
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "enquiry": "ENQ109",
+  "employee": "HR-EMP-00003",
+  "document": "/private/files/IMG_20260923_131500.jpg",
+  "is_photo": 1
+}
+
+
+
+### Open the file: {{baseUrl}} + "document". A private file needs the same Authorization header.
+GET {{baseUrl}}/private/files/IMG_20260923_131500.jpg
+Authorization: token {{token}}
+
+
+###

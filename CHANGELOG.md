@@ -25,6 +25,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Job Location shortcut** on the LogicX HR Home workspace, next to Job Execution.
 - `Frappe.Api.JobLocation.rest` REST Client examples: list for an Enquiry, read,
   create from the phone's GPS, correct the coordinates.
+- **Job Attachment DocType** (`LogicX HR`) -- a document or photo for an Enquiry:
+  `Enquiry`, `Employee`, `Date` (default today), `Time` (default now), the file
+  in `Document` (mandatory Attach field, one file per record) and an `Is Photo`
+  check. In the desk form, attaching a picture (gif / jpg / jpeg / png / svg /
+  tiff) ticks `Is Photo` and any other file unticks it; the box stays editable,
+  and a photo shows a preview next to the file. New forms pre-fill Employee from
+  the logged-in user. Inserting, or changing the enquiry or file, posts a "Photo
+  attached by ..." / "Document attached by ..." row to the Enquiry's Messages
+  with a full link to the file (URL-encoded, so file names with spaces still
+  work). Named `JOBATT.#`; same permissions as Job Location.
+- **Job Attachment shortcut** on the LogicX HR Home workspace, next to Job Location.
+- `Frappe.Api.JobAttachment.rest` REST Client examples: list for an Enquiry, read,
+  upload a file, create the record for it, open a private file with the API token.
 
 ## [0.1.6] - 2026-09-16
 
