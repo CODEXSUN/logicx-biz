@@ -364,7 +364,10 @@
 			// frappe-datatable sizes its columns wrong inside a hidden pane
 			this.results = {};
 			this.active_tab = TABS[0].key;
-			this.url_params_read = false;
+			// the URL is left alone until the first show has read it: the load
+			// below would otherwise wipe the very party a refresh is meant to
+			// bring back (see write_url_params)
+			this.url_ready = false;
 			// frappe lazy-loads the datatable bundle; the report views await this
 			// same call before constructing one, so the page does too
 			this.datatable_ready = ensure_datatable();
@@ -478,17 +481,28 @@
 		}
 
 		apply_prefill() {
+			// the router copies the URL's query string into route_options on every
+			// route change, so this covers a refresh and the Back button as well
+			// as another page routing here with a party already picked. the URL
+			// is read directly too, for a desk that does not.
 			const from_route = frappe.route_options || {};
 			frappe.route_options = null;
-
-			// URL params are read once, on the first show -- the desk keeps the query string around as you navigate away and back,
-			// and re-applying it would silently undo whatever the user picked in the meantime
-			const from_url = this.url_params_read ? {} : frappe.utils.get_query_params() || {};
-			this.url_params_read = true;
+			const from_url = frappe.utils.get_query_params() || {};
+			this.url_ready = true;
 
 			const party_type = from_route.party_type || from_url.party_type;
 			const party = from_route.party || from_url.party;
-			if (!party_type && !party) return;
+
+			// nothing asked for, or only what is already on screen -- as on Back
+			// to this page, whose URL has followed every pick (see load). applying
+			// it again would only fetch the same party over. either way the URL
+			// is brought up to date, since arriving from the sidebar clears it.
+			const on_screen =
+				(party_type || this.party_type) === this.party_type && (party || "") === this.party;
+			if ((!party_type && !party) || on_screen) {
+				this.write_url_params();
+				return;
+			}
 
 			// party_type first: it repoints the party link at the right doctype
 			if (party_type && PARTY_TYPES.includes(party_type)) {
@@ -500,6 +514,26 @@
 			this.reload();
 		}
 
+		// the party on screen is kept in the URL as ?party_type=&party=, so a
+		// browser refresh, or a link copied from the address bar, opens on it
+		// again. the URL is replaced rather than pushed: picking a party is not a
+		// navigation, and Back should leave the page rather than step through
+		// every party tried. any other query parameter is left as it was.
+		write_url_params() {
+			// a debounced reload can land after the user has already moved on,
+			// and the page they are on now has its own URL
+			if (!this.url_ready || (frappe.get_route() || [])[0] !== PAGE_NAME) return;
+
+			const params = new URLSearchParams(window.location.search);
+			params.set("party_type", this.party_type);
+			if (this.party) params.set("party", this.party);
+			else params.delete("party");
+
+			const search = "?" + params.toString();
+			if (search === window.location.search) return;
+			history.replaceState(history.state, "", window.location.pathname + search + window.location.hash);
+		}
+
 		/* ------------------------------------------------------------- loading */
 
 		load(party_type, party) {
@@ -508,6 +542,7 @@
 			this.seq += 1;
 			this.party_type = party_type;
 			this.party = party;
+			this.write_url_params();
 			this.results = {};
 			// before anything else, so a tab this party type does not have is off
 			// the strip -- and cannot still be the open one -- while it loads
