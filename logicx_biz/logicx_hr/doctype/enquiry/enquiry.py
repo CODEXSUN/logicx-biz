@@ -32,7 +32,7 @@ def get_current_employee():
 def add_enquiry_message(enquiry, comment):
 	"""Append an auto-generated row to an Enquiry's Messages timeline.
 
-	Used by related doctypes (Job Execution, Estimate) to log activity
+	Used by related doctypes (Job Execution, Job Location, Estimate) to log activity
 	against the Enquiry they belong to.
 	"""
 	if not enquiry or not comment:

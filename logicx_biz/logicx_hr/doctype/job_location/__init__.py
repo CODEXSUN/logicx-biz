@@ -1,0 +1,1 @@
+"""Job Location DocType."""

@@ -1,0 +1,154 @@
+{
+	"doctype": "DocType",
+	"name": "Job Location",
+	"module": "LogicX HR",
+	"autoname": "JOBLOC.#",
+	"track_changes": 1,
+	"track_views": 1,
+	"is_submittable": 0,
+	"allow_rename": 1,
+	"allow_import": 1,
+	"title_field": "enquiry",
+	"show_title_field_in_link": 1,
+	"sort_field": "creation",
+	"sort_order": "DESC",
+	"index_web_pages_for_search": 1,
+	"grid_page_length": 50,
+	"fields": [
+		{
+			"label": "Enquiry",
+			"fieldname": "enquiry",
+			"fieldtype": "Link",
+			"options": "Enquiry",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Employee",
+			"fieldname": "employee",
+			"fieldtype": "Link",
+			"options": "Employee",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"fieldname": "column_break_1",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Date",
+			"fieldname": "date",
+			"fieldtype": "Date",
+			"default": "Today",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"label": "Time",
+			"fieldname": "time",
+			"fieldtype": "Time",
+			"default": "Now",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
+			"label": "Location",
+			"fieldname": "section_location",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Latitude",
+			"fieldname": "latitude",
+			"fieldtype": "Float",
+			"precision": "7",
+			"reqd": 1
+		},
+		{
+			"label": "Longitude",
+			"fieldname": "longitude",
+			"fieldtype": "Float",
+			"precision": "7",
+			"reqd": 1
+		},
+		{
+			"label": "Get Current Location",
+			"fieldname": "btn_get_location",
+			"fieldtype": "Button"
+		},
+		{
+			"fieldname": "column_break_2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Geolocation URL",
+			"fieldname": "geolocation_url",
+			"fieldtype": "Data",
+			"options": "URL",
+			"read_only": 1
+		},
+		{
+			"fieldname": "section_map",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": " ",
+			"fieldname": "geolocation_map",
+			"fieldtype": "Geolocation",
+			"read_only": 1
+		}
+	],
+	"permissions": [
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM User",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Admin",
+			"read": 1,
+			"create": 1,
+			"write": 1,
+			"delete": 1,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 1,
+			"print": 1,
+			"share": 1,
+			"import": 1,
+			"mask": 1,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 1,
+			"role": "TM Admin",
+			"read": 1,
+			"write": 1,
+			"mask": 1
+		}
+	]
+}

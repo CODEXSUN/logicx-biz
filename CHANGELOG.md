@@ -5,6 +5,27 @@ All notable changes to **logicx-biz** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Job Location DocType** (`LogicX HR`) -- where an employee was for an Enquiry:
+  `Enquiry`, `Employee`, `Date` (default today), `Time` (default now) and the GPS
+  point as `Latitude` / `Longitude` Float fields with 7 decimals (about 1 cm,
+  stored as `decimal(21,9)`), the same design as HRMS Employee Checkin. Every
+  save rounds and range-checks the coordinates, rejecting a missing (0, 0)
+  location that `reqd` alone lets through for Float fields, and rebuilds the
+  read-only `Geolocation URL` (Google Maps link; opens the Maps app on phones)
+  and `Geolocation Map` (pin on an OpenStreetMap map). A "Get Current Location"
+  button fills the coordinates from the device's GPS in the desk form (HTTPS
+  only), and new forms pre-fill Employee from the logged-in user. Inserting, or
+  changing the enquiry or coordinates, posts a "Location captured by ..." row to
+  the Enquiry's Messages. Named `JOBLOC.#`; same permissions as Job Execution
+  (`TM User` read/create/write, `TM Admin` full plus permlevel 1).
+- **Job Location shortcut** on the LogicX HR Home workspace, next to Job Execution.
+- `Frappe.Api.JobLocation.rest` REST Client examples: list for an Enquiry, read,
+  create from the phone's GPS, correct the coordinates.
+
 ## [0.1.6] - 2026-09-16
 
 ### Added

@@ -1,0 +1,64 @@
+### Job Location: list for an Enquiry, newest first.
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"doctype": "Job Location",
+	"filters": [
+		[ "enquiry", "=", "ENQ109" ]
+	],
+	"order_by": "creation desc",
+	"fields": [
+		"name",
+		"creation",
+		"enquiry",
+		"date",
+		"time",
+		"employee",
+		"employee.employee_name",
+		"latitude",
+		"longitude",
+		"geolocation_url"
+	]
+}
+
+
+
+### Read Job Location by ID.
+
+GET {{baseUrl}}/api/v2/document/Job Location/JOBLOC1
+Authorization: token {{token}}
+
+
+
+### Create: post the phone's GPS position.
+	# "date" / "time" are optional: they default to the server's today / now.
+	# "geolocation_url" and "geolocation_map" are built by the server from latitude / longitude,
+	# and a "Location captured by ..." row is added to the Enquiry's Messages.
+	# Missing coordinates (0, 0) or out-of-range values are rejected.
+POST {{baseUrl}}/api/v2/document/Job Location
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "enquiry": "ENQ109",
+  "employee": "HR-EMP-00003",
+  "latitude": 13.0826802,
+  "longitude": 80.2707184
+}
+
+
+
+### Correct the coordinates: the URL, the map and a new Enquiry message follow.
+PUT {{baseUrl}}/api/v2/document/Job Location/JOBLOC1
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "latitude": 13.0827105,
+  "longitude": 80.2706950
+}
+
+
+###
