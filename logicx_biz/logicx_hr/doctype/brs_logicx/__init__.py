@@ -1,0 +1,1 @@
+"""BRS LogicX DocType."""
