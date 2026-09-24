@@ -1271,9 +1271,11 @@
 
 	// Payment Reconciliation is a single, which frappe copies no options into,
 	// and it clears its own party as it loads besides -- so the party goes in
-	// once the form has loaded
+	// once the form has loaded, and its entries are fetched straight after
 	function open_payment_reconciliation({ party_type, party }) {
-		after_form_load(PAYMENT_RECONCILIATION, (frm) => set_party(frm, { party_type, party }));
+		after_form_load(PAYMENT_RECONCILIATION, (frm) =>
+			set_party(frm, { party_type, party }).then(() => get_unreconciled_entries(frm))
+		);
 		frappe.set_route("Form", PAYMENT_RECONCILIATION);
 
 		// Party Type, then Party, the order a user picks them in: setting Party Type
@@ -1281,6 +1283,17 @@
 		// account that Payment Reconciliation's "Get Unreconciled Entries" needs
 		function set_party(frm, { party_type, party }) {
 			return frm.set_value("party_type", party_type).then(() => party && frm.set_value("party", party));
+		}
+
+		// presses the form's own "Get Unreconciled Entries" for the user. the
+		// account comes back on a request of its own and clears the tables as
+		// it lands, so that is waited out first, or it would clear the entries
+		// just fetched. no account (no party, or none found for it) means the
+		// form shows no button either, and nothing is fetched.
+		function get_unreconciled_entries(frm) {
+			return frappe.after_ajax(() => {
+				if (frm.doc.receivable_payable_account) frm.trigger("get_unreconciled_entries");
+			});
 		}
 	}
 
