@@ -96,6 +96,61 @@ def set_party_comments(party_type: str, party: str, comments: str | None = None)
 	return doc.get(COMMENTS_FIELD) or ""
 
 
+@frappe.whitelist()
+def new_payment_entry(payment_type: str, party_type: str, party: str):
+	"""A new, unsaved Payment Entry against the party, for the dashboard's "+" menu.
+
+	Made here and opened from what comes back, the way ERPNext opens the Payment
+	Entry it makes from an invoice, because a new form opened on the party loses
+	it: as a new form loads, frappe sets its Link fields over again, Party Type
+	among them, and Payment Entry clears Party whenever Party Type is set. A
+	document made here is opened as it stands, and Payment Entry leaves the Party
+	Type of a new one that already has a party.
+
+	Filled by the same ERPNext code its own "Create > Payment" uses, in the same
+	order: the party's account, name, contact and bank account, and the company
+	bank account the money goes through. Only the amount is left to whoever takes
+	the payment.
+	"""
+	import erpnext
+	from erpnext.accounts.doctype.bank_account.bank_account import (
+		get_default_company_bank_account,
+		get_party_bank_account,
+	)
+
+	_validate_party(party_type, party)
+	if payment_type not in ("Receive", "Pay"):
+		frappe.throw(_("Payment Type must be Receive or Pay."))
+
+	frappe.has_permission("Payment Entry", "create", throw=True)
+	# select is enough, as it is when the party is picked on the form
+	ptype = "select" if frappe.only_has_select_perm(party_type) else "read"
+	frappe.has_permission(party_type, ptype, party, throw=True)
+
+	pe = frappe.new_doc("Payment Entry")
+	pe.company = pe.company or erpnext.get_default_company()
+	pe.posting_date = nowdate()
+	pe.payment_type = payment_type
+	pe.party_type = party_type
+	pe.party = party
+	pe.party_bank_account = get_party_bank_account(party_type, party)
+	pe.bank_account = get_default_company_bank_account(pe.company, party_type, party, ignore_permissions=False)
+
+	# the bank side from the company bank account, then the party's side with
+	# its name and contact, then the rate each side converts at
+	pe.set_bank_account_data()
+	pe.setup_party_account_field()
+	pe.set_missing_values()
+	pe.set_exchange_rate()
+
+	# a new form also takes its letter head from the Company as it loads, which
+	# one made here does not do
+	letter_head = frappe.get_cached_value("Company", pe.company, "default_letter_head")
+	if letter_head:
+		pe.letter_head = letter_head
+	return pe
+
+
 def _validate_party(party_type: str, party: str) -> None:
 	if party_type not in INVOICE_VOUCHER_TYPE:
 		frappe.throw(_("Party Type must be Customer or Supplier."))

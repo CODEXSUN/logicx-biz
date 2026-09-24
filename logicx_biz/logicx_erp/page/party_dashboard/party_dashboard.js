@@ -18,6 +18,7 @@
 	const ACTIVITY_METHOD = "logicx_biz.logicx_erp.party_dashboard.get_party_activity";
 	const GET_COMMENTS_METHOD = "logicx_biz.logicx_erp.party_dashboard.get_party_comments";
 	const SET_COMMENTS_METHOD = "logicx_biz.logicx_erp.party_dashboard.set_party_comments";
+	const NEW_PAYMENT_ENTRY_METHOD = "logicx_biz.logicx_erp.party_dashboard.new_payment_entry";
 
 	// how many tiles a full row holds. drives both the grid and the offset a
 	// short row is centred by, so the two cannot drift apart.
@@ -377,11 +378,11 @@
 			label: __("Opening Balance"),
 			open: new_opening_balance,
 		},
-		{
-			key: "general-ledger",
-			label: __("General Ledger"),
-			open: open_general_ledger,
-		},
+		// {
+		// 	key: "general-ledger",
+		// 	label: __("General Ledger"),
+		// 	open: open_general_ledger,
+		// },
 	];
 
 	// held across on_page_load / on_page_show, which frappe calls separately
@@ -1247,41 +1248,51 @@
 		});
 	}
 
-	// money in from a Customer, out to a Supplier. Party Type goes in with the
-	// new form, but Party has to wait for it to load: Payment Entry clears its
-	// party whenever Party Type is set, and setting Party is what fetches the
-	// party's account, name and bank details.
+	// money in from a Customer, out to a Supplier. with no party picked that is
+	// all the new form needs. with one, the Payment Entry is made on the server,
+	// party and all, and opened from what comes back -- the way ERPNext opens
+	// the one it makes from an invoice. a new form opened on the party would
+	// lose it (see new_payment_entry in party_dashboard.py for why).
 	function new_payment_entry({ party_type, party }) {
-		if (party) {
-			after_form_load("Payment Entry", (frm) => frm.is_new() && frm.set_value("party", party));
+		const payment_type = party_type === "Supplier"
+								? "Pay"
+								: "Receive";
+		if (!party) {
+			frappe.new_doc("Payment Entry", { payment_type, party_type });
+			return;
 		}
-		frappe.new_doc("Payment Entry", {
-			payment_type: party_type === "Supplier" ? "Pay" : "Receive",
-			party_type,
-		});
+		frappe
+			.call({ method: NEW_PAYMENT_ENTRY_METHOD, args: { payment_type, party_type, party } })
+			.then((r) => {
+				const [doc] = frappe.model.sync(r.message);
+				frappe.set_route("Form", doc.doctype, doc.name);
+			});
 	}
 
 	// Payment Reconciliation is a single, which frappe copies no options into,
 	// and it clears its own party as it loads besides -- so the party goes in
-	// once the form has loaded. Party Type first, since setting it clears
-	// Party; setting Party is then what fetches the receivable / payable
-	// account that "Get Unreconciled Entries" needs.
+	// once the form has loaded
 	function open_payment_reconciliation({ party_type, party }) {
-		after_form_load(PAYMENT_RECONCILIATION, (frm) =>
-			frm.set_value("party_type", party_type).then(() => party && frm.set_value("party", party))
-		);
+		after_form_load(PAYMENT_RECONCILIATION, (frm) => set_party(frm, { party_type, party }));
 		frappe.set_route("Form", PAYMENT_RECONCILIATION);
+
+		// Party Type, then Party, the order a user picks them in: setting Party Type
+		// clears Party, and setting Party is what fetches the receivable / payable
+		// account that Payment Reconciliation's "Get Unreconciled Entries" needs
+		function set_party(frm, { party_type, party }) {
+			return frm.set_value("party_type", party_type).then(() => party && frm.set_value("party", party));
+		}
 	}
 
 	// General Ledger filtered on the party, as the Customer and Supplier forms
 	// open it. Party there is a multi-select, so it goes as a list of one; the
 	// report fills in the party's name itself, and its dates and company keep
 	// their own defaults.
-	function open_general_ledger({ party_type, party }) {
-		const filters = { party_type };
-		if (party) filters.party = [party];
-		frappe.set_route("query-report", GENERAL_LEDGER_REPORT, filters);
-	}
+	// function open_general_ledger({ party_type, party }) {
+	// 	const filters = { party_type };
+	// 	if (party) filters.party = [party];
+	// 	frappe.set_route("query-report", GENERAL_LEDGER_REPORT, filters);
+	// }
 
 	// runs `callback` on the next form frappe loads, once its own scripts have
 	// had their say. the hook is frappe's, and fires for whichever form comes

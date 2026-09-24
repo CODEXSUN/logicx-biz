@@ -58,11 +58,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `New Payment Entry`, `Payment Reconciliation` and `General Ledger` for both.
   Each opens on the party picked at the top of the page: the new invoices and
   notes fill Customer / Supplier (fetching its address, price list and so on as
-  if picked by hand); Payment Entry fills Payment Type (Receive / Pay), Party
-  Type and Party, and so the party's account; Payment Reconciliation fills
-  Party Type and Party, and so the Receivable / Payable Account; General Ledger
-  opens filtered on Party Type and Party. With no party picked they open without
-  one. The other side's entries are hidden when the party type changes.
+  if picked by hand); Payment Entry is made on the server the way ERPNext makes
+  one from an invoice, with Payment Type (Receive / Pay), Party Type and Party,
+  the party's account, name and contact, and the company bank account the money
+  goes through; Payment Reconciliation fills Party Type and Party, and so the
+  Receivable / Payable Account; General Ledger opens filtered on Party Type and
+  Party. With no party picked they open without one. The other side's entries
+  are hidden when the party type changes.
 
 ## [0.1.6] - 2026-09-16
 
