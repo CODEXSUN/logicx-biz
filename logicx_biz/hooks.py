@@ -66,6 +66,8 @@ fixtures = [
 															"Customer-party_comments",
 															"Supplier-comments_tab",
 															"Supplier-party_comments",
+															"Bank Account-brs_opening_date",
+															"Bank Account-brs_closing_date",
 															]],
 											]},
 	# Batch.supplier is a standard ERPNext field, so its overrides (editable

@@ -193,5 +193,25 @@
 		"label": "Party Comments",
 		"fieldtype": "Long Text",
 		"insert_after": "comments_tab"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Bank Account-brs_opening_date",
+		"dt": "Bank Account",
+		"fieldname": "brs_opening_date",
+		"label": "BRS Opening Date",
+		"fieldtype": "Link",
+		"options": "BRS Date",
+		"insert_after": "company"
+	},
+	{
+		"doctype": "Custom Field",
+		"name": "Bank Account-brs_closing_date",
+		"dt": "Bank Account",
+		"fieldname": "brs_closing_date",
+		"label": "BRS Closing Date",
+		"fieldtype": "Link",
+		"options": "BRS Date",
+		"insert_after": "brs_opening_date"
 	}
 ]
