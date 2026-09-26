@@ -110,6 +110,53 @@ Account fields that point at the renamed date.
 | `fixtures/custom_field.json` | `Bank Account-brs_opening_date`, `Bank Account-brs_closing_date` (inserted after `company`). |
 | `hooks.py` | The two custom fields listed under `fixtures`. |
 
+## pseudo code
+
+Bank Account:
+```
+      function Update_BRS_Date (new_brs_date)
+            if new_brs_date.'Is Opening' is checked then
+                  if 'BRS Opening Date' is set yet then
+                        raise error.
+                  set 'BRS Opening Date' = new_brs_date.name
+            else
+                  if ('BRS Closing Date' == new_brs_date.name)
+                        return
+                  set 'BRS Closing Date' = new_brs_date.name
+            end
+      end
+```
+
+BRS Date:
+```
+      on insert
+            if 'Next BRS Date' is set then
+                  raise error. (becuase it will be auto-updted by the next-'BRS Date')
+            end
+
+            if 'Is Opening' is checked then
+                  if 'Previous BRS Date' is set then
+                        raise error.
+            else
+                  if 'Previous BRS Date' is not set then
+                        raise error.
+            end
+
+            if 'Previous BRS Date' is set then
+                  if 'Previous BRS Date'.'Next BRS Date' is set then
+                        throw error
+                  set 'Previous BRS Date'.'Next BRS Date' = this.name
+            end
+
+            'Bank Account'.Update_BRS_Date (this)
+
+      on update
+            throw 'Not implemented yet'
+
+      on delete
+            throw 'Not implemented yet'
+```
+
 ## Not done yet
 
 - Update and delete of a BRS Date (see above).

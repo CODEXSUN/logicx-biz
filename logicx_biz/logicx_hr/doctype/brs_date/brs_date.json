@@ -45,24 +45,32 @@
 			"in_standard_filter": 1
 		},
 		{
-			"label": "Previous BRS Date",
-			"fieldname": "previous_brs_date",
-			"fieldtype": "Link",
-			"options": "BRS Date"
-		},
-		{
-			"label": "Next BRS Date",
-			"fieldname": "next_brs_date",
-			"fieldtype": "Link",
-			"options": "BRS Date"
-		},
-		{
 			"label": "Title",
 			"fieldname": "title",
 			"fieldtype": "Data",
 			"read_only": 1,
 			"hidden": 1,
 			"no_copy": 1
+		},
+		{
+			"fieldname": "section2",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Previous BRS Date",
+			"fieldname": "previous_brs_date",
+			"fieldtype": "Link",
+			"options": "BRS Date"
+		},
+		{
+			"fieldname": "section2_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Next BRS Date",
+			"fieldname": "next_brs_date",
+			"fieldtype": "Link",
+			"options": "BRS Date"
 		}
 	],
 	"permissions": [
