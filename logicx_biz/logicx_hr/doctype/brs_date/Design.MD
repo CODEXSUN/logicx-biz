@@ -6,6 +6,7 @@ chain per account: an opening date first, then each later date linked to the one
 | DocType | Module | Purpose |
 |---------|--------|---------|
 | **BRS Date** | LogicX HR | One row = one BRS date of one Bank Account, linked to the previous and next date. |
+| **BRS Transaction** | LogicX HR | Creates the BRS Date of its date, and points it at its first and latest transaction (see [../brs_transaction/Design.MD](../brs_transaction/Design.MD)). |
 | **Bank Account** (ERPNext) | -- | Two custom fields point at the first and the latest BRS Date of the account. |
 
 ## The chain
@@ -28,6 +29,8 @@ Bank Account "HDFC Current"
   the previous date when the following date is inserted.
 - `Bank Account.brs_opening_date` is the head; `Bank Account.brs_closing_date` is the latest
   non-opening date (the tail). With only the opening date in place, the closing date is empty.
+- No user creates or edits a BRS Date: the first BRS Transaction on a date creates it, and each
+  later one on that date updates it.
 
 ## BRS Date
 
@@ -42,10 +45,23 @@ Naming: `BRSDATE.#` -> `BRSDATE1`, `BRSDATE2`, ... Title: `"{Date} : {Account Na
 | `previous_brs_date` | Link -> BRS Date | Required unless `is_opening`; must be empty when it is. |
 | `next_brs_date` | Link -> BRS Date | Set by the system only; must be empty on insert. |
 | `title` | Data, hidden, read-only | Filled on insert from `date` and Bank Account's `account_name`. |
+| `opening_transaction` | Link -> BRS Transaction, read-only | The date's first transaction; set when it creates the date. |
+| `closing_transaction` | Link -> BRS Transaction, read-only | The date's latest transaction; set to the first on insert, then to each later one. |
+| `no_of_transactions` | Int, read-only, default 0 | 1 on insert; + 1 for each later transaction on the date. |
 
-Permissions: TM User can read / create / write; TM Admin can also delete and import.
+Permissions: no user can create or update a BRS Date by hand. TM User and TM Admin can read; TM
+Admin can also delete, which the delete guard below still refuses. Import is off. BRS Transactions
+insert BRS Dates with `ignore_permissions`. Administrator bypasses role permissions, so `validate`
+also refuses any insert that does not come from a transaction (see Insert).
 
 ## Insert
+
+A BRS Date is inserted only by `update_brs_transaction()`, for the first BRS Transaction on its
+date; that sets `previous_brs_date` to the account's BRS Closing Date, or its BRS Opening Date
+while the closing date is empty. Any other insert -- by hand, import, API or console, Administrator's
+included -- fails first with "A BRS Date is created by the first BRS Transaction on its date, not
+by hand." `update_brs_transaction()` marks its insert with the `from_brs_transaction` flag, which
+nothing else sets.
 
 Checks run in `validate`, before the row is written; the first failure stops the insert.
 
@@ -78,10 +94,11 @@ An error in `after_insert` still rolls back the whole insert, the BRS Date row i
 ## Update and delete
 
 Not implemented yet. Saving an existing BRS Date fails with "Updating a BRS Date is not
-implemented yet."; deleting one fails with "Deleting a BRS Date is not implemented yet."
+implemented yet."; deleting one fails with "Deleting a BRS Date is not implemented yet." A later
+BRS Transaction on the date changes its Closing Transaction and No of Transactions with
+`frappe.db.set_value`, which the guard does not see.
 
-Rename is still allowed (`allow_rename`); Frappe rewrites the Previous / Next links and the Bank
-Account fields that point at the renamed date.
+`allow_rename` is still set, but renaming needs write permission, which no role has now.
 
 ## Implementation notes
 
@@ -105,7 +122,7 @@ Account fields that point at the renamed date.
 | File | What |
 |------|------|
 | `logicx_hr/doctype/brs_date/brs_date.json` | The DocType. |
-| `logicx_hr/doctype/brs_date/brs_date.py` | Insert rules, chain links, update / delete guards, unique index. |
+| `logicx_hr/doctype/brs_date/brs_date.py` | Insert rules, chain links, update / delete guards, unique index; `update_brs_transaction()` and `insert_brs_date()` for BRS Transaction. |
 | `logicx_erp/bank_account.py` | `update_brs_date()` -- Bank Account's opening / closing date. |
 | `fixtures/custom_field.json` | `Bank Account-brs_opening_date`, `Bank Account-brs_closing_date` (inserted after `company`). |
 | `hooks.py` | The two custom fields listed under `fixtures`. |
@@ -160,6 +177,4 @@ BRS Date:
 ## Not done yet
 
 - Update and delete of a BRS Date (see above).
-- The Previous BRS Date picker lists the BRS Dates of every Bank Account; rule 5 rejects a wrong
-  pick only on save. A form script could limit it to the same account's tail.
 - The Bank Account's two fields are editable by hand; nothing stops them from drifting off the chain.

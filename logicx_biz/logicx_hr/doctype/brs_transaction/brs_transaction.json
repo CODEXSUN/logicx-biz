@@ -1,16 +1,16 @@
 {
 	"doctype": "DocType",
-	"name": "BRS Date",
+	"name": "BRS Transaction",
 	"module": "LogicX HR",
-	"autoname": "BRSDATE.#",
+	"autoname": "BRSTXN.#",
 	"track_changes": 1,
 	"track_views": 1,
 	"is_submittable": 0,
 	"allow_rename": 1,
-	"allow_import": 0,
-	"title_field": "title",
+	"allow_import": 1,
+	"title_field": "description",
 	"show_title_field_in_link": 1,
-	"sort_field": "date",
+	"sort_field": "creation",
 	"sort_order": "DESC",
 	"index_web_pages_for_search": 1,
 	"grid_page_length": 50,
@@ -41,73 +41,108 @@
 			"permlevel": 1,
 			"fieldtype": "Check",
 			"default": "0",
-			"in_list_view": 1,
 			"in_standard_filter": 1
 		},
 		{
-			"label": "Title",
-			"fieldname": "title",
-			"fieldtype": "Data",
+			"fieldname": "section1_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "BRS Date",
+			"fieldname": "brs_date",
+			"fieldtype": "Link",
+			"options": "BRS Date",
 			"read_only": 1,
-			"hidden": 1,
-			"no_copy": 1
+			"no_copy": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"label": "Daily Roll Number",
+			"fieldname": "daily_roll_number",
+			"fieldtype": "Int",
+			"read_only": 1,
+			"no_copy": 1,
+			"in_list_view": 1
 		},
 		{
 			"fieldname": "section2",
 			"fieldtype": "Section Break"
 		},
 		{
-			"label": "Previous BRS Date",
-			"fieldname": "previous_brs_date",
-			"fieldtype": "Link",
-			"options": "BRS Date"
+			"label": "Description",
+			"fieldname": "description",
+			"fieldtype": "Small Text"
+		},
+		{
+			"label": "Reference Number",
+			"fieldname": "reference_number",
+			"fieldtype": "Data"
 		},
 		{
 			"fieldname": "section2_column2",
 			"fieldtype": "Column Break"
 		},
 		{
-			"label": "Next BRS Date",
-			"fieldname": "next_brs_date",
-			"fieldtype": "Link",
-			"options": "BRS Date"
-		},
-		{
 			"fieldname": "section3",
 			"fieldtype": "Section Break"
 		},
 		{
-			"label": "Opening Transaction",
-			"fieldname": "opening_transaction",
-			"fieldtype": "Link",
-			"options": "BRS Transaction",
-			"read_only": 1,
-			"no_copy": 1
+			"label": "Opening Balance",
+			"fieldname": "opening_balance",
+			"fieldtype": "Currency"
 		},
 		{
 			"fieldname": "section3_column2",
 			"fieldtype": "Column Break"
 		},
 		{
-			"label": "Closing Transaction",
-			"fieldname": "closing_transaction",
-			"fieldtype": "Link",
-			"options": "BRS Transaction",
-			"read_only": 1,
-			"no_copy": 1
+			"label": "Withdrawal",
+			"fieldname": "withdrawal",
+			"fieldtype": "Currency",
+			"in_list_view": 1
 		},
 		{
 			"fieldname": "section3_column3",
 			"fieldtype": "Column Break"
 		},
 		{
-			"label": "No of Transactions",
-			"fieldname": "no_of_transactions",
-			"fieldtype": "Int",
-			"default": "0",
-			"read_only": 1,
-			"no_copy": 1,
+			"label": "Deposit",
+			"fieldname": "deposit",
+			"fieldtype": "Currency",
 			"in_list_view": 1
+		},
+		{
+			"fieldname": "section3_column4",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Closing Balance",
+			"fieldname": "closing_balance",
+			"fieldtype": "Currency",
+			"in_list_view": 1
+		},
+		{
+			"fieldname": "section4",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Previous Transaction",
+			"fieldname": "previous_transaction",
+			"fieldtype": "Link",
+			"options": "BRS Transaction",
+			"no_copy": 1
+		},
+		{
+			"fieldname": "section4_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Next Transaction",
+			"fieldname": "next_transaction",
+			"fieldtype": "Link",
+			"options": "BRS Transaction",
+			"read_only": 1,
+			"no_copy": 1
 		}
 	],
 	"permissions": [
@@ -116,8 +151,8 @@
 			"permlevel": 0,
 			"role": "TM User",
 			"read": 1,
-			"create": 0,
-			"write": 0,
+			"create": 1,
+			"write": 1,
 			"delete": 0,
 			"select": 1,
 			"report": 1,

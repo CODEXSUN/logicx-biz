@@ -1,12 +1,13 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import formatdate, get_link_to_form, getdate
+from frappe.utils import cint, formatdate, get_link_to_form, getdate
 
 from logicx_biz.logicx_erp.bank_account import update_brs_date
 
 # a Bank Account's BRS Dates form a chain: the opening date first, each later
-# date linked to the one before it through Previous / Next BRS Date
+# date linked to the one before it through Previous / Next BRS Date; each date
+# is created by the first BRS Transaction on it (see update_brs_transaction)
 
 
 class BRSDate(Document):
@@ -14,6 +15,10 @@ class BRSDate(Document):
 		# validate runs on insert too; only a save of an existing date is refused
 		if not self.flags.in_insert:
 			frappe.throw(_("Updating a BRS Date is not implemented yet."))
+		#
+		# role permissions keep users out, but not Administrator, who bypasses them
+		if self.flags.in_insert and not self.flags.from_brs_transaction:
+			frappe.throw(_("A BRS Date is created by the first BRS Transaction on its date, not by hand."))
 		self.validate_duplicate()
 		self.validate_chain()
 		self.set_title()
@@ -94,6 +99,68 @@ class BRSDate(Document):
 		"""Title reads "{Date} : {Account Name}", e.g. "24-09-2026 : HDFC Current"."""
 		account_name = frappe.db.get_value("Bank Account", self.bank_account, "account_name")
 		self.title = f"{formatdate(self.date)} : {account_name or self.bank_account}"
+
+
+def update_brs_transaction(brs_transaction):
+	"""Record a new BRS Transaction on the BRS Date of its date.
+
+	The first transaction on a date creates that date's BRS Date; each later
+	one becomes the date's Closing Transaction and adds to its count.
+	"""
+	if brs_transaction.is_opening:
+		if frappe.db.exists("BRS Date", {"bank_account": brs_transaction.bank_account}):
+			frappe.throw(_("Opening balance is already added."), title=_("Opening Balance Already Added"))
+		brs_date = insert_brs_date(brs_transaction, is_opening=1)
+	else:
+		existing = frappe.db.get_value(
+			"BRS Date",
+			{"bank_account": brs_transaction.bank_account, "date": brs_transaction.date},
+			["name", "no_of_transactions"],
+			as_dict=True,
+		)
+		if existing:
+			# set_value rather than a save, which validate would refuse
+			frappe.db.set_value(
+				"BRS Date",
+				existing.name,
+				{
+					"closing_transaction": brs_transaction.name,
+					"no_of_transactions": cint(existing.no_of_transactions) + 1,
+				},
+			)
+			brs_date = existing.name
+		else:
+			opening_date, closing_date = frappe.db.get_value(
+				"Bank Account", brs_transaction.bank_account, ["brs_opening_date", "brs_closing_date"]
+			)
+			if not opening_date:
+				frappe.throw(
+					_("{0} has no BRS Opening Date.").format(frappe.bold(brs_transaction.bank_account))
+				)
+			# the closing date is empty while the account has only its opening date
+			brs_date = insert_brs_date(brs_transaction, previous_brs_date=closing_date or opening_date)
+
+	brs_transaction.db_set("brs_date", brs_date)
+
+
+def insert_brs_date(brs_transaction, **values):
+	"""Insert the BRS Date that brs_transaction is the first transaction of; return its name."""
+	brs_date = frappe.get_doc(
+		{
+			"doctype": "BRS Date",
+			"bank_account": brs_transaction.bank_account,
+			"date": brs_transaction.date,
+			"opening_transaction": brs_transaction.name,
+			"closing_transaction": brs_transaction.name,
+			"no_of_transactions": 1,
+			**values,
+		}
+	)
+	# no role may create a BRS Date by hand, and validate refuses any insert without
+	# this flag; a BRS Date comes only from its first transaction
+	brs_date.flags.from_brs_transaction = True
+	brs_date.insert(ignore_permissions=True)
+	return brs_date.name
 
 
 def on_doctype_update():
