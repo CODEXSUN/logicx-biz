@@ -36,24 +36,15 @@
 			"in_filter": 1
 		},
 		{
+			"fieldname": "section1_column2",
+			"fieldtype": "Column Break"
+		},
+		{
 			"label": "Is Opening",
 			"fieldname": "is_opening",
 			"permlevel": 1,
 			"fieldtype": "Check",
 			"default": "0",
-			"in_standard_filter": 1
-		},
-		{
-			"fieldname": "section1_column2",
-			"fieldtype": "Column Break"
-		},
-		{
-			"label": "BRS Date",
-			"fieldname": "brs_date",
-			"fieldtype": "Link",
-			"options": "BRS Date",
-			"read_only": 1,
-			"no_copy": 1,
 			"in_standard_filter": 1
 		},
 		{
@@ -134,6 +125,19 @@
 		},
 		{
 			"fieldname": "section4_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "BRS Date",
+			"fieldname": "brs_date",
+			"fieldtype": "Link",
+			"options": "BRS Date",
+			"read_only": 1,
+			"no_copy": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"fieldname": "section4_column3",
 			"fieldtype": "Column Break"
 		},
 		{
