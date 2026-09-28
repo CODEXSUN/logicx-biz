@@ -6,12 +6,17 @@
 	},
 	{
 		"doctype": "Role",
-		"name": "TM User",
-		"role_name": "TM User"
+		"name": "TM Accounts",
+		"role_name": "TM Accounts"
 	},
 	{
 		"doctype": "Role",
-		"name": "TM Accounts",
-		"role_name": "TM Accounts"
+		"name": "TM Stores",
+		"role_name": "TM Stores"
+	},
+	{
+		"doctype": "Role",
+		"name": "TM User",
+		"role_name": "TM User"
 	}
 ]

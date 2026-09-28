@@ -38,7 +38,7 @@ website_route_rules = [
 # bench --site tmnext.in migrate         -- PROD: from app - update to site.
 fixtures = [
 	{"doctype": "Role", "filters": [
-									["name", "in", ["TM Admin", "TM Accounts", "TM User"]],
+									["name", "in", ["TM Admin", "TM Accounts", "TM Stores", "TM User"]],
 									]},
 	{"doctype": "Custom Field", "filters": [
 											["name", "in", [

@@ -17,6 +17,9 @@
 		},
 		{
 			"role": "TM Admin"
+		},
+		{
+			"role": "TM Stores"
 		}
 	]
 }
