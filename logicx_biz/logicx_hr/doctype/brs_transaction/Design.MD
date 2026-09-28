@@ -143,7 +143,7 @@ Then, in `after_insert`:
        if the Bank Account has any BRS Date  -> error "Opening balance is already added"
        brs_date = insert BRS Date(bank_account, date, is_opening = 1,
                                   opening_transaction = this, closing_transaction = this,
-                                  no_of_transactions = 1)
+                                  no_of_transactions = 1, amounts = this's)
    else:
        brs_date = the BRS Date of (bank_account, date)
        if there is none:
@@ -151,12 +151,18 @@ Then, in `after_insert`:
            brs_date = insert BRS Date(bank_account, date,
                                       previous_brs_date = brs_closing_date or brs_opening_date,
                                       opening_transaction = this, closing_transaction = this,
-                                      no_of_transactions = 1)
+                                      no_of_transactions = 1, amounts = this's)
        else:
            brs_date.closing_transaction = this
            brs_date.no_of_transactions += 1
+           brs_date.withdrawal += this.withdrawal
+           brs_date.deposit += this.deposit
+           brs_date.closing_balance = this.closing_balance
    this.brs_date = brs_date
    ```
+
+   `amounts = this's`: the new BRS Date's Opening Balance, Withdrawal, Deposit and Closing
+   Balance are this transaction's own.
 
    The BRS Opening Date check is the pseudo code's assert: a guard against a Bank Account edited
    by hand, since rule 7 already keeps a normal transaction off an account without an opening.

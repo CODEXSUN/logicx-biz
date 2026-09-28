@@ -48,6 +48,15 @@ Naming: `BRSDATE.#` -> `BRSDATE1`, `BRSDATE2`, ... Title: `"{Date} : {Account Na
 | `opening_transaction` | Link -> BRS Transaction, read-only | The date's first transaction; set when it creates the date. |
 | `closing_transaction` | Link -> BRS Transaction, read-only | The date's latest transaction; set to the first on insert, then to each later one. |
 | `no_of_transactions` | Int, read-only, default 0 | 1 on insert; + 1 for each later transaction on the date. |
+| `opening_balance` | Currency, read-only | Opening Transaction's Opening Balance; set on insert. |
+| `withdrawal` | Currency, read-only | Sum of Withdrawal over the date's BRS Transactions: the first's on insert, + each later one's. |
+| `deposit` | Currency, read-only | Sum of Deposit over the date's BRS Transactions: the first's on insert, + each later one's. |
+| `closing_balance` | Currency, read-only | Closing Transaction's Closing Balance: the first's on insert, then each later one's. |
+
+The four amounts are stored, not computed on read, and kept up to date by `update_brs_transaction()`
+as each transaction is added. Since the date's transactions chain on from one another, Opening
+Balance + Deposit - Withdrawal = Closing Balance. Adding to the sums is enough while a BRS
+Transaction cannot be updated or deleted; once it can, the date's sums must be recomputed.
 
 Permissions: no user can create or update a BRS Date by hand. TM User and TM Admin can read; TM
 Admin can also delete, which the delete guard below still refuses. Import is off. BRS Transactions
@@ -172,6 +181,14 @@ BRS Date:
 
       on delete
             throw 'Not implemented yet'
+```
+
+BRS Date amounts:
+```
+      Opening Balance = "Opening Transaction"."Opening Balance"
+      Withdrawal      = Sum(Withdrawal) from "BRS Transaction" where "BRS Date" = {{"BRS Date"}}
+      Deposit         = Sum(Deposit)    from "BRS Transaction" where "BRS Date" = {{"BRS Date"}}
+      Closing Balance = "Closing Transaction"."Closing Balance"
 ```
 
 ## Not done yet

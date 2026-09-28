@@ -116,6 +116,50 @@
 			"options": "BRS Transaction",
 			"read_only": 1,
 			"no_copy": 1
+		},
+		{
+			"fieldname": "section4",
+			"fieldtype": "Section Break"
+		},
+		{
+			"label": "Opening Balance",
+			"fieldname": "opening_balance",
+			"fieldtype": "Currency",
+			"read_only": 1,
+			"no_copy": 1
+		},
+		{
+			"fieldname": "section4_column2",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Withdrawal",
+			"fieldname": "withdrawal",
+			"fieldtype": "Currency",
+			"read_only": 1,
+			"no_copy": 1
+		},
+		{
+			"fieldname": "section4_column3",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Deposit",
+			"fieldname": "deposit",
+			"fieldtype": "Currency",
+			"read_only": 1,
+			"no_copy": 1
+		},
+		{
+			"fieldname": "section4_column4",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Closing Balance",
+			"fieldname": "closing_balance",
+			"fieldtype": "Currency",
+			"read_only": 1,
+			"no_copy": 1
 		}
 	],
 	"permissions": [

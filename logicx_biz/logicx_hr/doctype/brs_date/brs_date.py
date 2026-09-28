@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, formatdate, get_link_to_form, getdate
+from frappe.utils import cint, flt, formatdate, get_link_to_form, getdate
 
 from logicx_biz.logicx_erp.bank_account import update_brs_date
 
@@ -105,7 +105,8 @@ def update_brs_transaction(brs_transaction):
 	"""Record a new BRS Transaction on the BRS Date of its date.
 
 	The first transaction on a date creates that date's BRS Date; each later
-	one becomes the date's Closing Transaction and adds to its count.
+	one becomes the date's Closing Transaction, sets its Closing Balance, and
+	adds to its count, Withdrawal and Deposit.
 	"""
 	if brs_transaction.is_opening:
 		if frappe.db.exists("BRS Date", {"bank_account": brs_transaction.bank_account}):
@@ -115,17 +116,22 @@ def update_brs_transaction(brs_transaction):
 		existing = frappe.db.get_value(
 			"BRS Date",
 			{"bank_account": brs_transaction.bank_account, "date": brs_transaction.date},
-			["name", "no_of_transactions"],
+			["name", "no_of_transactions", "withdrawal", "deposit"],
 			as_dict=True,
 		)
 		if existing:
-			# set_value rather than a save, which validate would refuse
+			# set_value rather than a save, which validate would refuse; Withdrawal and
+			# Deposit stay the sums of the date's transactions, none of which can be
+			# updated or deleted yet
 			frappe.db.set_value(
 				"BRS Date",
 				existing.name,
 				{
 					"closing_transaction": brs_transaction.name,
 					"no_of_transactions": cint(existing.no_of_transactions) + 1,
+					"withdrawal": flt(existing.withdrawal) + flt(brs_transaction.withdrawal),
+					"deposit": flt(existing.deposit) + flt(brs_transaction.deposit),
+					"closing_balance": brs_transaction.closing_balance,
 				},
 			)
 			brs_date = existing.name
@@ -153,6 +159,10 @@ def insert_brs_date(brs_transaction, **values):
 			"opening_transaction": brs_transaction.name,
 			"closing_transaction": brs_transaction.name,
 			"no_of_transactions": 1,
+			"opening_balance": brs_transaction.opening_balance,
+			"withdrawal": brs_transaction.withdrawal,
+			"deposit": brs_transaction.deposit,
+			"closing_balance": brs_transaction.closing_balance,
 			**values,
 		}
 	)
