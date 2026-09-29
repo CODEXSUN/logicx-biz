@@ -11,7 +11,7 @@ transaction on it.
 |---------|--------|--------|
 | **BRS Transaction** | LogicX HR | New. One row = one transaction of one Bank Account, linked to the previous and next transaction. |
 | **BRS Date** | LogicX HR | Three new fields: the date's Opening and Closing Transaction, and its No of Transactions. Created and updated by transactions only; no user can create or update one by hand. |
-| **Bank Account** (ERPNext) | -- | No change. Its BRS Opening / Closing Date still follow the BRS Dates, now created by transactions. |
+| **Bank Account** (ERPNext) | -- | No change. Its BRS Opening / Closing Date still follow the BRS Dates, now created and deleted by transactions. |
 
 ## The chains
 
@@ -45,6 +45,8 @@ BRS Transaction | T1        |-->| T2        |------>| T3        |-->| T4        
   it is set on the previous transaction when the following one is inserted.
 - The chain of transactions runs across dates, never back in time, and each transaction opens at
   the balance the previous one closed at.
+- The chain grows and shrinks at its tail only: a new transaction goes on after the last one, and
+  only the last one can be deleted.
 - A BRS Date points into the chain at its first transaction (Opening Transaction) and its latest
   (Closing Transaction), and counts its transactions (No of Transactions). Each transaction points
   back at its BRS Date and carries its place in that date (Daily Roll Number, restarting at 1 each date).
@@ -198,11 +200,64 @@ head start, not the check.
 - `get_chain_tail()` reads without locking the Bank Account, unlike `bulk_insert`'s call, which
   goes on to append; a form that is only being filled in must not hold up a posting.
 
-## Update and delete
+## Update
 
 Not implemented yet. Saving an existing BRS Transaction fails with "Updating a BRS Transaction is
-not implemented yet."; deleting one fails with "Deleting a BRS Transaction is not implemented
-yet."
+not implemented yet."
+
+## Delete
+
+Only the last transaction of a Bank Account can be deleted -- the tail of its chain, the one with
+no Next Transaction -- so an account's transactions come off from the last one backwards, in the
+reverse of the order they went on. Only **TM Admin** may delete one; TM User has no delete. That is
+the DocType's own permission setting (`delete` is 1 for TM Admin and 0 for TM User in
+brs_transaction.json), not a check in code. Administrator bypasses role permissions, as everywhere,
+and is held to the same chain rule.
+
+The check runs in `on_trash`, before the row goes:
+
+| # | Rule | Error |
+|---|------|-------|
+| 1 | The transaction has no Next Transaction. Read from the row and locked, not taken from the loaded document, which may predate the transaction that followed it. | "{this} is followed by {next}, so it is not the last transaction of {account}. An account's transactions are deleted from the last one backwards." |
+
+Then, still in `on_trash`:
+
+1. `previous_transaction.next_transaction = empty` -- the transaction before it becomes the
+   account's last (when there is one; the opening transaction has none).
+2. `remove_brs_transaction(this)`, a function of BRS Date and the mirror of
+   `update_brs_transaction()`:
+
+   ```
+   brs_date = this.'BRS Date'
+   this.'BRS Date' = empty            # a BRS Date cannot be deleted while a transaction points at it
+   if brs_date.'No of Transactions' <= 1:
+       delete brs_date                # nothing is left on the date: an orphan
+   else:
+       brs_date.'Closing Transaction' = this.'Previous Transaction'
+       brs_date.'No of Transactions' -= 1
+       brs_date.Withdrawal -= this.Withdrawal
+       brs_date.Deposit    -= this.Deposit
+       brs_date.'Closing Balance' = this.'Previous Transaction'.'Closing Balance'
+   ```
+
+   The date keeps its Opening Transaction and Opening Balance: the transaction deleted is the
+   date's last, and a date with more than one does not lose its first here. Deleting the orphan
+   date runs BRS Date's own delete (see [../brs_date/Design.MD](../brs_date/Design.MD)), which
+   unlinks it from the date before it and from its Bank Account's BRS Opening / Closing Date.
+
+An error anywhere in the delete rolls back the whole of it: the transaction row, the previous
+transaction's next link, and any BRS Date deleted or changed.
+
+### Walk-through
+
+Taking the four transactions above off again, last one first:
+
+| Delete | BRS Date | Bank Account |
+|--------|----------|--------------|
+| T4 | D2 stays: Closing Transaction = T3, No of Transactions = 1, Closing Balance 55,000.00, Withdrawal loses 2,500.00. | -- |
+| T3 | D2 has nothing left: **deleted**, and D1's Next BRS Date cleared. | BRS Closing Date cleared: the date before D2 is D1, the opening date, which is never the closing date. |
+| T2 | D1 stays: Closing Transaction = T1, No of Transactions = 1, Closing Balance 50,000.00, Withdrawal loses 5,000.00. | -- |
+| T1 | D1 has nothing left: **deleted**. | BRS Opening Date cleared: the account can be opened again. |
 
 ## Implementation notes
 
@@ -219,10 +274,18 @@ yet."
 - **Other rows written with `frappe.db.set_value`.** Saving the previous transaction or an
   existing BRS Date (Closing Transaction, No of Transactions) would hit their "not implemented
   yet" update guards.
+- **Delete clears the links before the row goes.** Frappe refuses to delete a row that other
+  documents still link to, and runs `on_trash` before that check: the previous transaction's next
+  link and the transaction's own BRS Date link are cleared there, the second of which is also what
+  leaves an orphan BRS Date deletable.
 - **Concurrent inserts.** Read the previous transaction `for_update`, as BRS Date reads its
   previous date. Every new transaction of an account must follow the same tail, so this lock
   queues them all: two transactions cannot both follow one, both create the same BRS Date, or
   both take the same Daily Roll Number and No of Transactions.
+- **Concurrent delete.** A delete reads its own row `for_update` before anything else, so an
+  insert following this transaction (which reads it `for_update` too) and the delete cannot both
+  go through: whichever is second finds the row gone, or the chain already moved on. The locks are
+  taken in the same order as an insert's -- the transaction row, then the Bank Account.
 - **Balances compared at currency precision** (`flt(..., precision)` on both sides) in rules 4 and
   10, not as raw floats, where 0.1 + 0.2 != 0.3.
 
@@ -235,12 +298,13 @@ yet."
 | `logicx_hr/doctype/brs_transaction/brs_transaction.js` | The form script: fills Previous Transaction and Opening Balance from the Bank Account's chain. |
 | `logicx_hr/doctype/brs_transaction/Bulk-Insert.MD` | Posting a whole bank statement in one call: what is skipped, what is appended, and what is refused. |
 | `logicx_hr/doctype/brs_date/brs_date.json` | `opening_transaction`, `closing_transaction`, `no_of_transactions`; create and write removed from TM User and TM Admin (all permlevels); import off. |
-| `logicx_hr/doctype/brs_date/brs_date.py` | `update_brs_transaction()`, and `insert_brs_date()` for a date's first transaction. |
+| `logicx_hr/doctype/brs_date/brs_date.py` | `update_brs_transaction()` and `insert_brs_date()` for a date's first transaction; `remove_brs_transaction()` for a deleted one. |
+| `logicx_erp/bank_account.py` | `remove_brs_date()` -- the account's opening / closing date after a BRS Date is deleted. |
 | `logicx_hr/doctype/brs_date/Design.MD` | The new fields and permissions; BRS Dates now created by transactions. |
 
 ## Later
 
-- Update and delete of a BRS Transaction (see above).
+- Update of a BRS Transaction (see above).
 
 ## pseudo code
 
@@ -283,6 +347,20 @@ BRS Date:
             end
 
             update new_brs_transaction.'BRS Date' = brs_date
+
+      function Remove_BRS_Transaction (deleted_brs_transaction)
+            set brs_date = deleted_brs_transaction.'BRS Date'
+            update deleted_brs_transaction.'BRS Date' = empty
+
+            if brs_date.'No of Transactions' <= 1
+                  delete brs_date
+            else
+                  update brs_date.'Closing Transaction' = deleted_brs_transaction.'Previous Transaction'
+                         brs_date.'No of Transactions' -= 1
+                         brs_date.Withdrawal -= deleted_brs_transaction.Withdrawal
+                         brs_date.Deposit -= deleted_brs_transaction.Deposit
+                         brs_date.'Closing Balance' = deleted_brs_transaction.'Previous Transaction'.'Closing Balance'
+            end
 ```
 
 BRS Transaction:
@@ -338,5 +416,11 @@ BRS Transaction:
             throw 'Not implemented yet'
 
       on delete
-            throw 'Not implemented yet'
+            if 'Next Transaction' is set then
+                  throw '{this} is followed by {Next Transaction}, so it is not the last transaction of {Bank Account}'
+
+            if 'Previous Transaction' is set then
+                  set 'Previous Transaction'.'Next Transaction' = empty
+
+            'BRS Date'.Remove_BRS_Transaction (this)
 ```

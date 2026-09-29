@@ -3,11 +3,12 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt, formatdate, get_link_to_form, getdate
 
-from logicx_biz.logicx_erp.bank_account import update_brs_date
+from logicx_biz.logicx_erp.bank_account import remove_brs_date, update_brs_date
 
 # a Bank Account's BRS Dates form a chain: the opening date first, each later
 # date linked to the one before it through Previous / Next BRS Date; each date
-# is created by the first BRS Transaction on it (see update_brs_transaction)
+# is created by the first BRS Transaction on it (see update_brs_transaction) and
+# deleted with the last one left on it (see remove_brs_transaction)
 
 
 class BRSDate(Document):
@@ -30,7 +31,16 @@ class BRSDate(Document):
 		update_brs_date(self)
 
 	def on_trash(self):
-		frappe.throw(_("Deleting a BRS Date is not implemented yet."))
+		# role permissions keep users out, but not Administrator, who bypasses them
+		if not self.flags.from_brs_transaction:
+			frappe.throw(
+				_("A BRS Date is deleted with the last BRS Transaction on it, not by hand."),
+			)
+		self.validate_delete()
+		if self.previous_brs_date:
+			# set_value rather than a save, which validate would refuse
+			frappe.db.set_value("BRS Date", self.previous_brs_date, "next_brs_date", None)
+		remove_brs_date(self)
 
 	def validate_duplicate(self):
 		"""A Bank Account carries one BRS Date per date."""
@@ -47,6 +57,18 @@ class BRSDate(Document):
 				),
 				frappe.DuplicateEntryError,
 				title=_("Duplicate BRS Date"),
+			)
+
+	def validate_delete(self):
+		"""Only the date at the tail of a Bank Account's chain is ever deleted."""
+		if self.next_brs_date:
+			frappe.throw(
+				_("{0} is followed by {1}, so it is not the last BRS Date of {2}.").format(
+					get_link_to_form("BRS Date", self.name),
+					get_link_to_form("BRS Date", self.next_brs_date),
+					frappe.bold(self.bank_account),
+				),
+				title=_("Not the Last BRS Date"),
 			)
 
 	def validate_chain(self):
@@ -147,6 +169,80 @@ def update_brs_transaction(brs_transaction):
 			brs_date = insert_brs_date(brs_transaction, previous_brs_date=closing_date or opening_date)
 
 	brs_transaction.db_set("brs_date", brs_date)
+
+
+def remove_brs_transaction(brs_transaction):
+	"""Take a deleted BRS Transaction off the BRS Date of its date.
+
+	Only the last transaction of a Bank Account is ever deleted, so it is also
+	the Closing Transaction of its date: the date falls back to the transaction
+	before it, and its count, Withdrawal and Deposit lose this one. A date left
+	with no transaction at all is deleted along with it.
+	"""
+	# locked until the transaction ends, as when a transaction is added to it
+	brs_date = None
+	if brs_transaction.brs_date:
+		brs_date = frappe.db.get_value(
+			"BRS Date",
+			brs_transaction.brs_date,
+			["name", "date", "no_of_transactions", "withdrawal", "deposit"],
+			as_dict=True,
+			for_update=True,
+		)
+	if not brs_date:
+		frappe.throw(
+			_("{0} is on no BRS Date.").format(get_link_to_form("BRS Transaction", brs_transaction.name)),
+			title=_("Chain Broken"),
+		)
+
+	# the link goes first: the transaction's row is still there until its delete
+	# ends, and a BRS Date cannot be deleted while a transaction points at it
+	brs_transaction.db_set("brs_date", None, update_modified=False)
+
+	if cint(brs_date.no_of_transactions) <= 1:
+		# the date has nothing left on it; its own delete takes it off the BRS Date
+		# before it and off its Bank Account
+		frappe.delete_doc(
+			"BRS Date",
+			brs_date.name,
+			ignore_permissions=True,
+			flags={"from_brs_transaction": True},
+		)
+		return
+
+	# a date with more than one transaction has an earlier one, and the chain runs
+	# in date order, so that is the transaction before this one
+	previous = None
+	if brs_transaction.previous_transaction:
+		previous = frappe.db.get_value(
+			"BRS Transaction",
+			brs_transaction.previous_transaction,
+			["name", "date", "closing_balance"],
+			as_dict=True,
+		)
+	if not previous or getdate(previous.date) != getdate(brs_date.date):
+		frappe.throw(
+			_("{0} counts {1} transactions, but none of them comes before {2}.").format(
+				get_link_to_form("BRS Date", brs_date.name),
+				cint(brs_date.no_of_transactions),
+				get_link_to_form("BRS Transaction", brs_transaction.name),
+			),
+			title=_("Chain Broken"),
+		)
+
+	# set_value rather than a save, which validate would refuse; the date's Opening
+	# Balance stays its first transaction's, which this is not
+	frappe.db.set_value(
+		"BRS Date",
+		brs_date.name,
+		{
+			"closing_transaction": previous.name,
+			"no_of_transactions": cint(brs_date.no_of_transactions) - 1,
+			"withdrawal": flt(brs_date.withdrawal) - flt(brs_transaction.withdrawal),
+			"deposit": flt(brs_date.deposit) - flt(brs_transaction.deposit),
+			"closing_balance": previous.closing_balance,
+		},
+	)
 
 
 def insert_brs_date(brs_transaction, **values):

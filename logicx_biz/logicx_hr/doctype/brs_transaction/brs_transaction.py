@@ -3,11 +3,13 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, cstr, flt, formatdate, get_link_to_form, getdate
 
-from logicx_biz.logicx_hr.doctype.brs_date.brs_date import update_brs_transaction
+from logicx_biz.logicx_hr.doctype.brs_date.brs_date import remove_brs_transaction, update_brs_transaction
 
 # a Bank Account's BRS Transactions form a chain: the opening transaction first,
 # each later one linked to the one before it through Previous / Next Transaction;
-# each transaction also joins the BRS Date of its date
+# each transaction also joins the BRS Date of its date. The chain grows and
+# shrinks at its tail only: a new transaction is appended after the last one, and
+# only the last one can be deleted.
 
 
 class BRSTransaction(Document):
@@ -27,7 +29,12 @@ class BRSTransaction(Document):
 		self.db_set("daily_roll_number", frappe.db.get_value("BRS Date", self.brs_date, "no_of_transactions"))
 
 	def on_trash(self):
-		frappe.throw(_("Deleting a BRS Transaction is not implemented yet."))
+		# only TM Admin has delete on this DocType; the chain is what is checked here
+		self.validate_delete()
+		if self.previous_transaction:
+			# set_value rather than a save, which validate would refuse
+			frappe.db.set_value("BRS Transaction", self.previous_transaction, "next_transaction", None)
+		remove_brs_transaction(self)
 
 	def validate_amounts(self):
 		"""A transaction is either a Deposit or a Withdrawal, and its balance adds up."""
@@ -43,6 +50,27 @@ class BRSTransaction(Document):
 		precision = self.precision("closing_balance")
 		if flt(flt(self.opening_balance) + deposit - withdrawal, precision) != flt(self.closing_balance, precision):
 			frappe.throw(_("Balance is not matching."))
+
+	def validate_delete(self):
+		"""Only the transaction at the tail of a Bank Account's chain can be deleted."""
+		# read from the row rather than from this document, which was loaded before the
+		# transaction that follows could have set the link; and locked until the
+		# transaction ends, so nothing can follow this one while it is being deleted
+		next_transaction = frappe.db.get_value(
+			"BRS Transaction", self.name, "next_transaction", for_update=True
+		)
+		if next_transaction:
+			frappe.throw(
+				_(
+					"{0} is followed by {1}, so it is not the last transaction of {2}. "
+					"An account's transactions are deleted from the last one backwards."
+				).format(
+					get_link_to_form("BRS Transaction", self.name),
+					get_link_to_form("BRS Transaction", next_transaction),
+					frappe.bold(self.bank_account),
+				),
+				title=_("Not the Last Transaction"),
+			)
 
 	def validate_chain(self):
 		"""A new transaction joins its Bank Account's chain after the transaction that has no next one yet."""
@@ -75,6 +103,12 @@ class BRSTransaction(Document):
 			as_dict=True,
 			for_update=True,
 		)
+		if not previous:
+			# deleted between this form being filled in and this save
+			frappe.throw(
+				_("Previous Transaction {0} no longer exists.").format(frappe.bold(self.previous_transaction)),
+				title=_("No Such Previous Transaction"),
+			)
 		# the account first, so a wrong account's transaction is not reported as a balance or date mismatch
 		if previous.bank_account != self.bank_account:
 			frappe.throw(
