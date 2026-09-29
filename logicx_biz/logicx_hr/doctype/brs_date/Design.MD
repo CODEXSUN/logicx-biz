@@ -147,6 +147,25 @@ Then, still in `on_trash`:
 
 An error in `on_trash` rolls back the whole delete, the BRS Transaction that started it included.
 
+## Form
+
+Below the four amounts, a **Transactions** section lists the BRS Transactions of this date -- the
+`transactions_html` HTML field, filled by `brs_date.js`:
+
+| Column | Notes |
+|--------|-------|
+| ID | The transaction's name, linked to its form. |
+| Withdrawal | Blank rather than zero: a transaction carries a Deposit or a Withdrawal, never both. |
+| Deposit | As above. |
+| Reference Number | |
+| Description | Wraps onto as many lines as the bank's narration takes. |
+
+Read with `frappe.db.get_list` on `brs_date = {this}`, ordered by `daily_roll_number` -- the order
+the date's transactions were posted in -- and rendered with frappe-datatable, so the columns sort
+and filter in place. Nothing is written from the form: a BRS Date's transactions are created and
+deleted only through BRS Transaction. The four amounts above the table are the totals over exactly
+these rows.
+
 ## Implementation notes
 
 - **Update guard in `validate`, not `on_update`.** Frappe runs `on_update` after an insert as well,
@@ -174,6 +193,7 @@ An error in `on_trash` rolls back the whole delete, the BRS Transaction that sta
 | File | What |
 |------|------|
 | `logicx_hr/doctype/brs_date/brs_date.json` | The DocType. |
+| `logicx_hr/doctype/brs_date/brs_date.js` | The form's Transactions table (see Form). |
 | `logicx_hr/doctype/brs_date/brs_date.py` | Insert and delete rules, chain links, update guard, unique index; `update_brs_transaction()`, `insert_brs_date()` and `remove_brs_transaction()` for BRS Transaction. |
 | `logicx_erp/bank_account.py` | `update_brs_date()` and `remove_brs_date()` -- Bank Account's opening / closing date. |
 | `fixtures/custom_field.json` | `Bank Account-brs_opening_date`, `Bank Account-brs_closing_date` (inserted after `company`). |

@@ -160,6 +160,15 @@
 			"fieldtype": "Currency",
 			"read_only": 1,
 			"no_copy": 1
+		},
+		{
+			"label": "Transactions",
+			"fieldname": "section5",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fieldname": "transactions_html",
+			"fieldtype": "HTML"
 		}
 	],
 	"permissions": [
