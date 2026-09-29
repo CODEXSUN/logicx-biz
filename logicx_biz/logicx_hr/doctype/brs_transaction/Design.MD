@@ -174,6 +174,30 @@ Then, in `after_insert`:
 An error in `after_insert` still rolls back the whole insert: the transaction row, the previous
 transaction's next link and any BRS Date it created or changed.
 
+## Form
+
+Picking the Previous Transaction by hand would mean finding the account's tail among all
+transactions, so the form fills it. As soon as the Bank Account is picked on a new transaction,
+`get_chain_tail()` is asked for the account's last posted transaction -- its latest BRS Date's
+Closing Transaction, the same one `bulk_insert` appends after -- and the form sets:
+
+| Field | Filled with |
+|-------|-------------|
+| `previous_transaction` | The account's last posted transaction. |
+| `opening_balance` | That transaction's Closing Balance. |
+
+Both stay editable, and the insert works them out again (rules 7-10): what the form fills is a
+head start, not the check.
+
+- Is Opening starts the chain, so ticking it clears both; unticking it fills them again.
+- An account with no BRS Opening Date yet has no tail: both are cleared and the form says
+  "{account} has no opening balance yet. Ask your administrator to add one (even if it is zero)."
+  -- as a passing alert, since the next transaction on such an account is the opening one, which
+  only TM Admin can enter.
+- Only a new transaction is filled: an existing one cannot be updated at all.
+- `get_chain_tail()` reads without locking the Bank Account, unlike `bulk_insert`'s call, which
+  goes on to append; a form that is only being filled in must not hold up a posting.
+
 ## Update and delete
 
 Not implemented yet. Saving an existing BRS Transaction fails with "Updating a BRS Transaction is
@@ -207,7 +231,8 @@ yet."
 | File | What |
 |------|------|
 | `logicx_hr/doctype/brs_transaction/brs_transaction.json` | The DocType. |
-| `logicx_hr/doctype/brs_transaction/brs_transaction.py` | Insert rules, chain links, Daily Roll Number, update / delete guards, and `bulk_insert()`. |
+| `logicx_hr/doctype/brs_transaction/brs_transaction.py` | Insert rules, chain links, Daily Roll Number, update / delete guards, `get_chain_tail()` and `bulk_insert()`. |
+| `logicx_hr/doctype/brs_transaction/brs_transaction.js` | The form script: fills Previous Transaction and Opening Balance from the Bank Account's chain. |
 | `logicx_hr/doctype/brs_transaction/Bulk-Insert.MD` | Posting a whole bank statement in one call: what is skipped, what is appended, and what is refused. |
 | `logicx_hr/doctype/brs_date/brs_date.json` | `opening_transaction`, `closing_transaction`, `no_of_transactions`; create and write removed from TM User and TM Admin (all permlevels); import off. |
 | `logicx_hr/doctype/brs_date/brs_date.py` | `update_brs_transaction()`, and `insert_brs_date()` for a date's first transaction. |
@@ -216,9 +241,6 @@ yet."
 ## Later
 
 - Update and delete of a BRS Transaction (see above).
-- Picking the Previous Transaction by hand means finding the account's tail among all
-  transactions. A form script could fill it -- the latest BRS Date's Closing Transaction --
-  together with the Opening Balance.
 
 ## pseudo code
 

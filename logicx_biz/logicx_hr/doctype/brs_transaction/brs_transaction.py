@@ -97,6 +97,40 @@ class BRSTransaction(Document):
 
 
 # ---------------------------------------------------------------------------
+# The form fills Previous Transaction and Opening Balance itself, as soon as a
+# Bank Account is picked; see brs_transaction.js.
+# ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def get_chain_tail(bank_account):
+	"""Where a new transaction of this Bank Account would join the chain.
+
+	Read-only, and nothing is locked: the form asks this the moment a Bank
+	Account is picked, and the insert works all of it out again. An account
+	with no opening balance yet is reported rather than thrown, because the
+	next transaction on it is the opening one.
+	"""
+	frappe.has_permission("BRS Transaction", "read", throw=True)
+
+	if not frappe.db.exists("Bank Account", bank_account):
+		frappe.throw(
+			_("Bank Account {0} does not exist.").format(frappe.bold(bank_account)),
+			title=_("No Such Bank Account"),
+		)
+	if not frappe.db.get_value("Bank Account", bank_account, "brs_opening_date"):
+		return {"has_opening_balance": 0}
+
+	last_posted = get_last_posted(bank_account, for_update=False)
+	return {
+		"has_opening_balance": 1,
+		"previous_transaction": last_posted.name,
+		"opening_balance": flt(last_posted.closing_balance),
+		"date": cstr(last_posted.date),
+	}
+
+
+# ---------------------------------------------------------------------------
 # Bulk insert: append the rows of a bank statement to an account's chain.
 # The API, the matching rules and a walk-through are in Bulk-Insert.MD.
 # ---------------------------------------------------------------------------
@@ -252,7 +286,7 @@ def read_rows(data):
 	return list(data)
 
 
-def get_last_posted(bank_account):
+def get_last_posted(bank_account, for_update=True):
 	"""The transaction at the tail of the account's chain, the one new rows follow.
 
 	Read through the account's latest BRS Date rather than by searching the
@@ -260,6 +294,9 @@ def get_last_posted(bank_account):
 	Closing Transaction, which is the account's latest transaction. An account with
 	only its opening date has no BRS Closing Date, so that is what BRS Opening Date
 	is fallen back to -- and the tail is then the opening transaction itself.
+
+	`for_update` locks the account for a call that goes on to append to the chain;
+	a call that only reads the tail, such as the form's, passes it as False.
 	"""
 	if not frappe.db.exists("Bank Account", bank_account):
 		frappe.throw(
@@ -270,7 +307,7 @@ def get_last_posted(bank_account):
 	# locked until the request ends, so two bulk inserts on one account cannot both
 	# read the same tail and both append to it
 	opening_date, closing_date = frappe.db.get_value(
-		"Bank Account", bank_account, ["brs_opening_date", "brs_closing_date"], for_update=True
+		"Bank Account", bank_account, ["brs_opening_date", "brs_closing_date"], for_update=for_update
 	)
 	brs_date = closing_date or opening_date
 	if not brs_date:
