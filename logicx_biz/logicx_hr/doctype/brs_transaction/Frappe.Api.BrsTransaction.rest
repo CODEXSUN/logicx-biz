@@ -1,0 +1,328 @@
+### BRS Transaction: list for a Bank Account, newest first (the chain's order, tail first).
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"doctype": "BRS Transaction",
+	"filters": [
+		[ "bank_account", "=", "HDFC Bank 4980 - HDFC" ]
+	],
+	"order_by": "creation desc",
+	"fields": [
+		"name",
+		"creation",
+		"bank_account",
+		"date",
+		"brs_date",
+		"daily_roll_number",
+		"description",
+		"reference_number",
+		"opening_balance",
+		"withdrawal",
+		"deposit",
+		"closing_balance",
+		"previous_transaction",
+		"next_transaction"
+	]
+}
+
+
+
+### Read BRS Transaction by ID.
+
+GET {{baseUrl}}/api/v2/document/BRS Transaction/BRSTXN1
+Authorization: token {{token}}
+
+
+
+### The account's latest transaction (the one with no Next Transaction yet).
+	# Its "name" is the next create's "previous_transaction", its "closing_balance" the next "opening_balance".
+	# No row: the account has no opening transaction yet.
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+	"doctype": "BRS Transaction",
+	"filters": [
+		[ "bank_account", "=", "HDFC Bank 4980 - HDFC" ],
+		[ "next_transaction", "is", "not set" ]
+	],
+	"fields": [
+		"name",
+		"date",
+		"closing_balance"
+	]
+}
+
+
+
+### Create the opening transaction: the head of the account's chain.
+	# TM Admin only: "is_opening" is permlevel 1. One per Bank Account.
+	# No "previous_transaction". Deposit and Withdrawal may both be 0, to open at zero.
+	# The server creates the account's opening BRS Date and sets "brs_date" and "daily_roll_number" (1).
+POST {{baseUrl}}/api/v2/document/BRS Transaction
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "bank_account": "HDFC Bank 4980 - HDFC",
+  "date": "2026-03-31",
+  "is_opening": 1,
+  "description": "Opening balance",
+  "opening_balance": 0,
+  "withdrawal": 0,
+  "deposit": 50000,
+  "closing_balance": 50000
+}
+
+
+
+### Create a transaction on the same date: a withdrawal.
+	# "previous_transaction": the account's latest transaction (see above).
+	# "opening_balance" = its Closing Balance; "closing_balance" = opening_balance + deposit - withdrawal.
+	# Either a Deposit or a Withdrawal, not both. "date" not before the previous transaction's.
+	# Leave "next_transaction" out: the transaction that follows sets it.
+POST {{baseUrl}}/api/v2/document/BRS Transaction
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "bank_account": "HDFC Bank 4980 - HDFC",
+  "date": "2026-03-31",
+  "description": "Cheque 104512 - Office rent",
+  "reference_number": "104512",
+  "previous_transaction": "BRSTXN1",
+  "opening_balance": 50000,
+  "withdrawal": 5000,
+  "deposit": 0,
+  "closing_balance": 45000
+}
+
+
+
+### Create a transaction on a later date: a deposit.
+	# The first transaction on a date creates that date's BRS Date; "daily_roll_number" restarts at 1.
+POST {{baseUrl}}/api/v2/document/BRS Transaction
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "bank_account": "HDFC Bank 4980 - HDFC",
+  "date": "2026-04-01",
+  "description": "NEFT from customer",
+  "reference_number": "N091260401234567",
+  "previous_transaction": "BRSTXN2",
+  "opening_balance": 45000,
+  "withdrawal": 0,
+  "deposit": 10000,
+  "closing_balance": 55000
+}
+
+
+
+### Update (PUT) and delete are not implemented yet: both fail.
+
+
+
+### Bulk insert: post a bank statement in one call.
+	# The statement in the bank's own order, oldest row first, all of it for one Bank Account.
+	# Rows already posted are skipped; the rows after them are appended, one insert each.
+	#
+	# The data has to reach back to the account's last posted transaction AND include it.
+	# Carrying on from the three creates above, that is BRSTXN3 (01-04-2026, closing 55,000),
+	# so rows 1 and 2 here stand for BRSTXN2 and BRSTXN3. Two confirmations, which is
+	# MIN_BACKWARD_MATCHES_LIMIT; one row fewer and the call would be refused.
+	#
+	# No "opening_balance" and no "previous_transaction": each row opens at the Closing
+	# Balance of the one before it, and the first opens at the account's last posted one.
+	# The account needs its opening transaction first (TM Admin, above).
+	#
+	# Expect: "skipped" 2, "confirmed" 2, "inserted" ["BRSTXN4", "BRSTXN5", "BRSTXN6"].
+	# Full documentation: Bulk-Insert.MD
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "data": [
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-03-31",
+      "description": "Cheque 104512 - Office rent",
+      "reference_number": "104512",
+      "withdrawal": 5000.0,
+      "deposit": 0.0,
+      "closing_balance": 45000.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-01",
+      "description": "NEFT from customer",
+      "reference_number": "N091260401234567",
+      "withdrawal": 0.0,
+      "deposit": 10000.0,
+      "closing_balance": 55000.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-02",
+      "description": "NEFT from customer 1",
+      "reference_number": "N091260401234568",
+      "withdrawal": 1000.0,
+      "deposit": 0.0,
+      "closing_balance": 54000.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-02",
+      "description": "NEFT from customer 2",
+      "reference_number": "N091260401234999",
+      "withdrawal": 0.0,
+      "deposit": 3000.0,
+      "closing_balance": 57000.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-03",
+      "description": "NEFT from customer 3",
+      "reference_number": "N091260401235000",
+      "withdrawal": 0.0,
+      "deposit": 2000.0,
+      "closing_balance": 59000.0
+    }
+  ]
+}
+
+
+
+### Bulk insert: next week's download, overlapping what was posted above.
+	# The last posted transaction is now BRSTXN6 (03-04-2026, closing 59,000), which is row 3.
+	# Rows 1 to 3 are matched and skipped, row 4 is appended.
+	# The bank has reworded row 1's narration -- Description is not matched on, so it still
+	# matches; row 3's reference number arrives padded, and is compared trimmed.
+	# Expect: "skipped" 3, "confirmed" 3, "inserted" ["BRSTXN7"].
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "data": [
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-02",
+      "description": "NEFT/CUSTOMER ONE/N091260401234568",
+      "reference_number": "N091260401234568",
+      "withdrawal": 1000.0,
+      "deposit": 0.0,
+      "closing_balance": 54000.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-02",
+      "description": "NEFT from customer 2",
+      "reference_number": "N091260401234999",
+      "withdrawal": 0.0,
+      "deposit": 3000.0,
+      "closing_balance": 57000.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-03",
+      "description": "NEFT from customer 3",
+      "reference_number": "  N091260401235000  ",
+      "withdrawal": 0.0,
+      "deposit": 2000.0,
+      "closing_balance": 59000.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-06",
+      "description": "Cheque 104513 - Electricity",
+      "reference_number": "104513",
+      "withdrawal": 2500.0,
+      "deposit": 0.0,
+      "closing_balance": 56500.0
+    }
+  ]
+}
+
+
+
+### Bulk insert: data that ends too soon -- refused, nothing written.
+	# Row 1 is the last posted transaction, so the append point is found; but the data then
+	# ends with only 1 confirmation against a chain that has more behind it, below
+	# MIN_BACKWARD_MATCHES_LIMIT of 2:
+	# "The data confirms only 1 of ...'s posted transactions before it ends, and 2 have to
+	#  be confirmed."
+	# Sending one row further back (as the call above does) is enough.
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "data": [
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-06",
+      "description": "Cheque 104513 - Electricity",
+      "reference_number": "104513",
+      "withdrawal": 2500.0,
+      "deposit": 0.0,
+      "closing_balance": 56500.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-07",
+      "description": "NEFT from customer 4",
+      "reference_number": "N091260401235001",
+      "withdrawal": 0.0,
+      "deposit": 1500.0,
+      "closing_balance": 58000.0
+    }
+  ]
+}
+
+
+
+### Bulk insert: a statement that disagrees with what is posted -- refused, nothing written.
+	# Row 3 is the last posted transaction (BRSTXN7), so the append point is found and the
+	# walk sets off: row 3 = BRSTXN7, row 2 = BRSTXN6, and then row 1, whose Deposit has been
+	# changed from 3000 to 3500, meets BRSTXN5:
+	# "Row 1 does not match BRSTXN5 ... Deposit, Closing Balance differ."
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+  "data": [
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-02",
+      "description": "NEFT from customer 2",
+      "reference_number": "N091260401234999",
+      "withdrawal": 0.0,
+      "deposit": 3500.0,
+      "closing_balance": 57500.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-03",
+      "description": "NEFT from customer 3",
+      "reference_number": "N091260401235000",
+      "withdrawal": 0.0,
+      "deposit": 2000.0,
+      "closing_balance": 59000.0
+    },
+    {
+      "bank_account": "HDFC Bank 4980 - HDFC",
+      "date": "2026-04-06",
+      "description": "Cheque 104513 - Electricity",
+      "reference_number": "104513",
+      "withdrawal": 2500.0,
+      "deposit": 0.0,
+      "closing_balance": 56500.0
+    }
+  ]
+}

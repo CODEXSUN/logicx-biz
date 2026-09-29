@@ -207,7 +207,8 @@ yet."
 | File | What |
 |------|------|
 | `logicx_hr/doctype/brs_transaction/brs_transaction.json` | The DocType. |
-| `logicx_hr/doctype/brs_transaction/brs_transaction.py` | Insert rules, chain links, Daily Roll Number, update / delete guards. |
+| `logicx_hr/doctype/brs_transaction/brs_transaction.py` | Insert rules, chain links, Daily Roll Number, update / delete guards, and `bulk_insert()`. |
+| `logicx_hr/doctype/brs_transaction/Bulk-Insert.MD` | Posting a whole bank statement in one call: what is skipped, what is appended, and what is refused. |
 | `logicx_hr/doctype/brs_date/brs_date.json` | `opening_transaction`, `closing_transaction`, `no_of_transactions`; create and write removed from TM User and TM Admin (all permlevels); import off. |
 | `logicx_hr/doctype/brs_date/brs_date.py` | `update_brs_transaction()`, and `insert_brs_date()` for a date's first transaction. |
 | `logicx_hr/doctype/brs_date/Design.MD` | The new fields and permissions; BRS Dates now created by transactions. |
