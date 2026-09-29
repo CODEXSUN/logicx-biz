@@ -179,7 +179,7 @@ def get_chain_tail(bank_account):
 # The maximum stops a long overlap early; rows it does not reach are skipped
 # unconfirmed. Keep the maximum at or above the minimum.
 MIN_BACKWARD_MATCHES_LIMIT = 2
-MAX_BACKWARD_MATCHES_LIMIT = 100
+MAX_BACKWARD_MATCHES_LIMIT = 10000
 
 # What makes a statement row and a posted transaction the same transaction.
 # Description is deliberately not among them: a bank rewords it, and the wording
@@ -326,8 +326,9 @@ def get_last_posted(bank_account, for_update=True):
 	Read through the account's latest BRS Date rather than by searching the
 	transactions: the Bank Account points at that date, and the date points at its
 	Closing Transaction, which is the account's latest transaction. An account with
-	only its opening date has no BRS Closing Date, so that is what BRS Opening Date
-	is fallen back to -- and the tail is then the opening transaction itself.
+	only its opening date carries it as its BRS Closing Date as well, so the tail is
+	then the opening transaction itself; BRS Opening Date is fallen back to for an
+	account opened before the closing date was set along with the opening one.
 
 	`for_update` locks the account for a call that goes on to append to the chain;
 	a call that only reads the tail, such as the form's, passes it as False.

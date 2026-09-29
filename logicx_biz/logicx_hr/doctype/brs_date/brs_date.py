@@ -165,7 +165,8 @@ def update_brs_transaction(brs_transaction):
 				frappe.throw(
 					_("{0} has no BRS Opening Date.").format(frappe.bold(brs_transaction.bank_account))
 				)
-			# the closing date is empty while the account has only its opening date
+			# the closing date is the opening date itself while that is the account's only
+			# one; it is empty only on an account opened before it was set along with it
 			brs_date = insert_brs_date(brs_transaction, previous_brs_date=closing_date or opening_date)
 
 	brs_transaction.db_set("brs_date", brs_date)
