@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, cstr, flt, formatdate, get_link_to_form, getdate
+from frappe.utils import cint, cstr, escape_html, flt, formatdate, get_link_to_form, getdate
 
 from logicx_biz.logicx_hr.doctype.brs_date.brs_date import remove_brs_transaction, update_brs_transaction
 
@@ -384,11 +384,18 @@ def locate_last_posted(rows, last_posted, precision):
 	"""
 	# searched from the end: everything after the last posted transaction is new, so
 	# the last row that matches it is where the statement was left off
-	anchor = None
+	anchor, nearest = None, None
 	for index in range(len(rows) - 1, -1, -1):
-		if not differences(rows[index], last_posted, precision):
+		differing = differences(rows[index], last_posted, precision)
+		if not differing:
 			anchor = index
 			break
+		# the fewest fields apart, and the latest row at that distance: the row the
+		# statement most likely meant to be the last posted transaction, which the
+		# refusal below shows field by field. Kept while the rows are being read
+		# anyway, rather than read a second time to work out what went wrong.
+		if nearest is None or len(differing) < len(nearest[1]):
+			nearest = (index, differing)
 
 	if anchor is None:
 		message = _(
@@ -402,6 +409,19 @@ def locate_last_posted(rows, last_posted, precision):
 		)
 		if last_posted.is_opening:
 			message += " " + _("It is the account's opening transaction, matched like any other.")
+
+		# all six on the screen, and the row that came closest under them: which of
+		# the six a row is out on is the whole of what there is to correct, and it
+		# cannot be seen from a statement that says only that nothing matched
+		message += "<br><br>" + _("It is matched on all six of these:")
+		message += describe_match_fields(last_posted, precision)
+		if nearest:
+			index, differing = nearest
+			message += _("The closest the data comes is row {0}, which differs on {1}:").format(
+				index + 1, ", ".join(differing)
+			)
+			message += describe_match_fields(rows[index], precision, only=set(differing))
+
 		frappe.throw(message, title=_("Last Posted Transaction Not in the Data"))
 
 	return anchor + 1, confirm_backwards(rows, anchor, last_posted, precision)
@@ -422,18 +442,22 @@ def confirm_backwards(rows, anchor, last_posted, precision):
 	while confirmed < MAX_BACKWARD_MATCHES_LIMIT:
 		differing = differences(rows[index], transaction, precision)
 		if differing:
-			frappe.throw(
-				_(
-					"Row {0} does not match {1}, which is posted at that place in {2}'s chain: {3} differ. "
-					"Rows are only ever appended at the end, so nothing was posted."
-				).format(
-					index + 1,
-					get_link_to_form("BRS Transaction", transaction.name),
-					frappe.bold(transaction.bank_account),
-					", ".join(differing),
-				),
-				title=_("Data Inconsistent with the Posted Transactions"),
+			message = _(
+				"Row {0} does not match {1}, which is posted at that place in {2}'s chain: {3} differ. "
+				"Rows are only ever appended at the end, so nothing was posted."
+			).format(
+				index + 1,
+				get_link_to_form("BRS Transaction", transaction.name),
+				frappe.bold(transaction.bank_account),
+				", ".join(differing),
 			)
+			# the two sides of the disagreement, so that it is read off the message
+			# rather than looked up transaction by transaction
+			message += "<br><br>" + _("{0} has:").format(frappe.bold(transaction.name))
+			message += describe_match_fields(transaction, precision, only=set(differing))
+			message += _("Row {0} has:").format(index + 1)
+			message += describe_match_fields(rows[index], precision, only=set(differing))
+			frappe.throw(message, title=_("Data Inconsistent with the Posted Transactions"))
 		confirmed += 1
 
 		# the chain is asked first: a walk that has reached the opening transaction has
@@ -486,6 +510,42 @@ def differences(row, transaction, precision):
 		if not same:
 			differing.append(label)
 	return differing
+
+
+def match_field_value(source, fieldname, precision):
+	"""One match field of a statement row or a posted transaction, as a message shows it.
+
+	Shown the way it is compared rather than the way it was written: a date as a
+	date, so that one read as the wrong month reads as the wrong month; an amount at
+	currency precision; and an empty Reference Number as a word, so that it is not
+	the blank a missing column would look like.
+	"""
+	value = source.get(fieldname)
+	if fieldname == "date":
+		try:
+			return formatdate(getdate(value))
+		except Exception:
+			# read_rows has already refused a row's date it cannot read, and a
+			# transaction's is a date; whatever this is, it is shown as it stands
+			return cstr(value)
+	if fieldname in ("bank_account", "reference_number"):
+		return cstr(value).strip() or _("(empty)")
+	return cstr(flt(value, precision))
+
+
+def describe_match_fields(source, precision, only=None):
+	"""The match fields of a statement row or a posted transaction, as a list.
+
+	`only` narrows it to some of MATCH_FIELDS's labels, for the side of a comparison
+	where only what differs is worth showing. The values are the user's own text, so
+	they are escaped into the message the desk renders as HTML.
+	"""
+	items = "".join(
+		"<li>{0}: {1}</li>".format(label, escape_html(match_field_value(source, fieldname, precision)))
+		for fieldname, label in MATCH_FIELDS
+		if only is None or label in only
+	)
+	return "<ul>{0}</ul>".format(items)
 
 
 def append_row(row, index, previous):
