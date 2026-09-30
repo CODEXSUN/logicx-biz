@@ -7,9 +7,11 @@
 	// safe to send the same statement twice (doctype/brs_transaction/Bulk-Insert.MD).
 	const BULK_INSERT_METHOD =
 		"logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert";
-	// a .xlsx is turned into those same rows here first: the desk has no
-	// spreadsheet reader, and openpyxl on the server has (see brs_dashboard.py)
-	const XLSX_TO_ROWS_METHOD = "logicx_biz.logicx_hr.brs_dashboard.xlsx_to_rows";
+	// a .xlsx is imported whole on the server instead: the sheet goes up, is read
+	// there and posted there, and what comes back is what bulk_insert answered. The
+	// desk has no spreadsheet reader, and the rows are too much to carry back and
+	// forth even if it had (see brs_dashboard.py).
+	const IMPORT_SHEET_METHOD = "logicx_biz.logicx_hr.brs_dashboard.import_sheet";
 
 	// the two files the page reads, and what it does with each
 	const JSON_EXTENSION = "json";
@@ -103,10 +105,10 @@
 
 		/* --------------------------------------------------------- the import */
 
-		// one click, start to finish: the rows are read out of the file, posted to
-		// bulk_insert, and what it answered is rendered. Nothing is posted in
-		// pieces -- the call is one database transaction on the server -- so
-		// whatever happens, what the panel shows is the whole of it.
+		// one click, start to finish: the file is imported, and what bulk_insert
+		// answered is rendered. Nothing is posted in pieces -- the insert is one
+		// database transaction on the server -- so whatever happens, what the panel
+		// shows is the whole of it.
 		async import_file(file) {
 			const extension = extension_of(file.name);
 			this.busy = true;
@@ -126,14 +128,10 @@
 						__("{0} is neither a .json nor a .xlsx file. Pick one of those.", [file.name])
 					);
 				}
-				const rows =
+				const result =
 					extension === JSON_EXTENSION
-						? await this.rows_from_json(file)
-						: await this.rows_from_xlsx(file);
-				// the rows go over as they are, in a JSON body: that is the request
-				// body the REST examples post, and it reaches the endpoint as the
-				// list it already is rather than as a string of one
-				const result = await post_json(BULK_INSERT_METHOD, { data: rows });
+						? await this.import_json(file)
+						: await this.import_sheet(file);
 				this.render_result(file, extension, result);
 			} catch (error) {
 				this.render_error(file, extension, error);
@@ -143,10 +141,10 @@
 			}
 		}
 
-		// a .json file holds the rows already, so it is posted as it stands: the
-		// file is only parsed here, to tell a file that is not JSON at all from a
-		// statement the server has something to say about
-		async rows_from_json(file) {
+		// a .json file holds the rows already, so the page posts them as they stand.
+		// The file is only parsed here, to tell a file that is not JSON at all from a
+		// statement the endpoint has something to say about.
+		async import_json(file) {
 			const text = await read_text(file);
 			let content;
 			try {
@@ -165,16 +163,20 @@
 					)
 				);
 			}
-			return rows;
+			// the rows go over as they are, in a JSON body: that is the request body
+			// the REST examples post, and they reach the endpoint as the list they
+			// already are rather than as a string of one
+			return post_json(BULK_INSERT_METHOD, { data: rows });
 		}
 
-		// a .xlsx goes to the server to be read, and comes back as the same rows a
-		// .json file would have held. The sheet's columns are checked there, so a
-		// sheet with a column too many never reaches bulk_insert.
+		// a .xlsx is imported on the server: the sheet goes up as the file it is, and
+		// what comes back is what bulk_insert answered. Its columns are checked there,
+		// so a sheet with a column too many never reaches the insert.
 		//
-		// It is uploaded as the file it is rather than turned into base64 and sent as
-		// an argument, for the reason under "calling" below.
-		async rows_from_xlsx(file) {
+		// The rows are never carried back here to be posted again. They are several
+		// times the size of the workbook they were read out of, and that round trip is
+		// what a month-long statement cannot fit through -- see "calling" below.
+		async import_sheet(file) {
 			if (file.size > MAX_SHEET_BYTES) {
 				throw local_error(
 					__("{0} is {1}. A bank statement is a small sheet; BRS Import reads up to {2}.", [
@@ -185,12 +187,7 @@
 				);
 			}
 
-			const sheet = await upload(XLSX_TO_ROWS_METHOD, file);
-			const rows = (sheet && sheet.rows) || [];
-			if (!rows.length) {
-				throw local_error(__("The sheet has no rows to post."));
-			}
-			return rows;
+			return upload(IMPORT_SHEET_METHOD, file);
 		}
 
 		/* --------------------------------------------------------- the result */
@@ -281,20 +278,25 @@
 
 	/* ------------------------------------------------------------------- calling */
 
-	// nothing here goes through frappe.call. frappe.call posts its arguments as
-	// url-encoded form data, and werkzeug refuses url-encoded form data over 500 kB
-	// -- which a bank statement passes twice over on its way through this page: once
-	// as the workbook, once as the rows read out of it. Both are answered as a 413,
-	// and the desk shows every 413 as "File size exceeded the maximum allowed size of
-	// 25 MB", which is frappe.boot's own file limit printed back rather than the one
-	// that was reached.
+	// nothing here goes through frappe.call, which posts its arguments as url-encoded
+	// form data: that is longer again than what it carries, and werkzeug refuses
+	// url-encoded form data over 500 kB on top of it. A JSON body and a multipart file
+	// part are both read without being parsed as form data at all.
 	//
-	// A JSON body and a multipart file part are both read without being parsed as
-	// form data at all, so neither is held to that limit.
+	// That is the smaller half of it. Whatever else limits a request body on the site
+	// -- Frappe's own max_content_length, a proxy's client_max_body_size -- applies to
+	// these too, and a statement's rows reach it. So the page sends the file and
+	// nothing else: import_sheet() posts the rows on the server, where they already
+	// are, rather than carrying them back here to be sent up again.
+	//
+	// Every one of those limits reaches the user as "File size exceeded the maximum
+	// allowed size of 25 MB" -- frappe.boot's own file limit printed back by the
+	// desk's 413 handler, not the limit that was reached and not a size the page
+	// necessarily came near.
 
-	// a whitelisted method, posted as JSON: the body the REST examples post, which is
-	// what this page has always been -- a REST client with a file dialog in front of
-	// it (doctype/brs_transaction/Bulk-Insert.MD).
+	// a whitelisted method, posted as JSON: the body the REST examples post
+	// (doctype/brs_transaction/Bulk-Insert.MD). A .json file's rows go up this way,
+	// since they are the user's own rows and there is nothing to read them from.
 	function post_json(method, args) {
 		return send(method, {
 			body: JSON.stringify(args),

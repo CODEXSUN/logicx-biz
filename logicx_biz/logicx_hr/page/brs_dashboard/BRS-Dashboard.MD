@@ -12,43 +12,49 @@ the page.
 | **Page** | `/app/brs-dashboard` (`brs_dashboard.json`; System Manager, TM Admin, TM User) |
 | **Reads** | one `.json` file of statement rows, or one `.xlsx` sheet of them |
 | **Posts to** | `logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert` |
-| **Files** | `brs_dashboard.js` (the page), `../../brs_dashboard.py` (the .xlsx reader) |
+| **Files** | `brs_dashboard.js` (the page), `../../brs_dashboard.py` (the .xlsx import) |
 
 ## The two files it reads
 
-**A `.json` file** holds the rows already, so it is posted as it stands -- either the rows on their
-own, `[ {...}, {...} ]`, or the whole request body the REST examples post, `{"data": [ ... ]}`. The
-page only parses it, to tell a file that is not JSON from a statement the endpoint has something to
-say about. Everything else about the rows is the endpoint's to judge.
+**A `.json` file** holds the rows already, so the page posts them as they stand -- either the rows on
+their own, `[ {...}, {...} ]`, or the whole request body the REST examples post, `{"data": [ ... ]}`.
+The page only parses it, to tell a file that is not JSON from a statement the endpoint has something
+to say about. Everything else about the rows is the endpoint's to judge.
 
-**A `.xlsx` file** goes to the server first (`brs_dashboard.py`), which turns the workbook's first
-sheet into those same rows and hands them back; the page then posts them like any others. Nothing is
-written while it is converted.
+**A `.xlsx` file** is imported whole on the server (`import_sheet` in `brs_dashboard.py`). The sheet
+is uploaded, read out of `frappe.request.files["file"]`, turned into those same rows and posted to
+`bulk_insert` there; what comes back to the page is what `bulk_insert` answered. The workbook is
+never saved and the rows never reach the browser.
 
-It is **uploaded**, as its own multipart part, read back out of `frappe.request.files["file"]` and
-never saved.
+## The request never carries more than the file
 
-## Neither call goes through `frappe.call`
+Three things limit how large a request body this page can send, and the desk reports all three the
+same way:
 
-`frappe.call` posts its arguments as url-encoded form data, and werkzeug 3.1 refuses url-encoded form
-data over **500 kB**. A bank statement passes that twice over on its way through this page:
-
-| sent as an argument | goes out as | reaches 500 kB at |
+| limit | where | what it is |
 |---|---|---|
-| the workbook, base64 | url-encoded form data, ~1.4x the file | a sheet of ~350 KB |
-| its rows, JSON text | url-encoded form data, ~1.4x the JSON | a statement of ~1,600 rows |
+| `max_form_memory_size` | werkzeug 3.1 | **500 kB**, url-encoded form data only. Frappe switches it off in `app.py`, on the versions carrying the patch for it. |
+| `max_content_length` | Frappe `app.py` | `max_file_size` from `site_config.json`, **in bytes**, or 25 MB |
+| `client_max_body_size` | nginx, and any proxy in front of it | bench's own template sets 50m; another proxy has its own |
 
-Both come back **413**, and the desk shows every 413 as *"File size exceeded the maximum allowed size
-of 25 MB"* -- `frappe.boot.max_file_size` printed back, not the limit that was reached and not a size
-anything here came near. (Frappe switches werkzeug's limit off in `app.py`, but only on the versions
-carrying the patch for it, and whatever stands in front of Frappe has a `client_max_body_size` of its
-own.)
+Every one of them comes back **413**, and the desk shows every 413 as *"File size exceeded the
+maximum allowed size of 25 MB"* -- `frappe.boot.max_file_size` printed back by the handler in
+`request.js`, not the limit that was reached and not a size the page necessarily came near.
 
-So the page posts neither as form data. The workbook goes up as a **multipart file part**, the rows
-as a **JSON body** -- `{"data": [ ... ]}`, the same body the REST examples post. Neither is parsed as
-form data at all, so neither is held to that limit, and each goes out at its own size rather than
-half again as much. `send()` in `brs_dashboard.js` is the whole of it; there is no `frappe.call` left
-on the page.
+So the page keeps the body small rather than guessing which limit it is under:
+
+- **no `frappe.call`.** It posts its arguments as url-encoded form data, which is ~1.4x what it
+  carries and is the only thing werkzeug's 500 kB applies to. `send()` in `brs_dashboard.js` is the
+  whole of the calling now: a JSON body, or a multipart file part.
+- **the rows are not carried back and forth.** A statement's rows are several times the size of the
+  workbook they were read out of -- ~227 bytes of JSON a row against a `.xlsx` that compresses --
+  so converting on the server and posting from the page sends the same statement three times, the
+  last two of them the largest. `import_sheet` posts them where they already are, and the only body
+  that leaves the browser is the file itself.
+
+A `.json` import still posts its rows as a JSON body, because they are the user's own rows and there
+is nothing to read them out of. A `.json` file large enough to be refused is the one case left, and
+the answer to it is the site's limit, not the page.
 
 Either way what reaches `bulk_insert` is the same JSON, so the page adds no rule of its own to a
 transaction: one Bank Account per file, the bank's own order, oldest row first, and far enough back
@@ -95,8 +101,7 @@ server's check is the one that counts, on what actually arrived.
 
 The file is never kept -- a `.json` is read in the browser, a `.xlsx` is read out of the request and
 dropped: a statement is posted once, and the transactions are what remains, not the sheet they came
-from. When the call comes back the page shows what
-`bulk_insert` answered --
+from. When the call comes back the page shows what `bulk_insert` answered --
 
 - the Bank Account, and how many rows the file held;
 - how many rows were skipped as already posted, and how many of those were confirmed against the
@@ -112,6 +117,7 @@ retry a file after fixing one that was refused.
 ## Permissions
 
 The page is open to System Manager, TM Admin and TM User -- the roles that can create a BRS
-Transaction. `xlsx_to_rows` asks for **create** on BRS Transaction as well, though it writes
-nothing: converting a statement is of use only to someone who can post it. The inserts themselves
+Transaction. `import_sheet` asks for **create** on BRS Transaction before it reads the sheet at all,
+though `bulk_insert` asks again: converting a statement is of use only to someone who can post it,
+and a sheet is not worth opening for someone who cannot. The inserts themselves
 are a desk user's own, so a role without create gets no further than the endpoint.

@@ -326,3 +326,38 @@ Content-Type: application/json
     }
   ]
 }
+
+
+
+### Import a sheet: post a .xlsx bank statement in one call.
+	# The BRS Dashboard's own endpoint (page/brs_dashboard). The workbook is uploaded, read on the
+	# server and handed to bulk_insert there, so the rows are never carried back and forth. What
+	# comes back is bulk_insert's own answer -- "skipped", "confirmed", "inserted" and the rest,
+	# exactly as above -- with the uploaded file's name added as "filename".
+	#
+	# Every rule above is bulk_insert's and unchanged: one Bank Account per file, the bank's own
+	# order, oldest row first, reaching back far enough to include AND confirm the account's last
+	# posted transaction. Importing the same sheet twice posts nothing the second time.
+	#
+	# The sheet's first non-empty row is the heading row, and it carries exactly these columns --
+	# no more and no fewer, in any order, matched on their wording alone (case ignored, and
+	# spaces, hyphens and underscores read as one):
+	#   bank_account  date  description  reference_number  withdrawal  deposit  closing_balance
+	# A column it does not know, or one missing or given twice, is refused. Only the workbook's
+	# first sheet is read, and up to 5 MB of it (MAX_FILE_BYTES).
+	#
+	# Asks for create on BRS Transaction before it opens the sheet at all; bulk_insert asks again.
+	#
+	# The file goes up as one multipart part named "file" -- not as base64 in an argument, which a
+	# statement is too large for. The path below is relative to this .rest file.
+	# Full documentation: ../../page/brs_dashboard/BRS-Dashboard.MD
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.brs_dashboard.import_sheet
+Authorization: token {{token}}
+Content-Type: multipart/form-data; boundary=BRSImportBoundary
+
+--BRSImportBoundary
+Content-Disposition: form-data; name="file"; filename="HDFC-4980-April.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< ./HDFC-4980-April.xlsx
+--BRSImportBoundary--

@@ -1,25 +1,26 @@
 """Server side of the BRS Dashboard page (page/brs_dashboard).
 
 The page takes the file the user picked in the browser. A .json file holds the
-statement rows already and goes straight to BRS Transaction's ``bulk_insert``; a
-.xlsx file comes here first, to be turned into those same rows -- the desk has no
-spreadsheet reader of its own, and openpyxl (through ``frappe.utils.xlsxutils``)
+statement rows already and the page posts them itself, straight to BRS
+Transaction's ``bulk_insert``; a .xlsx comes here, because the desk has no
+spreadsheet reader of its own and openpyxl (through ``frappe.utils.xlsxutils``)
 is already a Frappe dependency on the server.
 
-The .xlsx is uploaded, as its own multipart part, rather than posted as base64 in
-one of the call's form fields -- which is what a desk page reaches for first, and
-what gives way on a sheet of a few hundred KB. A form field goes out url-encoded,
-longer again than the base64, and werkzeug 3.1 refuses url-encoded form data over
-500 kB; Frappe turns that limit off, but only on the versions carrying the patch
-for it, and whatever stands in front of Frappe has a ceiling of its own. The 413
-reaches the user as "File size exceeded the maximum allowed size of 25 MB" either
-way -- frappe.boot's own limit printed back, not the one that was reached and not
-a size anything here came near. A file part is held to none of this.
+A .xlsx is imported whole here rather than converted and handed back -- the sheet
+is uploaded, read, and its rows posted to ``bulk_insert`` without leaving the
+server. The workbook is the smallest form the statement takes: its rows are
+several times its size once they are JSON, and carrying them back to the browser
+only to be posted up again is what a month-long statement cannot fit through.
+Whatever the limit is on a request body -- werkzeug's on form data, Frappe's own
+``max_content_length``, a proxy's ``client_max_body_size`` -- the desk reports
+every one of them as "File size exceeded the maximum allowed size of 25 MB",
+which is ``frappe.boot``'s file limit printed back rather than the one that was
+reached. Sending the file once and nothing else is what keeps clear of them.
 
-Converting only. Nothing is written here: the rows go back to the page, which
-posts them to ``bulk_insert`` exactly as a REST client would. What a row means,
-how far back a statement has to reach and which rows are skipped are all that
-endpoint's (doctype/brs_transaction/Bulk-Insert.MD).
+Nothing is saved here: the sheet is read out of the request and dropped, and the
+transactions are what remains of it. What a row means, how far back a statement
+has to reach and which rows are skipped are all ``bulk_insert``'s
+(doctype/brs_transaction/Bulk-Insert.MD).
 
 The sheet has to carry exactly the seven columns a statement row is made of, no
 more and no fewer. A column this page does not know is refused rather than
@@ -33,6 +34,8 @@ import frappe
 from frappe import _
 from frappe.utils import cstr, flt
 from frappe.utils.xlsxutils import read_xlsx_file_from_attached_file
+
+from logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction import bulk_insert
 
 # the sheet's columns, and the keys of the rows handed back to the page: exactly
 # bulk_insert's statement row, in the order the page lists them
@@ -62,37 +65,51 @@ ERROR_TITLE = "Nothing to Import"
 
 
 @frappe.whitelist()
-def xlsx_to_rows():
-	"""Turn the .xlsx the page uploaded into bulk_insert's statement rows.
+def import_sheet():
+	"""Post the .xlsx the page uploaded, and answer with what ``bulk_insert`` did.
 
-	The workbook arrives as an upload -- one multipart part named "file", the way a
-	browser sends a file and the way Frappe's own upload endpoint reads one. Nothing
-	is saved: the bytes are read out of the request, converted, and the rows go back
-	to the page. The name the part carries is the name the user's file had, and goes
-	back with them for the page's result panel.
+	The whole import in one request. The workbook arrives as an upload -- one
+	multipart part named "file", the way a browser sends a file and the way Frappe's
+	own upload endpoint reads one -- and its rows go straight to ``bulk_insert``
+	without ever leaving the server. Nothing is saved: the bytes are read out of the
+	request, posted, and dropped.
+
+	That the rows are not handed back for the page to post itself is the point of
+	this endpoint. A statement's rows are several times the size of the workbook they
+	were read out of, so sending them back and up again carries the same statement
+	over the wire three times -- and the last two of those are a request body large
+	enough to be refused, which is what a bank's own month-long statement reaches.
+
+	It is still ``bulk_insert``'s one database transaction: a row that fails takes
+	with it the rows inserted before it, and nothing is posted in pieces.
+	"""
+	# the inserts ask for this too; asked here so that a sheet is not read and
+	# converted for someone who could not have posted it
+	frappe.has_permission("BRS Transaction", "create", throw=True)
+
+	filename, file_bytes = read_upload()
+	result = bulk_insert(sheet_rows(file_bytes))
+	# the file is not the endpoint's to know about, so its name is added here, for
+	# the page's result panel
+	result["filename"] = filename
+	return result
+
+
+def sheet_rows(file_bytes):
+	"""The workbook's statement, as ``bulk_insert``'s rows.
 
 	The workbook's first sheet is the statement: its first non-empty row is the
 	heading row, and every row under it is one transaction.
 
-	Rows come back in the sheet's own order, which is the order bulk_insert posts
+	The rows keep the sheet's own order, which is the order ``bulk_insert`` posts
 	them in -- so the sheet has to be in the bank's order, oldest row first.
 	"""
-	# converting is of use only to someone who can post the result, and create on
-	# BRS Transaction is the permission bulk_insert itself goes on to ask for
-	frappe.has_permission("BRS Transaction", "create", throw=True)
-
-	filename, file_bytes = read_upload()
 	rows = read_sheet(file_bytes)
 	headings = read_headings(rows[0][1])
 	statement = [read_row(cells, headings, number) for number, cells in rows[1:]]
 	if not statement:
 		frappe.throw(_("The sheet has a heading row and nothing under it."), title=_(ERROR_TITLE))
-
-	return {
-		"filename": filename,
-		"columns": [label for _fieldname, label in COLUMNS],
-		"rows": statement,
-	}
+	return statement
 
 
 def read_upload():
