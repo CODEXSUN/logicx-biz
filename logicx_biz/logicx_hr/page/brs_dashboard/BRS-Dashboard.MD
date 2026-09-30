@@ -25,6 +25,17 @@ say about. Everything else about the rows is the endpoint's to judge.
 sheet into those same rows and hands them back; the page then posts them like any others. Nothing is
 written while it is converted.
 
+It is **uploaded**, as its own multipart part, read back out of `frappe.request.files["file"]` and
+never saved. `frappe.call` cannot send a file -- it posts its arguments as url-encoded form data --
+and base64 in one of those arguments is what breaks: url-encoding is longer again than the base64, so
+a 379 KB sheet goes out as some 540 KB of form data, and werkzeug 3.1 refuses url-encoded form data
+over 500 kB. (Frappe switches that limit off in `app.py`, but only on the versions carrying the patch
+for it, and whatever stands in front of Frappe has a `client_max_body_size` of its own.) The desk
+shows every 413 as *"File size exceeded the maximum allowed size of 25 MB"* --
+`frappe.boot.max_file_size` printed back, not the limit that was reached and not a size anything here
+came near. Uploading the file avoids all of it: a file part is held to none of those limits, and the
+body is the file's own size rather than half again as much.
+
 Either way what reaches `bulk_insert` is the same JSON, so the page adds no rule of its own to a
 transaction: one Bank Account per file, the bank's own order, oldest row first, and far enough back
 to include the account's last posted transaction. All of that, and what is skipped, confirmed and
@@ -62,12 +73,15 @@ be gone and looked at. (`bulk_insert`'s own errors count rows from the first one
 is the sheet's first row under the heading.)
 
 Only the workbook's first sheet is read, and the file is read up to `MAX_FILE_BYTES` (5 MB) --
-beyond that it is the wrong file rather than a statement.
+beyond that it is the wrong file rather than a statement. The page holds the same ceiling as
+`MAX_SHEET_BYTES`, so too large a sheet is refused by name and size before it is uploaded; the
+server's check is the one that counts, on what actually arrived.
 
 ## What it shows
 
-The file is read in the browser and never kept: a statement is posted once, and the transactions are
-what remains, not the sheet they came from. When the call comes back the page shows what
+The file is never kept -- a `.json` is read in the browser, a `.xlsx` is read out of the request and
+dropped: a statement is posted once, and the transactions are what remains, not the sheet they came
+from. When the call comes back the page shows what
 `bulk_insert` answered --
 
 - the Bank Account, and how many rows the file held;

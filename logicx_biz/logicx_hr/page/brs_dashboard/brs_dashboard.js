@@ -16,6 +16,11 @@
 	const XLSX_EXTENSION = "xlsx";
 	const ACCEPT = ".json,.xlsx";
 
+	// how large a .xlsx the page will upload -- the same ceiling the server keeps on
+	// what arrives (brs_dashboard.py MAX_FILE_BYTES), mirrored here so that too large
+	// a sheet is said so before it is sent rather than after.
+	const MAX_SHEET_BYTES = 5 * 1024 * 1024;
+
 	// the columns a .xlsx has to carry, shown on the page so that the sheet can be
 	// got right before it is picked. The server checks them (brs_dashboard.py COLUMNS);
 	// this list is only what the user is told, and is kept the same as that one.
@@ -142,7 +147,7 @@
 		// file is only parsed here, to tell a file that is not JSON at all from a
 		// statement the server has something to say about
 		async rows_from_json(file) {
-			const text = await read_file(file, "text");
+			const text = await read_text(file);
 			let content;
 			try {
 				content = JSON.parse(text);
@@ -166,11 +171,24 @@
 		// a .xlsx goes to the server to be read, and comes back as the same rows a
 		// .json file would have held. The sheet's columns are checked there, so a
 		// sheet with a column too many never reaches bulk_insert.
+		//
+		// The file is uploaded rather than posted as base64 in one of the call's
+		// arguments: arguments go out url-encoded, which is longer again than the
+		// base64 and puts a sheet of a few hundred KB over the 500 kB werkzeug takes
+		// as form data -- answered as a 413, which the desk shows as a 25 MB limit
+		// that was never the one reached.
 		async rows_from_xlsx(file) {
-			const data_url = await read_file(file, "data_url");
-			// "data:<mime>;base64,<the file>" -- the server decodes the tail
-			const content = cstr(data_url).split(",")[1] || "";
-			const sheet = await call(XLSX_TO_ROWS_METHOD, { filename: file.name, content });
+			if (file.size > MAX_SHEET_BYTES) {
+				throw local_error(
+					__("{0} is {1}. A bank statement is a small sheet; BRS Import reads up to {2}.", [
+						file.name,
+						format_size(file.size),
+						format_size(MAX_SHEET_BYTES),
+					])
+				);
+			}
+
+			const sheet = await upload(XLSX_TO_ROWS_METHOD, file);
 			const rows = (sheet && sheet.rows) || [];
 			if (!rows.length) {
 				throw local_error(__("The sheet has no rows to post."));
@@ -215,11 +233,12 @@
 			});
 		}
 
-		// what stopped the import. A server refusal has already been shown by frappe
-		// as it came back, so it is only restated here; a local error is the page's
-		// own and is shown now. Whatever went wrong, `error` can be anything at all
-		// -- a thrown TypeError, or nothing -- so the panel reads only the `html`
-		// its own errors carry, and says so plainly when there is none.
+		// what stopped the import. A server refusal is in a dialog by the time this
+		// runs -- frappe's own on the way back from a frappe.call, or the one upload()
+		// put up -- so it is only restated here; a local error is the page's own and
+		// is shown now. Whatever went wrong, `error` can be anything at all -- a
+		// thrown TypeError, or nothing -- so the panel reads only the `html` its own
+		// errors carry, and says so plainly when there is none.
 		render_error(file, extension, error) {
 			const html = (error && error.html) || escape_html(__("The import failed."));
 			if (error && error.is_local) {
@@ -246,16 +265,15 @@
 
 	/* ----------------------------------------------------------------- reading */
 
-	// the browser's FileReader, as a promise. "text" for a .json, "data_url" for a
-	// .xlsx, whose bytes have to reach the server as base64.
-	function read_file(file, as) {
+	// a .json file's text, through the browser's FileReader, as a promise. A .xlsx is
+	// not read here at all: it goes up as the file it is and is read on the server.
+	function read_text(file) {
 		return new Promise((resolve, reject) => {
 			const reader = new FileReader();
 			reader.onload = () => resolve(reader.result);
 			reader.onerror = () =>
 				reject(local_error(__("{0} could not be read from the disk.", [file.name])));
-			if (as === "text") reader.readAsText(file);
-			else reader.readAsDataURL(file);
+			reader.readAsText(file);
 		});
 	}
 
@@ -294,14 +312,106 @@
 		});
 	}
 
-	// why a call failed, as an error the panel can show. frappe has already put the
-	// same wording in a dialog of its own -- these are the messages it collected --
-	// so a response that carried none leaves the panel to say only that it failed.
+	// a whitelisted method, with a file: the file goes up as its own multipart part,
+	// which is how a browser sends a file and the one thing frappe.call cannot do --
+	// it posts its arguments as url-encoded form data, and a file turned into base64
+	// to fit in one of them is refused as form data long before the file is large.
+	//
+	// frappe.request's error handling is not on this path either, so what the server
+	// sent is shown here, the way it would have shown it.
+	async function upload(method, file) {
+		const body = new FormData();
+		// the part read back out as frappe.request.files["file"] (brs_dashboard.py).
+		// The multipart boundary is the browser's to set, so no Content-Type is given
+		// here: setting one would leave the boundary out of it.
+		body.append("file", file, file.name);
+
+		let response;
+		try {
+			response = await fetch(`/api/method/${method}`, {
+				method: "POST",
+				body: body,
+				// the desk's own session and csrf token, the two things frappe.call
+				// would have carried: the cookie because the request is same-origin,
+				// the token because frappe refuses an unsafe method without it
+				credentials: "same-origin",
+				headers: {
+					Accept: "application/json",
+					"X-Frappe-CSRF-Token": frappe.csrf_token,
+				},
+			});
+		} catch (error) {
+			// the request never arrived, so there is no response to read a reason out
+			// of: the browser's own is all there is to show
+			throw local_error(
+				__("{0} could not be sent to the server: {1}", [file.name, error.message])
+			);
+		}
+
+		const answer = await read_json(response);
+		if (!response.ok) {
+			const messages = server_messages(answer);
+			// a permission refusal carries _error_message instead of a message list,
+			// and frappe.call shows that one under "Not permitted"
+			const refusal = cstr(answer && answer._error_message);
+			if (!messages.length && refusal) {
+				messages.push({ message: refusal, title: __("Not permitted") });
+			}
+			// frappe's own refusal, and nothing has shown it yet on this path
+			if (messages.length) {
+				show_messages(messages);
+				throw error_from(messages);
+			}
+			// not frappe's refusal but the server's own: a gateway's error page, or a
+			// 413 from whatever stands in front of frappe. The status is all it said,
+			// and saying that is better than naming a limit it did not.
+			throw local_error(
+				__("The server refused {0}: {1} {2}", [
+					file.name,
+					response.status,
+					response.statusText || "",
+				])
+			);
+		}
+		return answer ? answer.message : null;
+	}
+
+	// the response body as the JSON frappe answers with, or null when it is not JSON
+	// at all -- which is what a gateway's own error page arrives as
+	async function read_json(response) {
+		try {
+			return await response.json();
+		} catch (parse_error) {
+			return null;
+		}
+	}
+
+	// why a call failed, as an error the panel can show. The same wording is in a
+	// dialog by the time this is read -- frappe's own, or the one upload() put up --
+	// so a response that carried no message leaves the panel to say only that it
+	// failed.
 	function server_error(response) {
-		const messages = server_messages(response);
-		const error = new Error(messages.join(" "));
-		error.html = messages.join("<br>");
+		return error_from(server_messages(response));
+	}
+
+	// frappe's messages as the one error the panel restates, each under the last
+	function error_from(messages) {
+		const text = messages.map((message) => cstr(message.message));
+		const error = new Error(text.join(" "));
+		error.html = text.join("<br>");
 		return error;
+	}
+
+	// frappe's messages, shown the way frappe.request shows them: one dialog each,
+	// under the title the server threw it with.
+	function show_messages(messages) {
+		messages.forEach((message) => {
+			frappe.msgprint({
+				title: message.title || __("Nothing to Import"),
+				message: cstr(message.message),
+				indicator: message.indicator || "red",
+			});
+		});
 	}
 
 	// frappe's messages, from either shape a failure arrives in: the parsed body,
@@ -315,11 +425,16 @@
 		);
 	}
 
+	// _server_messages is a JSON list of JSON strings, each one a message object
+	// carrying the title and indicator the server threw it with. They are kept whole
+	// here rather than reduced to their text, since show_messages() puts them up
+	// under those titles; frappe.msgprint reads one such object itself, but not a
+	// list of them.
 	function parse_messages(server_messages_json) {
 		try {
 			return JSON.parse(server_messages_json || "[]")
-				.map((entry) => cstr(JSON.parse(entry).message))
-				.filter(Boolean);
+				.map((entry) => JSON.parse(entry))
+				.filter((message) => message && message.message);
 		} catch (parse_error) {
 			// not the JSON-inside-JSON frappe sends, so there is nothing to read
 			return [];

@@ -1,10 +1,20 @@
 """Server side of the BRS Dashboard page (page/brs_dashboard).
 
-The page reads the file the user picked in the browser. A .json file holds the
+The page takes the file the user picked in the browser. A .json file holds the
 statement rows already and goes straight to BRS Transaction's ``bulk_insert``; a
 .xlsx file comes here first, to be turned into those same rows -- the desk has no
 spreadsheet reader of its own, and openpyxl (through ``frappe.utils.xlsxutils``)
 is already a Frappe dependency on the server.
+
+The .xlsx is uploaded, as its own multipart part, rather than posted as base64 in
+one of the call's form fields -- which is what a desk page reaches for first, and
+what gives way on a sheet of a few hundred KB. A form field goes out url-encoded,
+longer again than the base64, and werkzeug 3.1 refuses url-encoded form data over
+500 kB; Frappe turns that limit off, but only on the versions carrying the patch
+for it, and whatever stands in front of Frappe has a ceiling of its own. The 413
+reaches the user as "File size exceeded the maximum allowed size of 25 MB" either
+way -- frappe.boot's own limit printed back, not the one that was reached and not
+a size anything here came near. A file part is held to none of this.
 
 Converting only. Nothing is written here: the rows go back to the page, which
 posts them to ``bulk_insert`` exactly as a REST client would. What a row means,
@@ -17,7 +27,6 @@ ignored: a column read past in silence is a figure nobody notices is missing,
 and on a bank statement the figures are the whole point of the file.
 """
 
-import base64
 import datetime
 
 import frappe
@@ -44,7 +53,7 @@ COLUMNS = (
 AMOUNT_DEFAULTS = {"withdrawal": 0.0, "deposit": 0.0, "closing_balance": None}
 
 # a bank statement is a small sheet. Something this size is the wrong file rather
-# than a statement, and is refused before it is decoded or opened.
+# than a statement, and is refused before it is opened.
 MAX_FILE_BYTES = 5 * 1024 * 1024
 
 # the title every refusal here shares: the page has posted nothing yet, and after
@@ -53,13 +62,17 @@ ERROR_TITLE = "Nothing to Import"
 
 
 @frappe.whitelist()
-def xlsx_to_rows(filename=None, content=None):
-	"""Turn the .xlsx the page picked into bulk_insert's statement rows.
+def xlsx_to_rows():
+	"""Turn the .xlsx the page uploaded into bulk_insert's statement rows.
 
-	`content` is the file as base64, as the browser read it; `filename` is only
-	carried through to the page's result panel. The workbook's first sheet is the
-	statement: its first non-empty row is the heading row, and every row under it
-	is one transaction.
+	The workbook arrives as an upload -- one multipart part named "file", the way a
+	browser sends a file and the way Frappe's own upload endpoint reads one. Nothing
+	is saved: the bytes are read out of the request, converted, and the rows go back
+	to the page. The name the part carries is the name the user's file had, and goes
+	back with them for the page's result panel.
+
+	The workbook's first sheet is the statement: its first non-empty row is the
+	heading row, and every row under it is one transaction.
 
 	Rows come back in the sheet's own order, which is the order bulk_insert posts
 	them in -- so the sheet has to be in the bank's order, oldest row first.
@@ -68,34 +81,39 @@ def xlsx_to_rows(filename=None, content=None):
 	# BRS Transaction is the permission bulk_insert itself goes on to ask for
 	frappe.has_permission("BRS Transaction", "create", throw=True)
 
-	rows = read_sheet(content)
+	filename, file_bytes = read_upload()
+	rows = read_sheet(file_bytes)
 	headings = read_headings(rows[0][1])
 	statement = [read_row(cells, headings, number) for number, cells in rows[1:]]
 	if not statement:
 		frappe.throw(_("The sheet has a heading row and nothing under it."), title=_(ERROR_TITLE))
 
 	return {
-		"filename": cstr(filename),
+		"filename": filename,
 		"columns": [label for _fieldname, label in COLUMNS],
 		"rows": statement,
 	}
 
 
-def read_sheet(content):
-	"""The workbook's first sheet, as its non-empty rows with their row numbers.
+def read_upload():
+	"""The uploaded workbook, as its name and its bytes.
 
-	The numbers are the sheet's own, so that an error names the row the user can
-	go and look at. Wholly empty rows are dropped -- a spreadsheet carries them
-	below and between its data without meaning anything by them -- which is why
-	the numbers are kept here rather than counted again afterwards.
+	One part, named "file". A part that is not there is this being called some other
+	way than from the page, but it comes back as a refusal like any other here:
+	either way there is nothing to import.
+
+	The size is checked here, on what arrived. The page checks the file it picked
+	before uploading it, so that too large a sheet is said so without being sent --
+	but a check made in the browser is a courtesy and not a limit.
 	"""
-	if not content:
-		frappe.throw(_("No file was sent."), title=_(ERROR_TITLE))
+	files = frappe.request.files if getattr(frappe, "request", None) else None
+	part = files.get("file") if files else None
+	if part is None:
+		frappe.throw(_("No file was uploaded."), title=_(ERROR_TITLE))
 
-	try:
-		file_bytes = base64.b64decode(content, validate=True)
-	except Exception:
-		frappe.throw(_("The file did not arrive as base64 and could not be read."), title=_(ERROR_TITLE))
+	file_bytes = part.stream.read()
+	if not file_bytes:
+		frappe.throw(_("The uploaded file is empty."), title=_(ERROR_TITLE))
 
 	if len(file_bytes) > MAX_FILE_BYTES:
 		frappe.throw(
@@ -105,6 +123,17 @@ def read_sheet(content):
 			title=_(ERROR_TITLE),
 		)
 
+	return cstr(part.filename), file_bytes
+
+
+def read_sheet(file_bytes):
+	"""The workbook's first sheet, as its non-empty rows with their row numbers.
+
+	The numbers are the sheet's own, so that an error names the row the user can
+	go and look at. Wholly empty rows are dropped -- a spreadsheet carries them
+	below and between its data without meaning anything by them -- which is why
+	the numbers are kept here rather than counted again afterwards.
+	"""
 	try:
 		sheet = read_xlsx_file_from_attached_file(fcontent=file_bytes)
 	except Exception as exception:
