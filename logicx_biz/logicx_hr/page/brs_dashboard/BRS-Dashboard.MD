@@ -26,15 +26,29 @@ sheet into those same rows and hands them back; the page then posts them like an
 written while it is converted.
 
 It is **uploaded**, as its own multipart part, read back out of `frappe.request.files["file"]` and
-never saved. `frappe.call` cannot send a file -- it posts its arguments as url-encoded form data --
-and base64 in one of those arguments is what breaks: url-encoding is longer again than the base64, so
-a 379 KB sheet goes out as some 540 KB of form data, and werkzeug 3.1 refuses url-encoded form data
-over 500 kB. (Frappe switches that limit off in `app.py`, but only on the versions carrying the patch
-for it, and whatever stands in front of Frappe has a `client_max_body_size` of its own.) The desk
-shows every 413 as *"File size exceeded the maximum allowed size of 25 MB"* --
-`frappe.boot.max_file_size` printed back, not the limit that was reached and not a size anything here
-came near. Uploading the file avoids all of it: a file part is held to none of those limits, and the
-body is the file's own size rather than half again as much.
+never saved.
+
+## Neither call goes through `frappe.call`
+
+`frappe.call` posts its arguments as url-encoded form data, and werkzeug 3.1 refuses url-encoded form
+data over **500 kB**. A bank statement passes that twice over on its way through this page:
+
+| sent as an argument | goes out as | reaches 500 kB at |
+|---|---|---|
+| the workbook, base64 | url-encoded form data, ~1.4x the file | a sheet of ~350 KB |
+| its rows, JSON text | url-encoded form data, ~1.4x the JSON | a statement of ~1,600 rows |
+
+Both come back **413**, and the desk shows every 413 as *"File size exceeded the maximum allowed size
+of 25 MB"* -- `frappe.boot.max_file_size` printed back, not the limit that was reached and not a size
+anything here came near. (Frappe switches werkzeug's limit off in `app.py`, but only on the versions
+carrying the patch for it, and whatever stands in front of Frappe has a `client_max_body_size` of its
+own.)
+
+So the page posts neither as form data. The workbook goes up as a **multipart file part**, the rows
+as a **JSON body** -- `{"data": [ ... ]}`, the same body the REST examples post. Neither is parsed as
+form data at all, so neither is held to that limit, and each goes out at its own size rather than
+half again as much. `send()` in `brs_dashboard.js` is the whole of it; there is no `frappe.call` left
+on the page.
 
 Either way what reaches `bulk_insert` is the same JSON, so the page adds no rule of its own to a
 transaction: one Bank Account per file, the bank's own order, oldest row first, and far enough back

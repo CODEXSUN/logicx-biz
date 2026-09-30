@@ -179,7 +179,7 @@ def get_chain_tail(bank_account):
 # The maximum stops a long overlap early; rows it does not reach are skipped
 # unconfirmed. Keep the maximum at or above the minimum.
 MIN_BACKWARD_MATCHES_LIMIT = 2
-MAX_BACKWARD_MATCHES_LIMIT = 10000
+MAX_BACKWARD_MATCHES_LIMIT = 3
 
 # What makes a statement row and a posted transaction the same transaction.
 # Description is deliberately not among them: a bank rewords it, and the wording

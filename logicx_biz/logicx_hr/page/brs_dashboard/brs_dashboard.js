@@ -130,10 +130,10 @@
 					extension === JSON_EXTENSION
 						? await this.rows_from_json(file)
 						: await this.rows_from_xlsx(file);
-				// the rows are handed over as JSON text: a list argument would be
-				// stringified on its way out anyway, and the endpoint reads either,
-				// so it is written out here where it can be seen
-				const result = await call(BULK_INSERT_METHOD, { data: JSON.stringify(rows) });
+				// the rows go over as they are, in a JSON body: that is the request
+				// body the REST examples post, and it reaches the endpoint as the
+				// list it already is rather than as a string of one
+				const result = await post_json(BULK_INSERT_METHOD, { data: rows });
 				this.render_result(file, extension, result);
 			} catch (error) {
 				this.render_error(file, extension, error);
@@ -172,11 +172,8 @@
 		// .json file would have held. The sheet's columns are checked there, so a
 		// sheet with a column too many never reaches bulk_insert.
 		//
-		// The file is uploaded rather than posted as base64 in one of the call's
-		// arguments: arguments go out url-encoded, which is longer again than the
-		// base64 and puts a sheet of a few hundred KB over the 500 kB werkzeug takes
-		// as form data -- answered as a 413, which the desk shows as a 25 MB limit
-		// that was never the one reached.
+		// It is uploaded as the file it is rather than turned into base64 and sent as
+		// an argument, for the reason under "calling" below.
 		async rows_from_xlsx(file) {
 			if (file.size > MAX_SHEET_BYTES) {
 				throw local_error(
@@ -234,11 +231,11 @@
 		}
 
 		// what stopped the import. A server refusal is in a dialog by the time this
-		// runs -- frappe's own on the way back from a frappe.call, or the one upload()
-		// put up -- so it is only restated here; a local error is the page's own and
-		// is shown now. Whatever went wrong, `error` can be anything at all -- a
-		// thrown TypeError, or nothing -- so the panel reads only the `html` its own
-		// errors carry, and says so plainly when there is none.
+		// runs -- send() puts it up as it comes back -- so it is only restated here;
+		// a local error is the page's own and is shown now. Whatever went wrong,
+		// `error` can be anything at all -- a thrown TypeError, or nothing -- so the
+		// panel reads only the `html` its own errors carry, and says so plainly when
+		// there is none.
 		render_error(file, extension, error) {
 			const html = (error && error.html) || escape_html(__("The import failed."));
 			if (error && error.is_local) {
@@ -284,68 +281,63 @@
 
 	/* ------------------------------------------------------------------- calling */
 
-	// a whitelisted method, answered with what it returned. frappe.xcall would do,
-	// but it rejects with the response's `message` -- which a server that threw did
-	// not send at all -- and the page would then have nothing to show. The response
-	// itself is what carries the reason, so the call is made here and kept.
-	function call(method, args) {
-		return new Promise((resolve, reject) => {
-			let settled = false;
-			frappe.call({
-				method: method,
-				args: args,
-				callback: (response) => {
-					settled = true;
-					resolve(response ? response.message : null);
-				},
-				error: (response) => {
-					settled = true;
-					reject(server_error(response));
-				},
-				// a failure that took some other path out of frappe.request settles
-				// here instead: a call that never settles leaves the desk frozen,
-				// waiting on it
-				always: (response) => {
-					if (!settled) reject(server_error(response));
-				},
-			});
+	// nothing here goes through frappe.call. frappe.call posts its arguments as
+	// url-encoded form data, and werkzeug refuses url-encoded form data over 500 kB
+	// -- which a bank statement passes twice over on its way through this page: once
+	// as the workbook, once as the rows read out of it. Both are answered as a 413,
+	// and the desk shows every 413 as "File size exceeded the maximum allowed size of
+	// 25 MB", which is frappe.boot's own file limit printed back rather than the one
+	// that was reached.
+	//
+	// A JSON body and a multipart file part are both read without being parsed as
+	// form data at all, so neither is held to that limit.
+
+	// a whitelisted method, posted as JSON: the body the REST examples post, which is
+	// what this page has always been -- a REST client with a file dialog in front of
+	// it (doctype/brs_transaction/Bulk-Insert.MD).
+	function post_json(method, args) {
+		return send(method, {
+			body: JSON.stringify(args),
+			headers: { "Content-Type": "application/json" },
 		});
 	}
 
 	// a whitelisted method, with a file: the file goes up as its own multipart part,
-	// which is how a browser sends a file and the one thing frappe.call cannot do --
-	// it posts its arguments as url-encoded form data, and a file turned into base64
-	// to fit in one of them is refused as form data long before the file is large.
-	//
-	// frappe.request's error handling is not on this path either, so what the server
-	// sent is shown here, the way it would have shown it.
-	async function upload(method, file) {
+	// which is how a browser sends a file and something frappe.call cannot do at all.
+	function upload(method, file) {
 		const body = new FormData();
 		// the part read back out as frappe.request.files["file"] (brs_dashboard.py).
 		// The multipart boundary is the browser's to set, so no Content-Type is given
 		// here: setting one would leave the boundary out of it.
 		body.append("file", file, file.name);
+		return send(method, { body: body });
+	}
 
+	// the call itself, answered with what the method returned. frappe.request's error
+	// handling is not on this path, so what the server sent is shown here, the way it
+	// would have shown it.
+	async function send(method, init) {
 		let response;
 		try {
 			response = await fetch(`/api/method/${method}`, {
 				method: "POST",
-				body: body,
+				body: init.body,
 				// the desk's own session and csrf token, the two things frappe.call
 				// would have carried: the cookie because the request is same-origin,
 				// the token because frappe refuses an unsafe method without it
 				credentials: "same-origin",
-				headers: {
-					Accept: "application/json",
-					"X-Frappe-CSRF-Token": frappe.csrf_token,
-				},
+				headers: Object.assign(
+					{
+						Accept: "application/json",
+						"X-Frappe-CSRF-Token": frappe.csrf_token,
+					},
+					init.headers
+				),
 			});
 		} catch (error) {
 			// the request never arrived, so there is no response to read a reason out
 			// of: the browser's own is all there is to show
-			throw local_error(
-				__("{0} could not be sent to the server: {1}", [file.name, error.message])
-			);
+			throw local_error(__("The server could not be reached: {0}", [error.message]));
 		}
 
 		const answer = await read_json(response);
@@ -366,8 +358,7 @@
 			// 413 from whatever stands in front of frappe. The status is all it said,
 			// and saying that is better than naming a limit it did not.
 			throw local_error(
-				__("The server refused {0}: {1} {2}", [
-					file.name,
+				__("The server refused the request: {0} {1}", [
 					response.status,
 					response.statusText || "",
 				])
@@ -386,15 +377,10 @@
 		}
 	}
 
-	// why a call failed, as an error the panel can show. The same wording is in a
-	// dialog by the time this is read -- frappe's own, or the one upload() put up --
-	// so a response that carried no message leaves the panel to say only that it
-	// failed.
-	function server_error(response) {
-		return error_from(server_messages(response));
-	}
-
-	// frappe's messages as the one error the panel restates, each under the last
+	// frappe's messages as the one error the panel restates, each under the last. The
+	// same wording is in a dialog by the time this is read -- send() puts it up as it
+	// comes back -- so a refusal that carried no message at all leaves the panel to
+	// say only that the import failed.
 	function error_from(messages) {
 		const text = messages.map((message) => cstr(message.message));
 		const error = new Error(text.join(" "));
@@ -414,15 +400,10 @@
 		});
 	}
 
-	// frappe's messages, from either shape a failure arrives in: the parsed body,
-	// when the desk handed one over, or the jqXHR, which is what jQuery passes on a
-	// 417 -- the status frappe.throw answers with, and so the shape a refused
-	// statement comes back as.
+	// frappe's messages, out of the body it answered with. A refused statement comes
+	// back as a 417 carrying them -- the status frappe.throw answers with.
 	function server_messages(response) {
-		const body = response || {};
-		return parse_messages(body._server_messages).concat(
-			parse_messages((body.responseJSON || {})._server_messages)
-		);
+		return parse_messages((response || {})._server_messages);
 	}
 
 	// _server_messages is a JSON list of JSON strings, each one a message object
