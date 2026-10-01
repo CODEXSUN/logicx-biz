@@ -79,6 +79,37 @@
 
 			this.setup_file_input();
 			this.page.set_primary_action(__("BRS Import"), () => this.pick_file());
+
+
+			function inject_styles() {
+				let style = document.getElementById(STYLE_ID);
+				if (!style) {
+					style = document.createElement("style");
+					style.id = STYLE_ID;
+					document.head.appendChild(style);
+				}
+				style.textContent = PAGE_STYLES;
+			}
+
+			function render_scaffold() {
+				const columns = SHEET_COLUMNS.map(
+					(column) => `<code class="logicx-bd-column">${column}</code>`
+				).join(" ");
+
+				return `
+					<div class="logicx-bd-card">
+						<div class="logicx-bd-title">${__("What BRS Import reads")}</div>
+						<div class="logicx-bd-help">
+							<p>${__("A <b>.json</b> file of statement rows, or a <b>.xlsx</b> sheet of them: one bank account per file, in the bank's own order, oldest row first.")}</p>
+							<p>${__("A sheet carries exactly these columns, and no others:")}<br>${columns}</p>
+							<p>${__("Rows already posted are skipped and the rest are appended, so the same file can be imported twice. The file has to reach back far enough to include the account's last posted transaction.")}</p>
+						</div>
+					</div>
+					<div class="logicx-bd-card" data-panel="result">
+						<div class="logicx-bd-status is-idle">${__("No file imported yet.")}</div>
+					</div>
+				`;
+			}
 		}
 
 		/* ------------------------------------------------------------ the file */
@@ -139,6 +170,11 @@
 				if (frozen) frappe.dom.unfreeze();
 				this.busy = false;
 			}
+
+			function extension_of(filename) {
+				const parts = cstr(filename).toLowerCase().split(".");
+				return parts.length > 1 ? parts.pop() : "";
+			}
 		}
 
 		// a .json file holds the rows already, so the page posts them as they stand.
@@ -167,6 +203,28 @@
 			// the REST examples post, and they reach the endpoint as the list they
 			// already are rather than as a string of one
 			return post_json(BULK_INSERT_METHOD, { data: rows });
+
+			// a .json file's text, through the browser's FileReader, as a promise. A .xlsx is
+			// not read here at all: it goes up as the file it is and is read on the server.
+			function read_text(file) {
+				return new Promise((resolve, reject) => {
+					const reader = new FileReader();
+					reader.onload = () => resolve(reader.result);
+					reader.onerror = () =>
+						reject(local_error(__("{0} could not be read from the disk.", [file.name])));
+					reader.readAsText(file);
+				});
+			}
+
+			// a whitelisted method, posted as JSON: the body the REST examples post
+			// (doctype/brs_transaction/Bulk-Insert.MD). A .json file's rows go up this way,
+			// since they are the user's own rows and there is nothing to read them from.
+			function post_json(method, args) {
+				return send(method, {
+					body: JSON.stringify(args),
+					headers: { "Content-Type": "application/json" },
+				});
+			}
 		}
 
 		// a .xlsx is imported on the server: the sheet goes up as the file it is, and
@@ -187,7 +245,18 @@
 				);
 			}
 
-			return upload(IMPORT_SHEET_METHOD, file);
+			return upload(file);
+
+			// a whitelisted method, with a file: the file goes up as its own multipart part,
+			// which is how a browser sends a file and something frappe.call cannot do at all.
+			function upload(file) {
+				const body = new FormData();
+				// the part read back out as frappe.request.files["file"] (brs_dashboard.py).
+				// The multipart boundary is the browser's to set, so no Content-Type is given
+				// here: setting one would leave the boundary out of it.
+				body.append("file", file, file.name);
+				return send(IMPORT_SHEET_METHOD, { body: body });
+			}
 		}
 
 		/* --------------------------------------------------------- the result */
@@ -225,6 +294,67 @@
 					: __("Nothing new to post."),
 				indicator: posted ? "green" : "orange",
 			});
+
+			function render_summary(result) {
+				const confirmed = cint(result.confirmed);
+				const rows = [
+					[__("Bank Account"), link("Bank Account", result.bank_account)],
+					[__("Rows in the file"), cint(result.rows)],
+					[
+						__("Already posted"),
+						__("{0} skipped, {1} of them confirmed against the chain", [cint(result.skipped), confirmed]),
+					],
+					[__("Posted now"), cint((result.inserted || []).length)],
+				];
+
+				return `
+					<table class="logicx-bd-summary">
+						${rows
+							.map(
+								([label, value]) => `
+							<tr>
+								<th>${label}</th>
+								<td>${value}</td>
+							</tr>`
+							)
+							.join("")}
+					</table>
+				`;
+			}
+
+			function render_inserted(inserted) {
+				if (!inserted.length) return "";
+				return `
+					<div class="logicx-bd-subtitle">${__("Transactions posted")}</div>
+					<div class="logicx-bd-chips">
+						${inserted.map((name) => link("BRS Transaction", name)).join("")}
+					</div>
+				`;
+			}
+
+			// where the account's chain ended before this import and where it ends now:
+			// the same transaction when nothing was posted
+			function render_tail(result) {
+				const before = result.last_posted_before;
+				const after = result.last_posted_after;
+				if (!before || !after) return "";
+
+				return `
+					<div class="logicx-bd-subtitle">${__("Last posted transaction")}</div>
+					<div class="logicx-bd-tail">
+						<span>${__("Before")}: ${render_transaction(before)}</span>
+						<span>${__("After")}: ${render_transaction(after)}</span>
+					</div>
+				`;
+
+				function render_transaction(transaction) {
+					return `${link("BRS Transaction", transaction.name)}
+						<span class="logicx-bd-file-meta">
+							${frappe.datetime.str_to_user(transaction.date)} &middot;
+							${__("closing")} ${format_number(transaction.closing_balance, null, AMOUNT_DECIMALS)}
+						</span>`;
+				}
+			}
 		}
 
 		// what stopped the import. A server refusal is in a dialog by the time this
@@ -257,25 +387,6 @@
 		}
 	}
 
-	/* ----------------------------------------------------------------- reading */
-
-	// a .json file's text, through the browser's FileReader, as a promise. A .xlsx is
-	// not read here at all: it goes up as the file it is and is read on the server.
-	function read_text(file) {
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result);
-			reader.onerror = () =>
-				reject(local_error(__("{0} could not be read from the disk.", [file.name])));
-			reader.readAsText(file);
-		});
-	}
-
-	function extension_of(filename) {
-		const parts = cstr(filename).toLowerCase().split(".");
-		return parts.length > 1 ? parts.pop() : "";
-	}
-
 	/* ------------------------------------------------------------------- calling */
 
 	// nothing here goes through frappe.call, which posts its arguments as url-encoded
@@ -293,27 +404,6 @@
 	// allowed size of 25 MB" -- frappe.boot's own file limit printed back by the
 	// desk's 413 handler, not the limit that was reached and not a size the page
 	// necessarily came near.
-
-	// a whitelisted method, posted as JSON: the body the REST examples post
-	// (doctype/brs_transaction/Bulk-Insert.MD). A .json file's rows go up this way,
-	// since they are the user's own rows and there is nothing to read them from.
-	function post_json(method, args) {
-		return send(method, {
-			body: JSON.stringify(args),
-			headers: { "Content-Type": "application/json" },
-		});
-	}
-
-	// a whitelisted method, with a file: the file goes up as its own multipart part,
-	// which is how a browser sends a file and something frappe.call cannot do at all.
-	function upload(method, file) {
-		const body = new FormData();
-		// the part read back out as frappe.request.files["file"] (brs_dashboard.py).
-		// The multipart boundary is the browser's to set, so no Content-Type is given
-		// here: setting one would leave the boundary out of it.
-		body.append("file", file, file.name);
-		return send(method, { body: body });
-	}
 
 	// the call itself, answered with what the method returned. frappe.request's error
 	// handling is not on this path, so what the server sent is shown here, the way it
@@ -367,84 +457,61 @@
 			);
 		}
 		return answer ? answer.message : null;
-	}
 
-	// the response body as the JSON frappe answers with, or null when it is not JSON
-	// at all -- which is what a gateway's own error page arrives as
-	async function read_json(response) {
-		try {
-			return await response.json();
-		} catch (parse_error) {
-			return null;
+		// the response body as the JSON frappe answers with, or null when it is not JSON
+		// at all -- which is what a gateway's own error page arrives as
+		async function read_json(response) {
+			try {
+				return await response.json();
+			} catch (parse_error) {
+				return null;
+			}
 		}
-	}
 
-	// frappe's messages as the one error the panel restates, each under the last. The
-	// same wording is in a dialog by the time this is read -- send() puts it up as it
-	// comes back -- so a refusal that carried no message at all leaves the panel to
-	// say only that the import failed.
-	function error_from(messages) {
-		const text = messages.map((message) => cstr(message.message));
-		const error = new Error(text.join(" "));
-		error.html = text.join("<br>");
-		return error;
-	}
+		// frappe's messages as the one error the panel restates, each under the last. The
+		// same wording is in a dialog by then -- show_messages() above put it up -- so a
+		// refusal that carried no message at all leaves the panel to say only that the
+		// import failed.
+		function error_from(messages) {
+			const text = messages.map((message) => cstr(message.message));
+			const error = new Error(text.join(" "));
+			error.html = text.join("<br>");
+			return error;
+		}
 
-	// frappe's messages, shown the way frappe.request shows them: one dialog each,
-	// under the title the server threw it with.
-	function show_messages(messages) {
-		messages.forEach((message) => {
-			frappe.msgprint({
-				title: message.title || __("Nothing to Import"),
-				message: cstr(message.message),
-				indicator: message.indicator || "red",
+		// frappe's messages, shown the way frappe.request shows them: one dialog each,
+		// under the title the server threw it with.
+		function show_messages(messages) {
+			messages.forEach((message) => {
+				frappe.msgprint({
+					title: message.title || __("Nothing to Import"),
+					message: cstr(message.message),
+					indicator: message.indicator || "red",
+				});
 			});
-		});
-	}
+		}
 
-	// frappe's messages, out of the body it answered with. A refused statement comes
-	// back as a 417 carrying them -- the status frappe.throw answers with.
-	function server_messages(response) {
-		return parse_messages((response || {})._server_messages);
-	}
-
-	// _server_messages is a JSON list of JSON strings, each one a message object
-	// carrying the title and indicator the server threw it with. They are kept whole
-	// here rather than reduced to their text, since show_messages() puts them up
-	// under those titles; frappe.msgprint reads one such object itself, but not a
-	// list of them.
-	function parse_messages(server_messages_json) {
-		try {
-			return JSON.parse(server_messages_json || "[]")
-				.map((entry) => JSON.parse(entry))
-				.filter((message) => message && message.message);
-		} catch (parse_error) {
-			// not the JSON-inside-JSON frappe sends, so there is nothing to read
-			return [];
+		// frappe's messages, out of the body it answered with. A refused statement comes
+		// back as a 417 carrying them -- the status frappe.throw answers with.
+		//
+		// _server_messages is a JSON list of JSON strings, each one a message object
+		// carrying the title and indicator the server threw it with. They are kept whole
+		// here rather than reduced to their text, since show_messages() puts them up
+		// under those titles; frappe.msgprint reads one such object itself, but not a
+		// list of them.
+		function server_messages(response) {
+			try {
+				return JSON.parse((response || {})._server_messages || "[]")
+					.map((entry) => JSON.parse(entry))
+					.filter((message) => message && message.message);
+			} catch (parse_error) {
+				// not the JSON-inside-JSON frappe sends, so there is nothing to read
+				return [];
+			}
 		}
 	}
 
 	/* --------------------------------------------------------------- rendering */
-
-	function render_scaffold() {
-		const columns = SHEET_COLUMNS.map(
-			(column) => `<code class="logicx-bd-column">${column}</code>`
-		).join(" ");
-
-		return `
-			<div class="logicx-bd-card">
-				<div class="logicx-bd-title">${__("What BRS Import reads")}</div>
-				<div class="logicx-bd-help">
-					<p>${__("A <b>.json</b> file of statement rows, or a <b>.xlsx</b> sheet of them: one bank account per file, in the bank's own order, oldest row first.")}</p>
-					<p>${__("A sheet carries exactly these columns, and no others:")}<br>${columns}</p>
-					<p>${__("Rows already posted are skipped and the rest are appended, so the same file can be imported twice. The file has to reach back far enough to include the account's last posted transaction.")}</p>
-				</div>
-			</div>
-			<div class="logicx-bd-card" data-panel="result">
-				<div class="logicx-bd-status is-idle">${__("No file imported yet.")}</div>
-			</div>
-		`;
-	}
 
 	function render_file_line(file, extension) {
 		const format = extension === XLSX_EXTENSION ? __("Excel sheet") : __("JSON");
@@ -454,67 +521,6 @@
 				<span class="logicx-bd-file-meta">${format} &middot; ${format_size(file.size)}</span>
 			</div>
 		`;
-	}
-
-	function render_summary(result) {
-		const confirmed = cint(result.confirmed);
-		const rows = [
-			[__("Bank Account"), link("Bank Account", result.bank_account)],
-			[__("Rows in the file"), cint(result.rows)],
-			[
-				__("Already posted"),
-				__("{0} skipped, {1} of them confirmed against the chain", [cint(result.skipped), confirmed]),
-			],
-			[__("Posted now"), cint((result.inserted || []).length)],
-		];
-
-		return `
-			<table class="logicx-bd-summary">
-				${rows
-					.map(
-						([label, value]) => `
-					<tr>
-						<th>${label}</th>
-						<td>${value}</td>
-					</tr>`
-					)
-					.join("")}
-			</table>
-		`;
-	}
-
-	function render_inserted(inserted) {
-		if (!inserted.length) return "";
-		return `
-			<div class="logicx-bd-subtitle">${__("Transactions posted")}</div>
-			<div class="logicx-bd-chips">
-				${inserted.map((name) => link("BRS Transaction", name)).join("")}
-			</div>
-		`;
-	}
-
-	// where the account's chain ended before this import and where it ends now:
-	// the same transaction when nothing was posted
-	function render_tail(result) {
-		const before = result.last_posted_before;
-		const after = result.last_posted_after;
-		if (!before || !after) return "";
-
-		return `
-			<div class="logicx-bd-subtitle">${__("Last posted transaction")}</div>
-			<div class="logicx-bd-tail">
-				<span>${__("Before")}: ${render_transaction(before)}</span>
-				<span>${__("After")}: ${render_transaction(after)}</span>
-			</div>
-		`;
-	}
-
-	function render_transaction(transaction) {
-		return `${link("BRS Transaction", transaction.name)}
-			<span class="logicx-bd-file-meta">
-				${frappe.datetime.str_to_user(transaction.date)} &middot;
-				${__("closing")} ${format_number(transaction.closing_balance, null, AMOUNT_DECIMALS)}
-			</span>`;
 	}
 
 	function link(doctype, name) {
@@ -535,16 +541,6 @@
 	}
 
 	/* ------------------------------------------------------------------ styles */
-
-	function inject_styles() {
-		let style = document.getElementById(STYLE_ID);
-		if (!style) {
-			style = document.createElement("style");
-			style.id = STYLE_ID;
-			document.head.appendChild(style);
-		}
-		style.textContent = PAGE_STYLES;
-	}
 
 	const PAGE_STYLES = `
 		.logicx-bd {

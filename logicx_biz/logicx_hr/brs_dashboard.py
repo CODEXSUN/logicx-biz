@@ -182,6 +182,11 @@ def read_headings(cells):
 	spaces, hyphens and underscores all read as one, so "Bank Account",
 	"bank account" and "BANK_ACCOUNT" are the same column.
 	"""
+
+	def normalise(heading):
+		"""A heading as a fieldname: trimmed, lowercased, its runs of spacing as one."""
+		return "_".join(cstr(heading).replace("_", " ").replace("-", " ").lower().split())
+
 	labels = dict(COLUMNS)
 	headings, unknown = {}, []
 
@@ -290,11 +295,6 @@ def read_text(value):
 	if isinstance(value, float) and value.is_integer():
 		return cstr(int(value))
 	return cstr(value).strip()
-
-
-def normalise(heading):
-	"""A heading as a fieldname: trimmed, lowercased, its runs of spacing as one."""
-	return "_".join(cstr(heading).replace("_", " ").replace("-", " ").lower().split())
 
 
 def is_blank(value):

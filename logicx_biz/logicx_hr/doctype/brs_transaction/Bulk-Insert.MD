@@ -177,7 +177,7 @@ At the top of the bulk insert section in [brs_transaction.py](brs_transaction.py
 | Constant | Value | What |
 |----------|-------|------|
 | `MIN_BACKWARD_MATCHES_LIMIT` | 2 | The guarantee. Data that ends before this many transactions have been confirmed is refused. **A walk that reaches the start of the chain is not refused, however few it confirmed:** it has confirmed every transaction the account has, which is more than the minimum could ask for. That is what lets a brand-new account, whose chain is its opening transaction alone, take its first statement. |
-| `MAX_BACKWARD_MATCHES_LIMIT` | 100 | The stop. Confirming stops here however much of the overlap is left; the rest is skipped unconfirmed. Raise it to confirm more, lower it for a shorter check. Keep it at or above the minimum. |
+| `MAX_BACKWARD_MATCHES_LIMIT` | 3 | The stop. Confirming stops here however much of the overlap is left; the rest is skipped unconfirmed. Raise it to confirm more, lower it for a shorter check. Keep it at or above the minimum. |
 | `MATCH_FIELDS` | 6 fields | What makes a row and a transaction the same transaction (above). |
 
 ### Walk-through
