@@ -330,7 +330,7 @@ Content-Type: application/json
 
 
 ### Import a sheet: post a .xlsx bank statement in one call.
-	# The BRS Dashboard's own endpoint (page/brs_dashboard). The workbook is uploaded, read on the
+	# The BRS Dashboard's own endpoint (page/brs_dashboard/brs_import). The workbook is uploaded, read on the
 	# server and handed to bulk_insert there, so the rows are never carried back and forth. What
 	# comes back is bulk_insert's own answer -- "skipped", "confirmed", "inserted" and the rest,
 	# exactly as above -- with the uploaded file's name added as "filename".
@@ -350,8 +350,8 @@ Content-Type: application/json
 	#
 	# The file goes up as one multipart part named "file" -- not as base64 in an argument, which a
 	# statement is too large for. The path below is relative to this .rest file.
-	# Full documentation: ../../page/brs_dashboard/BRS-Dashboard.MD
-POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.brs_dashboard.import_sheet
+	# Full documentation: ../../page/brs_dashboard/brs_import/BRS-Import.MD
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.page.brs_dashboard.brs_import.brs_import.import_sheet
 Authorization: token {{token}}
 Content-Type: multipart/form-data; boundary=BRSImportBoundary
 

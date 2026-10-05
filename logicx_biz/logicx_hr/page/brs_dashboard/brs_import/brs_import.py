@@ -1,6 +1,6 @@
-"""Server side of the BRS Dashboard page (page/brs_dashboard).
+"""Server side of the BRS Dashboard's Import tab (brs_import.js, beside this).
 
-The page takes the file the user picked in the browser. A .json file holds the
+The tab takes the file the user picked in the browser. A .json file holds the
 statement rows already and the page posts them itself, straight to BRS
 Transaction's ``bulk_insert``; a .xlsx comes here, because the desk has no
 spreadsheet reader of its own and openpyxl (through ``frappe.utils.xlsxutils``)

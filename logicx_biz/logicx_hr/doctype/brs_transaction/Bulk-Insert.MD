@@ -269,7 +269,7 @@ There is no partial post to clean up, and a failed call can be fixed and sent ag
 | `brs_transaction.py` | `bulk_insert()` and its helpers, after the controller class. |
 | `Frappe.Api.BrsTransaction.rest` | REST Client examples, bulk insert last. |
 | `Bulk-Insert.MD` | This file. |
-| [`page/brs_dashboard/`](../../page/brs_dashboard/BRS-Dashboard.MD) | The BRS Dashboard desk page: posts a `.json` or `.xlsx` statement here, and shows what came back. |
+| [`page/brs_dashboard/brs_import/`](../../page/brs_dashboard/brs_import/BRS-Import.MD) | The BRS Dashboard's Import tab: posts a `.json` or `.xlsx` statement here, and shows what came back. |
 
 ## Later
 
