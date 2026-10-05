@@ -3,11 +3,15 @@
 	const STYLE_ID = "logicx-brs-dashboard-styles";
 
 	// the tab strip, in order. Each tab is its own folder under this page --
-	// brs_import/ for Import -- whose script hooks.py's page_js appends to this
-	// one when the page is loaded. That script registers its class under the
-	// tab's key in logicx_biz.brs_dashboard.tabs, and the class is built into the
-	// tab's pane here (BRS-Dashboard.MD says what a tab's class is handed).
-	const TABS = [{ key: "import", title: __("Import") }];
+	// brs_import/ for Import, brs_transaction_report/ for Transaction -- whose
+	// script hooks.py's page_js appends to this one when the page is loaded. That
+	// script registers its class under the tab's key in
+	// logicx_biz.brs_dashboard.tabs, and the class is built into the tab's pane
+	// here (BRS-Dashboard.MD says what a tab's class is handed).
+	const TABS = [
+		{ key: "transaction", title: __("Transaction") },
+		{ key: "import", title: __("Import") },
+	];
 
 	// where the tabs' scripts put their classes. They run after this one, so it
 	// is read only from on_page_load on, once the page's whole script has run.

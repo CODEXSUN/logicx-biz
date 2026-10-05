@@ -13,6 +13,7 @@ under this one. The page itself does nothing but hold them.
 | Tab | Folder | What |
 |-----|--------|------|
 | **Import** | [`brs_import/`](brs_import/BRS-Import.MD) | Posts a `.json` or `.xlsx` bank statement to BRS Transaction's bulk insert, and shows what came back. |
+| **Transaction** | [`brs_transaction_report/`](brs_transaction_report/BRS-Transaction-Report.MD) | A report of BRS Transactions, narrowed by Bank Account, Date and a search through Reference Number and Description. |
 
 ## How a tab is put together
 
@@ -35,7 +36,7 @@ and is handed `{ $wrapper }`, the tab's empty pane, to render into. It is built 
 `on_show()`, that is called every time the tab comes on screen -- the first time too, and whenever
 the user comes back to the page. A tab fetches what it shows in `on_show()`, not in its constructor,
 or it fetches it twice on the first showing. Each tab brings its own buttons and injects its own styles under its own prefix
-(`logicx-bi-` for Import); the page's header and primary action are left alone, since every tab
+(`logicx-bi-` for Import, `logicx-bt-` for Transaction); the page's header and primary action are left alone, since every tab
 shares them.
 
 To add a tab:
