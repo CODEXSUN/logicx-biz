@@ -460,6 +460,13 @@
 				show_messages(messages);
 				throw error_from(messages);
 			}
+			// an error frappe did not throw on purpose: a 500 still names the exception,
+			// and carries its last line too where the site lets the user see tracebacks --
+			// more to go on than the status alone
+			const failure = cstr(answer && (answer.exception || answer.exc_type));
+			if (failure) {
+				throw local_error(__("The server failed: {0}", [failure]));
+			}
 			// not frappe's refusal but the server's own: a gateway's error page, or a
 			// 413 from whatever stands in front of frappe. The status is all it said,
 			// and saying that is better than naming a limit it did not.
