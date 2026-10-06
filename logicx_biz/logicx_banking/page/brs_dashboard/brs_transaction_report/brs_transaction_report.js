@@ -10,7 +10,7 @@
 	const STYLE_ID = "logicx-brs-transaction-report-styles";
 	const TRANSACTION_DOCTYPE = "BRS Transaction";
 
-	const SERVER = "logicx_biz.logicx_hr.page.brs_dashboard.brs_transaction_report.brs_transaction_report";
+	const SERVER = "logicx_biz.logicx_banking.page.brs_dashboard.brs_transaction_report.brs_transaction_report";
 	const GET_TRANSACTIONS_METHOD = `${SERVER}.get_transactions`;
 	// the company's own bank accounts, the disabled ones included (see the .py)
 	const BANK_ACCOUNT_QUERY = `${SERVER}.bank_account_query`;

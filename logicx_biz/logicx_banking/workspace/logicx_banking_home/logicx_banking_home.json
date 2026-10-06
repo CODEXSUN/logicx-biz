@@ -1,0 +1,60 @@
+{
+	"doctype": "Workspace",
+	"type": "Workspace",
+	"app": "logicx_biz",
+	"module": "LogicX Banking",
+	"name": "LogicX Banking Home",
+	"title": "Home",
+	"label": "Home",
+	"icon": "home",
+	"content": "[{\"id\":\"bNk_HdR-01\",\"type\":\"header\",\"data\":{\"text\":\"\\u003cspan class=\\\"h4\\\"\\u003eHome\\u003c/span\\u003e\",\"col\":12}},{\"id\":\"sc_brs_dashboard\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"BRS Dashboard\",\"col\":4}},{\"id\":\"sc_brs_transaction\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"BRS Transaction\",\"col\":4}},{\"id\":\"sc_brs_date\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"BRS Date\",\"col\":4}}]",
+	"indicator_color": "green",
+	"for_user": "",
+	"hide_custom": 0,
+	"is_hidden": 0,
+	"parent_page": "",
+	"public": 1,
+	"sequence_id": 3.0,
+	"charts": [],
+	"custom_blocks": [],
+	"links": [],
+	"number_cards": [],
+	"quick_lists": [],
+	"roles": [
+		{
+			"role": "System Manager"
+		},
+		{
+			"role": "TM Admin"
+		},
+		{
+			"role": "TM User"
+		}
+	],
+	"shortcuts_label": "Quick Access",
+	"shortcuts": [
+		{
+			"label": "BRS Dashboard",
+			"link_to": "brs-dashboard",
+			"type": "Page",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "BRS Transaction",
+			"link_to": "BRS Transaction",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		},
+		{
+			"label": "BRS Date",
+			"link_to": "BRS Date",
+			"type": "DocType",
+			"doc_view": "List",
+			"color": "Grey",
+			"stats_filter": "[]"
+		}
+	]
+}

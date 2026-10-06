@@ -1,2 +1,3 @@
 LogicX HR
 LogicX ERP
+LogicX Banking

@@ -1,0 +1,39 @@
+{
+	"doctype": "Workspace Sidebar",
+	"name": "LogicX Banking",
+	"title": "LogicX Banking",
+	"app": "logicx_biz",
+	"module": "LogicX Banking",
+	"standard": 1,
+	"header_icon": "circle-dollar-sign",
+	"items": [
+		{
+			"idx": 1,
+			"label": "Home",
+			"type": "Link",
+			"link_type": "Workspace",
+			"link_to": "LogicX Banking Home"
+		},
+		{
+			"idx": 2,
+			"label": "BRS Dashboard",
+			"type": "Link",
+			"link_type": "Page",
+			"link_to": "brs-dashboard"
+		},
+		{
+			"idx": 3,
+			"label": "BRS Transaction",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "BRS Transaction"
+		},
+		{
+			"idx": 4,
+			"label": "BRS Date",
+			"type": "Link",
+			"link_type": "DocType",
+			"link_to": "BRS Date"
+		}
+	]
+}

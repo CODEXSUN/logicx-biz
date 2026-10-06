@@ -35,7 +35,7 @@ from frappe import _
 from frappe.utils import cstr, flt
 from frappe.utils.xlsxutils import read_xlsx_file_from_attached_file
 
-from logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction import bulk_insert
+from logicx_biz.logicx_banking.doctype.brs_transaction.brs_transaction import bulk_insert
 
 # the sheet's columns, and the keys of the rows handed back to the page: exactly
 # bulk_insert's statement row, in the order the page lists them

@@ -141,7 +141,7 @@ Content-Type: application/json
 	#
 	# Expect: "skipped" 2, "confirmed" 2, "inserted" ["BRSTXN4", "BRSTXN5", "BRSTXN6"].
 	# Full documentation: Bulk-Insert.MD
-POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_banking.doctype.brs_transaction.brs_transaction.bulk_insert
 Authorization: token {{token}}
 Content-Type: application/json
 
@@ -203,7 +203,7 @@ Content-Type: application/json
 	# The bank has reworded row 1's narration -- Description is not matched on, so it still
 	# matches; row 3's reference number arrives padded, and is compared trimmed.
 	# Expect: "skipped" 3, "confirmed" 3, "inserted" ["BRSTXN7"].
-POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_banking.doctype.brs_transaction.brs_transaction.bulk_insert
 Authorization: token {{token}}
 Content-Type: application/json
 
@@ -257,7 +257,7 @@ Content-Type: application/json
 	# "The data confirms only 1 of ...'s posted transactions before it ends, and 2 have to
 	#  be confirmed."
 	# Sending one row further back (as the call above does) is enough.
-POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_banking.doctype.brs_transaction.brs_transaction.bulk_insert
 Authorization: token {{token}}
 Content-Type: application/json
 
@@ -291,7 +291,7 @@ Content-Type: application/json
 	# walk sets off: row 3 = BRSTXN7, row 2 = BRSTXN6, and then row 1, whose Deposit has been
 	# changed from 3000 to 3500, meets BRSTXN5:
 	# "Row 1 does not match BRSTXN5 ... Deposit, Closing Balance differ."
-POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_banking.doctype.brs_transaction.brs_transaction.bulk_insert
 Authorization: token {{token}}
 Content-Type: application/json
 
@@ -351,7 +351,7 @@ Content-Type: application/json
 	# The file goes up as one multipart part named "file" -- not as base64 in an argument, which a
 	# statement is too large for. The path below is relative to this .rest file.
 	# Full documentation: ../../page/brs_dashboard/brs_import/BRS-Import.MD
-POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.page.brs_dashboard.brs_import.brs_import.import_sheet
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_banking.page.brs_dashboard.brs_import.brs_import.import_sheet
 Authorization: token {{token}}
 Content-Type: multipart/form-data; boundary=BRSImportBoundary
 

@@ -118,8 +118,8 @@ page_js = {
 	# the BRS Dashboard's tabs, each in its own folder under the page: appended
 	# to brs_dashboard.js when the page is loaded (page/brs_dashboard/BRS-Dashboard.MD)
 	"brs-dashboard": [
-		"logicx_hr/page/brs_dashboard/brs_import/brs_import.js",
-		"logicx_hr/page/brs_dashboard/brs_transaction_report/brs_transaction_report.js",
+		"logicx_banking/page/brs_dashboard/brs_import/brs_import.js",
+		"logicx_banking/page/brs_dashboard/brs_transaction_report/brs_transaction_report.js",
 	],
 }
 

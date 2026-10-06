@@ -10,7 +10,7 @@ already posted is refused whole, and nothing is written.
 
 | | |
 |---|---|
-| **Endpoint** | `POST /api/v2/method/logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert` |
+| **Endpoint** | `POST /api/v2/method/logicx_biz.logicx_banking.doctype.brs_transaction.brs_transaction.bulk_insert` |
 | | `POST /api/method/...` also works; v1 wraps the result in `message`, v2 in `data`. |
 | **Auth** | Token or session, like any whitelisted method. Needs **create** on BRS Transaction (`TM User`, `TM Admin`). |
 | **Code** | `bulk_insert()` in [brs_transaction.py](brs_transaction.py) |

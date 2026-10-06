@@ -1,7 +1,7 @@
 {
 	"doctype": "DocType",
 	"name": "BRS Transaction",
-	"module": "LogicX HR",
+	"module": "LogicX Banking",
 	"autoname": "BRSTXN.#",
 	"track_changes": 1,
 	"track_views": 1,

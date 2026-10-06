@@ -5,8 +5,8 @@ chain per account: an opening date first, then each later date linked to the one
 
 | DocType | Module | Purpose |
 |---------|--------|---------|
-| **BRS Date** | LogicX HR | One row = one BRS date of one Bank Account, linked to the previous and next date. |
-| **BRS Transaction** | LogicX HR | Creates the BRS Date of its date, points it at its first and latest transaction, and deletes it when the last transaction left on it is deleted (see [../brs_transaction/Design.MD](../brs_transaction/Design.MD)). |
+| **BRS Date** | LogicX Banking | One row = one BRS date of one Bank Account, linked to the previous and next date. |
+| **BRS Transaction** | LogicX Banking | Creates the BRS Date of its date, points it at its first and latest transaction, and deletes it when the last transaction left on it is deleted (see [../brs_transaction/Design.MD](../brs_transaction/Design.MD)). |
 | **Bank Account** (ERPNext) | -- | Two custom fields point at the first and the latest BRS Date of the account. |
 
 ## The chain
@@ -192,9 +192,9 @@ these rows.
 
 | File | What |
 |------|------|
-| `logicx_hr/doctype/brs_date/brs_date.json` | The DocType. |
-| `logicx_hr/doctype/brs_date/brs_date.js` | The form's Transactions table (see Form). |
-| `logicx_hr/doctype/brs_date/brs_date.py` | Insert and delete rules, chain links, update guard, unique index; `update_brs_transaction()`, `insert_brs_date()` and `remove_brs_transaction()` for BRS Transaction. |
+| `logicx_banking/doctype/brs_date/brs_date.json` | The DocType. |
+| `logicx_banking/doctype/brs_date/brs_date.js` | The form's Transactions table (see Form). |
+| `logicx_banking/doctype/brs_date/brs_date.py` | Insert and delete rules, chain links, update guard, unique index; `update_brs_transaction()`, `insert_brs_date()` and `remove_brs_transaction()` for BRS Transaction. |
 | `logicx_erp/bank_account.py` | `update_brs_date()` and `remove_brs_date()` -- Bank Account's opening / closing date. |
 | `fixtures/custom_field.json` | `Bank Account-brs_opening_date`, `Bank Account-brs_closing_date` (inserted after `company`). |
 | `hooks.py` | The two custom fields listed under `fixtures`. |

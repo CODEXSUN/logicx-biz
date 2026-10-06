@@ -1,0 +1,1 @@
+"""LogicX Banking module."""

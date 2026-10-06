@@ -9,8 +9,8 @@ transaction on it.
 
 | DocType | Module | Change |
 |---------|--------|--------|
-| **BRS Transaction** | LogicX HR | New. One row = one transaction of one Bank Account, linked to the previous and next transaction. |
-| **BRS Date** | LogicX HR | Three new fields: the date's Opening and Closing Transaction, and its No of Transactions. Created and updated by transactions only; no user can create or update one by hand. |
+| **BRS Transaction** | LogicX Banking | New. One row = one transaction of one Bank Account, linked to the previous and next transaction. |
+| **BRS Date** | LogicX Banking | Three new fields: the date's Opening and Closing Transaction, and its No of Transactions. Created and updated by transactions only; no user can create or update one by hand. |
 | **Bank Account** (ERPNext) | -- | No change. Its BRS Opening / Closing Date still follow the BRS Dates, now created and deleted by transactions. |
 
 ## The chains
@@ -293,14 +293,14 @@ Taking the four transactions above off again, last one first:
 
 | File | What |
 |------|------|
-| `logicx_hr/doctype/brs_transaction/brs_transaction.json` | The DocType. |
-| `logicx_hr/doctype/brs_transaction/brs_transaction.py` | Insert rules, chain links, Daily Roll Number, update / delete guards, `get_chain_tail()` and `bulk_insert()`. |
-| `logicx_hr/doctype/brs_transaction/brs_transaction.js` | The form script: fills Previous Transaction and Opening Balance from the Bank Account's chain. |
-| `logicx_hr/doctype/brs_transaction/Bulk-Insert.MD` | Posting a whole bank statement in one call: what is skipped, what is appended, and what is refused. |
-| `logicx_hr/doctype/brs_date/brs_date.json` | `opening_transaction`, `closing_transaction`, `no_of_transactions`; create and write removed from TM User and TM Admin (all permlevels); import off. |
-| `logicx_hr/doctype/brs_date/brs_date.py` | `update_brs_transaction()` and `insert_brs_date()` for a date's first transaction; `remove_brs_transaction()` for a deleted one. |
+| `logicx_banking/doctype/brs_transaction/brs_transaction.json` | The DocType. |
+| `logicx_banking/doctype/brs_transaction/brs_transaction.py` | Insert rules, chain links, Daily Roll Number, update / delete guards, `get_chain_tail()` and `bulk_insert()`. |
+| `logicx_banking/doctype/brs_transaction/brs_transaction.js` | The form script: fills Previous Transaction and Opening Balance from the Bank Account's chain. |
+| `logicx_banking/doctype/brs_transaction/Bulk-Insert.MD` | Posting a whole bank statement in one call: what is skipped, what is appended, and what is refused. |
+| `logicx_banking/doctype/brs_date/brs_date.json` | `opening_transaction`, `closing_transaction`, `no_of_transactions`; create and write removed from TM User and TM Admin (all permlevels); import off. |
+| `logicx_banking/doctype/brs_date/brs_date.py` | `update_brs_transaction()` and `insert_brs_date()` for a date's first transaction; `remove_brs_transaction()` for a deleted one. |
 | `logicx_erp/bank_account.py` | `remove_brs_date()` -- the account's opening / closing date after a BRS Date is deleted. |
-| `logicx_hr/doctype/brs_date/Design.MD` | The new fields and permissions; BRS Dates now created by transactions. |
+| `logicx_banking/doctype/brs_date/Design.MD` | The new fields and permissions; BRS Dates now created by transactions. |
 
 ## Later
 

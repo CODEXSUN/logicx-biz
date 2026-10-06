@@ -13,13 +13,13 @@
 	// examples post to. It decides what is skipped and what is appended, and it is
 	// safe to send the same statement twice (doctype/brs_transaction/Bulk-Insert.MD).
 	const BULK_INSERT_METHOD =
-		"logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert";
+		"logicx_biz.logicx_banking.doctype.brs_transaction.brs_transaction.bulk_insert";
 	// a .xlsx is imported whole on the server instead: the sheet goes up, is read
 	// there and posted there, and what comes back is what bulk_insert answered. The
 	// desk has no spreadsheet reader, and the rows are too much to carry back and
 	// forth even if it had (see brs_import.py).
 	const IMPORT_SHEET_METHOD =
-		"logicx_biz.logicx_hr.page.brs_dashboard.brs_import.brs_import.import_sheet";
+		"logicx_biz.logicx_banking.page.brs_dashboard.brs_import.brs_import.import_sheet";
 
 	// the two files the page reads, and what it does with each
 	const JSON_EXTENSION = "json";

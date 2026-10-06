@@ -3,7 +3,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, cstr, escape_html, flt, formatdate, get_link_to_form, getdate
 
-from logicx_biz.logicx_hr.doctype.brs_date.brs_date import remove_brs_transaction, update_brs_transaction
+from logicx_biz.logicx_banking.doctype.brs_date.brs_date import remove_brs_transaction, update_brs_transaction
 
 # a Bank Account's BRS Transactions form a chain: the opening transaction first,
 # each later one linked to the one before it through Previous / Next Transaction;

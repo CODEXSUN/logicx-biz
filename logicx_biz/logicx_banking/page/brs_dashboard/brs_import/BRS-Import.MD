@@ -11,7 +11,7 @@ and appends the rest to the Bank Account's chain. What it did is then shown on t
 |---|---|
 | **Tab** | **Import** on `/app/brs-dashboard` (`../brs_dashboard.json`; System Manager, TM Admin, TM User) |
 | **Reads** | one `.json` file of statement rows, or one `.xlsx` sheet of them |
-| **Posts to** | `logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction.bulk_insert` |
+| **Posts to** | `logicx_biz.logicx_banking.doctype.brs_transaction.brs_transaction.bulk_insert` |
 | **Files** | `brs_import.js` (the tab), `brs_import.py` (the .xlsx import) -- both in this folder |
 
 ## The two files it reads

@@ -1,7 +1,7 @@
 // Copyright (c) 2026, LogicX and contributors
 // For license information, please see license.txt
 
-const DOCTYPE_PATH = "logicx_biz.logicx_hr.doctype.brs_transaction.brs_transaction";
+const DOCTYPE_PATH = "logicx_biz.logicx_banking.doctype.brs_transaction.brs_transaction";
 
 // a Bank Account's BRS Transactions form a chain, and a new one joins it at the end:
 // after the account's last posted transaction, opening at what that one closed at.

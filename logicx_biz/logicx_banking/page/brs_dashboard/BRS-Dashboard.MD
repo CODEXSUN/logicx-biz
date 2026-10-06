@@ -21,7 +21,7 @@ Frappe reads one script out of a page's folder, `brs_dashboard.js`. A tab's scri
 folder, so it reaches the page through the `page_js` hook instead: `hooks.py` lists it under
 `"brs-dashboard"`, and Frappe appends it to `brs_dashboard.js` when it loads the page. Whatever
 server side a tab has is in the same folder (`brs_import/brs_import.py`), whitelisted at its own
-path -- `logicx_biz.logicx_hr.page.brs_dashboard.brs_import.brs_import.import_sheet`.
+path -- `logicx_biz.logicx_banking.page.brs_dashboard.brs_import.brs_import.import_sheet`.
 
 The tab's script registers its class under the tab's key:
 

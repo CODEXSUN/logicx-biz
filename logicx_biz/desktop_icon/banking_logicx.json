@@ -1,0 +1,23 @@
+{
+	"doctype": "Desktop Icon",
+	"name": "Banking LogicX",
+	"label": "Banking LogicX",
+	"app": "logicx_biz",
+	"standard": 1,
+	"icon": "circle-dollar-sign",
+	"icon_type": "App",
+	"logo_url": "/assets/logicx_biz/logo.png",
+	"link_type": "External",
+	"link": "/desk/logicx-banking-home",
+	"roles": [
+		{
+			"role": "System Manager"
+		},
+		{
+			"role": "TM Admin"
+		},
+		{
+			"role": "TM User"
+		}
+	]
+}
