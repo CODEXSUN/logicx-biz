@@ -112,6 +112,7 @@
 						<div class="logicx-bi-help">
 							<p>${__("A <b>.json</b> file of statement rows, or a <b>.xlsx</b> sheet of them: one bank account per file, in the bank's own order, oldest row first.")}</p>
 							<p>${__("A sheet carries exactly these columns, and no others:")}<br>${columns}</p>
+							<p>${__("A sheet's dates can be date cells, or text written day first: 04/02/26, 04-02-2026 and 04-Feb-2026 are all the 4th of February. A .json file's dates are YYYY-MM-DD.")}</p>
 							<p>${__("Rows already posted are skipped and the rest are appended, so the same file can be imported twice. The file has to reach back far enough to include the account's last posted transaction.")}</p>
 						</div>
 					</div>

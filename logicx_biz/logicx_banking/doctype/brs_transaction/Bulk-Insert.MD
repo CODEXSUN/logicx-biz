@@ -62,7 +62,7 @@ of the request: it is the order the rows are matched in and the order they are p
 | Field | Required | Notes |
 |-------|----------|-------|
 | `bank_account` | yes | The same account on every row. Two accounts in one call is an error -- send one call per account. |
-| `date` | yes | `YYYY-MM-DD`. |
+| `date` | yes | `YYYY-MM-DD`, and nothing else. Other text is refused rather than read: `04/02/26` is the 4th of February from an Indian bank, and Frappe's own date parsing would make it the 2nd of April. [BRS Import](../../page/brs_dashboard/brs_import/BRS-Import.MD#dates) turns a sheet's dates into this form before posting. |
 | `closing_balance` | yes | The bank's running balance after the row. `0` is a value, not a missing one. |
 | `withdrawal` | no, defaults to 0 | One of Withdrawal and Deposit is zero. |
 | `deposit` | no, defaults to 0 | |
@@ -230,7 +230,7 @@ There is no partial post to clean up, and a failed call can be fixed and sent ag
 |-------|------|
 | "Send the statement rows as a non-empty list in "data"." | `data` missing, empty, or not a list. |
 | "Row _n_ has no Bank Account / Date / Closing Balance." | A row is missing one of the three fields every row must carry. |
-| "Row _n_ has a Date that cannot be read: ..." | A date Frappe cannot parse. |
+| "Row _n_ has a Date that is not YYYY-MM-DD: ..." | A date in any other form, or one that is not a day of the calendar. |
 | "The data is for 2 Bank Accounts (...). Post one Bank Account per call." | Rows of more than one account in one call. |
 | "Bank Account _x_ does not exist." | |
 | "_x_ has no opening balance. Ask your administrator to add one (even if it is zero)." | The account has no BRS Opening Date, so there is nothing to append to. A TM Admin adds the opening transaction first. |

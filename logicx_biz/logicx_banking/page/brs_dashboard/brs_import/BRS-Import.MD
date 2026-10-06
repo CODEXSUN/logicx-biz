@@ -82,7 +82,7 @@ Below the heading row, one transaction per row:
 
 | Cell | Read as |
 |------|---------|
-| `date` | A date-formatted cell is written out as `YYYY-MM-DD`. Text is passed through as it stands: whether `04-02-2026` is April or February is not the page's to guess, and `bulk_insert` refuses a date it cannot read. |
+| `date` | A date cell, a date kept as a plain number, or text written **day first** -- `04/02/26` is the 4th of February. Each is written out as `YYYY-MM-DD`; see [Dates](#dates). |
 | `withdrawal`, `deposit` | Blank is zero, as `bulk_insert`'s own default is. Text that is not a number is refused, naming the row: read as a zero instead, it would come back as a balance that does not match, several rows further down. |
 | `closing_balance` | The same, except that blank is left **missing** rather than zero, so `bulk_insert` reports it as the required field it is. |
 | `bank_account`, `description`, `reference_number` | Text, trimmed. A Reference Number of digits arrives from a spreadsheet as a number, and a whole one is written without a decimal part -- `104513`, not `104513.0`, which would no longer match what the bank sent. |
@@ -96,6 +96,48 @@ Only the workbook's first sheet is read, and the file is read up to `MAX_FILE_BY
 beyond that it is the wrong file rather than a statement. The page holds the same ceiling as
 `MAX_SHEET_BYTES`, so too large a sheet is refused by name and size before it is uploaded; the
 server's check is the one that counts, on what actually arrived.
+
+## Dates
+
+A bank's export holds its dates in one of three ways, often without saying which, and each is read
+for what it is (`read_date` in `brs_import.py`):
+
+| The cell holds | Read as |
+|---|---|
+| a date -- a cell formatted as one, shown as `dd/mm/yy` or any other way | the date it holds; the format is only how it is shown |
+| a plain number -- a date column formatted as General | the date Excel keeps under that number, counted from its 1900 epoch: `46057` is 04-02-2026 |
+| text | **day first**, in any of the shapes below |
+
+| Text shape | Examples |
+|---|---|
+| numbers, the same separator twice (`/`, `-` or `.`) | `04/02/26`, `4-2-2026`, `04.02.2026` |
+| a spelled month, in English | `04-Feb-2026`, `04 Feb 26`, `4 February 2026`, `04-Sept-2026` |
+| the year first | `2026-02-04`, `2026/02/04` |
+
+Any of them may carry a time after the date (`04/02/2026 10:15 AM`), which is dropped. A two-digit
+year is this century's.
+
+Text is read day first whatever the bank, and never guessed at. Frappe's own date parsing reads
+`04/02/26` month first, as the 2nd of April, and turns to day first only where the month would come
+out above 12 -- so a day-first statement read that way has every 1st to 12th of a month swapped,
+without a word. `DAY_FIRST` in `brs_import.py` is the one place the order is set.
+
+Refused, naming the row, and nothing posted:
+
+- **text that is not a date read day first** -- `02/13/26` (a thirteenth month: the statement is
+  written month first), `31/02/26`, `04/02-26`;
+- **a date outside 2000 to 2099**, or a cell that is no date at all -- a time of day, `TRUE`, a
+  number that was never a date;
+- **a column that mixes date cells and text.** That is what a statement looks like after Excel has
+  opened it under a different date setting from the bank's: every date it could read its own way
+  round became a date cell read that way, and the rest stayed text. Which date cells are right can
+  no longer be told, so the file is refused rather than half-trusted;
+- **a date earlier than the row above it.** The sheet is oldest row first; a sheet in another order,
+  or one written month first, fails here, and the message shows each cell's text with the date it
+  was read as.
+
+A blank Date is left for `bulk_insert` to report, as a blank Closing Balance is. A `.json` file's
+dates are posted as they stand, and `bulk_insert` takes `YYYY-MM-DD` and nothing else.
 
 ## What it shows
 
@@ -121,3 +163,8 @@ Transaction. `import_sheet` asks for **create** on BRS Transaction before it rea
 though `bulk_insert` asks again: converting a statement is of use only to someone who can post it,
 and a sheet is not worth opening for someone who cannot. The inserts themselves
 are a desk user's own, so a role without create gets no further than the endpoint.
+
+## Later
+
+- A bank that prints its dates month first: a per-account setting that reads that account's text
+  month first, on top of `DAY_FIRST`.

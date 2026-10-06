@@ -1,3 +1,5 @@
+import datetime
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -280,7 +282,12 @@ def request_data():
 
 
 def read_rows(data):
-	"""The statement rows of a bulk insert, checked for what every row has to carry."""
+	"""The statement rows of a bulk insert, checked for what every row has to carry.
+
+	A row's Date is put back as the YYYY-MM-DD it was read as (read_iso_date), so
+	that what is matched, inserted and filed under a BRS Date is the date itself and
+	not whatever text it came in.
+	"""
 	if data is None:
 		data = request_data()
 	if isinstance(data, str):
@@ -300,13 +307,7 @@ def read_rows(data):
 				frappe.throw(
 					_("Row {0} has no {1}.").format(index + 1, label), title=_("Nothing to Post")
 				)
-		try:
-			getdate(row["date"])
-		except Exception:
-			frappe.throw(
-				_("Row {0} has a Date that cannot be read: {1}").format(index + 1, cstr(row["date"])),
-				title=_("Nothing to Post"),
-			)
+		row["date"] = read_iso_date(row["date"], index)
 
 	# a chain is one account's, and so is the transaction the rows are appended after
 	accounts = {cstr(row["bank_account"]) for row in data}
@@ -318,6 +319,27 @@ def read_rows(data):
 			title=_("More Than One Bank Account"),
 		)
 	return list(data)
+
+
+def read_iso_date(value, index):
+	"""A row's Date as the YYYY-MM-DD it has to be, or the row refused.
+
+	Only ISO is read. getdate would read whatever dateutil can, and dateutil reads
+	04/02/26 month first -- the 2nd of April, where an Indian bank means the 4th of
+	February -- without a word, turning to day first only where the month would
+	come out above 12. A caller with dates in another order converts them first,
+	the way BRS Import does a sheet's (brs_import.py, read_date).
+	"""
+	if isinstance(value, datetime.date):
+		# a caller in Python may hand over a date, or a datetime, rather than its text
+		return value.strftime("%Y-%m-%d")
+	try:
+		return datetime.date.fromisoformat(cstr(value).strip()).isoformat()
+	except ValueError:
+		frappe.throw(
+			_("Row {0} has a Date that is not YYYY-MM-DD: {1}").format(index + 1, escape_html(cstr(value))),
+			title=_("Nothing to Post"),
+		)
 
 
 def get_last_posted(bank_account, for_update=True):
