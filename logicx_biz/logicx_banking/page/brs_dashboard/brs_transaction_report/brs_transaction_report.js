@@ -77,7 +77,15 @@
 			// its way while the first rows are fetched
 			this.datatable_ready = ensure_datatable();
 
-			this.setup_filters();
+			// the doc the filter controls keep their values in, as a dialog's
+			// controls do. A control tells a change from none by comparing against
+			// its doc; with none it compares against nothing, and an emptied Date
+			// parses to nothing too -- so clearing the Date would never count as a
+			// change, and the table would go on showing that day's rows.
+			this.values = {};
+			// the filters wait on frappe's form controls (see ensure_controls); the
+			// table does not wait on the filters, since blank ones narrow nothing
+			ensure_controls().then(() => this.setup_filters());
 			// on the table's body only: the header, with the table's own filter row
 			// in it, is outside .dt-scrollable
 			this.$el.on("click", ".dt-scrollable", (event) => this.open_row(event));
@@ -113,14 +121,11 @@
 
 		setup_filters() {
 			const $bar = this.$el.find(".logicx-bt-filters");
+			if (typeof frappe.ui.form.make_control !== "function") {
+				$bar.html(note_html(__("The filters could not be loaded. Reload the page to try again."), true));
+				return;
+			}
 			const refresh = frappe.utils.debounce(() => this.refresh(), FILTER_DEBOUNCE_MS);
-
-			// the doc the controls keep their values in, as a dialog's controls do.
-			// A control tells a change from none by comparing against its doc; with
-			// none it compares against nothing, and an emptied Date parses to nothing
-			// too -- so clearing the Date would never count as a change, and the
-			// table would go on showing that day's rows.
-			this.values = {};
 
 			FILTERS.forEach((df) =>
 				frappe.ui.form.make_control({
@@ -305,13 +310,27 @@
 	/* ------------------------------------------------------------------- loading */
 
 	function ensure_datatable() {
-		if (frappe.DataTable || window.DataTable) return Promise.resolve();
+		return ensure_bundle("data_table.bundle.js", () => frappe.DataTable || window.DataTable);
+	}
+
+	// frappe's form controls, which the filters are made of. The desk is meant to
+	// have them from boot (controls.bundle.js), but this tab has met a v16 desk
+	// without them -- as the dashboard's first tab it is built the moment the page
+	// is -- so when they are missing they are asked for, as the datatable is.
+	function ensure_controls() {
+		return ensure_bundle("controls.bundle.js", () => typeof frappe.ui.form.make_control === "function");
+	}
+
+	// a bundle, loaded only when what it brings is not there already: asked for
+	// again, it would run again over what the desk already has
+	function ensure_bundle(bundle, is_loaded) {
+		if (is_loaded()) return Promise.resolve();
 		// frappe.require has taken a callback in some versions and returned a
 		// promise in others, so settle on whichever one this build offers -- this
-		// promise must always resolve, or the tab hangs on "Loading..."
+		// promise must always resolve, or the tab hangs waiting on it
 		return new Promise(function (resolve) {
 			try {
-				const loading = frappe.require("data_table.bundle.js", resolve);
+				const loading = frappe.require(bundle, resolve);
 				if (loading && typeof loading.then === "function") loading.then(resolve, resolve);
 			} catch (error) {
 				resolve();

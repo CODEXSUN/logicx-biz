@@ -122,7 +122,18 @@
 				)}</div>`);
 				return null;
 			}
-			return (this.tabs[key] = new Tab({ $wrapper: $pane }));
+			// a tab that fails to build takes down its own pane, not the page: the
+			// rest of the strip still works. Not kept, so showing it again retries.
+			try {
+				$pane.empty();
+				return (this.tabs[key] = new Tab({ $wrapper: $pane }));
+			} catch (error) {
+				console.error(error);
+				$pane.html(`<div class="logicx-bd-note is-error">${__("This tab could not be loaded: {0}", [
+					frappe.utils.escape_html(cstr(error && error.message)),
+				])}</div>`);
+				return null;
+			}
 		}
 	}
 
