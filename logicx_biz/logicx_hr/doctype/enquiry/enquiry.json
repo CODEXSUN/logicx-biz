@@ -36,6 +36,18 @@
 			"in_list_view": 0
 		},
 		{
+			"label": "Company Name",
+			"fieldname": "company_name",
+			"fieldtype": "Data",
+			"reqd": 0
+		},
+		{
+			"label": "Address",
+			"fieldname": "address",
+			"fieldtype": "Small Text",
+			"reqd": 0
+		},
+		{
 			"label": "Customer",
 			"fieldname": "customer",
 			"fieldtype": "Link",
