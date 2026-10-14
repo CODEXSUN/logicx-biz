@@ -5,7 +5,7 @@ Authorization: token {{token}}
 Content-Type: application/json
 
 {
-	"doctype": "Estimate",
+	"doctype": "Job Estimate",
 	"filters": [ ],
 	"order_by": "creation desc",
 	"fields": [
@@ -23,13 +23,13 @@ Content-Type: application/json
 
 ### Read by ID
 
-GET {{baseUrl}}/api/v2/document/Estimate/ESTIMATE1
+GET {{baseUrl}}/api/v2/document/Job Estimate/ESTIMATE1
 Authorization: token {{token}}
 
 
 
 ### Create
-POST {{baseUrl}}/api/v2/document/Estimate
+POST {{baseUrl}}/api/v2/document/Job Estimate
 Authorization: token {{token}}
 Content-Type: application/json
 
@@ -44,7 +44,7 @@ Content-Type: application/json
 
 
 ### Update
-PUT {{baseUrl}}/api/v2/document/Estimate/ESTIMATE1
+PUT {{baseUrl}}/api/v2/document/Job Estimate/ESTIMATE1
 Authorization: token {{token}}
 Content-Type: application/json
 

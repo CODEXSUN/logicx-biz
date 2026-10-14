@@ -23,10 +23,10 @@
 		},
 		{
 			"idx": 3,
-			"label": "Estimate",
+			"label": "Job Estimate",
 			"type": "Link",
 			"link_type": "DocType",
-			"link_to": "Estimate"
+			"link_to": "Job Estimate"
 		},
 		{
 			"idx": 4,

@@ -7,7 +7,7 @@ from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_enquiry_message
 TRIGGER_FIELDS = ("item_name", "supplier", "date")
 
 
-class Estimate(Document):
+class JobEstimate(Document):
 	def on_update(self):
 		if any(self.has_value_changed(fieldname) for fieldname in TRIGGER_FIELDS):
 			self.post_enquiry_message()

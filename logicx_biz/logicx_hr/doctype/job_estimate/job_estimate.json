@@ -1,6 +1,6 @@
 {
 	"doctype": "DocType",
-	"name": "Estimate",
+	"name": "Job Estimate",
 	"module": "LogicX HR",
 	"autoname": "ESTIMATE.#",
 	"track_changes": 1,
