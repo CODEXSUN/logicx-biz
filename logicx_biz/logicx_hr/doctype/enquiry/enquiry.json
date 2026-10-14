@@ -8,7 +8,7 @@
 	"is_submittable": 0,
 	"allow_rename": 1,
 	"allow_import": 1,
-	"title_field": "enquiry_details",
+	"title_field": "title",
 	"sort_field": "creation",
 	"sort_order": "DESC",
 	"index_web_pages_for_search": 1,
@@ -150,17 +150,12 @@
 			"fieldname": "status_details",
 			"fieldtype": "Text Editor",
 			"reqd": 0
-		},
+		}
+	],
+	"links": [
 		{
-			"fieldname": "section2",
-			"fieldtype": "Section Break"
-		},
-		{
-			"label": "Messages",
-			"fieldname": "enquiry_messages",
-			"fieldtype": "Table",
-			"options": "Enquiry Message",
-			"reqd": 0
+			"link_doctype": "Job Comments",
+			"link_fieldname": "enquiry"
 		}
 	],
 	"permissions": [

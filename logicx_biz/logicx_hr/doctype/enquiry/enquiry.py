@@ -30,13 +30,13 @@ def get_current_employee():
 
 
 def add_enquiry_message(enquiry, comment):
-	"""Append an auto-generated row to an Enquiry's Messages timeline.
+	"""Add an auto-generated Job Comments record for an Enquiry.
 
 	Used by related doctypes (Job Execution, Job Location, Job Attachment, Job Estimate) to log activity
 	against the Enquiry they belong to.
 	"""
 	if not enquiry or not comment:
 		return
-	enquiry_doc = frappe.get_doc("Enquiry", enquiry)
-	enquiry_doc.append("enquiry_messages", {"comment": comment})
-	enquiry_doc.save(ignore_permissions=True)
+	frappe.get_doc({"doctype": "Job Comments", "enquiry": enquiry, "comment": comment}).insert(
+		ignore_permissions=True
+	)

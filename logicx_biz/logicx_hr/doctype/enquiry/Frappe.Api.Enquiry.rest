@@ -183,7 +183,7 @@ Content-Type: application/json
 
 
 
-### Read Enquiry with Messages(Comment) for viewing or editing.
+### Read Enquiry for viewing or editing. Its comments are in Job Comments (below).
 
 GET {{baseUrl}}/api/v2/document/Enquiry/ENQ796
 Authorization: token {{token}}
@@ -226,19 +226,37 @@ Content-Type: application/json
 
 
 
-### Add Messages(Comment) "with existing ones"
-PUT {{baseUrl}}/api/v2/document/Enquiry/ENQ699
+### Job Comments: list for an Enquiry, oldest first.
+POST {{baseUrl}}/api/v2/method/frappe.client.get_list
 Authorization: token {{token}}
 Content-Type: application/json
 
 {
-    "enquiry_messages": [
-	# < add existing messages here >
-	# ,
-      {
-        "comment": "Comment-2"
-      }
-    ]
+	"doctype": "Job Comments",
+	"filters": [
+		[ "enquiry", "=", "ENQ699" ]
+	],
+	"order_by": "creation asc",
+	"fields": [
+		"name",
+		"creation",
+		"owner",
+		"comment",
+		"mode",
+		"parent_comment"
+	]
+}
+
+
+
+### Job Comments: add a comment to an Enquiry (existing comments are not sent).
+POST {{baseUrl}}/api/v2/document/Job Comments
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+    "enquiry": "ENQ699",
+    "comment": "Comment-2"
 }
 
 
