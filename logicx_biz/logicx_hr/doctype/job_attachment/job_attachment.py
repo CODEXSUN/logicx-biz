@@ -4,7 +4,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import format_time, formatdate, get_url
 
-from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_add_job_comments
+from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_job_comments
 
 MESSAGE_TEMPLATE = "{kind} attached by {employee} at {date} {time}: {url}"
 TRIGGER_FIELDS = ("enquiry", "document")
@@ -27,7 +27,7 @@ class JobAttachment(Document):
 			time=format_time(self.time, "hh:mm a"),
 			url=get_file_link(self.document),
 		)
-		add_add_job_comments(self.enquiry, comment)
+		add_job_comments(self.enquiry, comment)
 
 
 def get_file_link(file_url):

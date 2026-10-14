@@ -5,7 +5,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, format_time, formatdate
 
-from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_add_job_comments
+from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_job_comments
 
 # Google Maps URLs "search" action: opens the Maps app on Android / iOS, the browser elsewhere
 GOOGLE_MAPS_URL = "https://www.google.com/maps/search/?api=1&query={latitude}%2C{longitude}"
@@ -73,4 +73,4 @@ class JobLocation(Document):
 			time=format_time(self.time, "hh:mm a"),
 			url=self.geolocation_url,
 		)
-		add_add_job_comments(self.enquiry, comment)
+		add_job_comments(self.enquiry, comment)

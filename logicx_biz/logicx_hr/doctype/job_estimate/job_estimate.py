@@ -2,7 +2,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import formatdate
 
-from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_add_job_comments
+from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_job_comments
 
 TRIGGER_FIELDS = ("item_name", "supplier", "date")
 
@@ -18,4 +18,4 @@ class JobEstimate(Document):
 
 		supplier_name = frappe.get_cached_value("Supplier", self.supplier, "supplier_name") or self.supplier
 		comment = f"Estimate for {self.item_name} is received from {supplier_name} on {formatdate(self.date)}"
-		add_add_job_comments(self.enquiry, comment)
+		add_job_comments(self.enquiry, comment)

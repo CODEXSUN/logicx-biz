@@ -4,7 +4,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import flt, formatdate, format_time, get_timedelta, nowtime
 
-from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_add_job_comments
+from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_job_comments
 
 STATUS_MESSAGE_TEMPLATES = {
 	"Running": "Job Started by {employee} at {date} {time}",
@@ -49,4 +49,4 @@ class JobExecution(Document):
 			date=formatdate(self.date),
 			time=format_time(event_time, "hh:mm a"),
 		)
-		add_add_job_comments(self.enquiry, comment)
+		add_job_comments(self.enquiry, comment)
