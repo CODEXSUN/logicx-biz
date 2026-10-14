@@ -4,7 +4,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import flt, formatdate, format_time, get_timedelta, nowtime
 
-from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_enquiry_message
+from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_add_job_comments
 
 STATUS_MESSAGE_TEMPLATES = {
 	"Running": "Job Started by {employee} at {date} {time}",
@@ -34,9 +34,9 @@ class JobExecution(Document):
 
 	def on_update(self):
 		if self.has_value_changed("status"):
-			self.post_enquiry_message()
+			self.post_job_comments()
 
-	def post_enquiry_message(self):
+	def post_job_comments(self):
 		template = STATUS_MESSAGE_TEMPLATES.get(self.status)
 		if not template or not self.enquiry:
 			return
@@ -49,4 +49,4 @@ class JobExecution(Document):
 			date=formatdate(self.date),
 			time=format_time(event_time, "hh:mm a"),
 		)
-		add_enquiry_message(self.enquiry, comment)
+		add_add_job_comments(self.enquiry, comment)

@@ -29,7 +29,7 @@ def get_current_employee():
 	return employee_doc
 
 
-def add_enquiry_message(enquiry, comment):
+def add_add_job_comments(enquiry, comment):
 	"""Add an auto-generated Job Comments record for an Enquiry.
 
 	Used by related doctypes (Job Execution, Job Location, Job Attachment, Job Estimate) to log activity

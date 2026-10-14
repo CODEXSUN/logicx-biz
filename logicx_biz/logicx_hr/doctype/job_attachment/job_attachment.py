@@ -4,7 +4,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import format_time, formatdate, get_url
 
-from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_enquiry_message
+from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_add_job_comments
 
 MESSAGE_TEMPLATE = "{kind} attached by {employee} at {date} {time}: {url}"
 TRIGGER_FIELDS = ("enquiry", "document")
@@ -13,9 +13,9 @@ TRIGGER_FIELDS = ("enquiry", "document")
 class JobAttachment(Document):
 	def on_update(self):
 		if any(self.has_value_changed(fieldname) for fieldname in TRIGGER_FIELDS):
-			self.post_enquiry_message()
+			self.post_job_comments()
 
-	def post_enquiry_message(self):
+	def post_job_comments(self):
 		if not self.enquiry or not self.document:
 			return
 
@@ -27,11 +27,11 @@ class JobAttachment(Document):
 			time=format_time(self.time, "hh:mm a"),
 			url=get_file_link(self.document),
 		)
-		add_enquiry_message(self.enquiry, comment)
+		add_add_job_comments(self.enquiry, comment)
 
 
 def get_file_link(file_url):
-	"""Full link to an attached file, so it also opens from the Enquiry message shared on WhatsApp."""
+	"""Full link to an attached file, so it also opens from the Job Comments shared on WhatsApp."""
 	if file_url.startswith(("/files/", "/private/files/")):
 		# uploaded file names often have spaces ("WhatsApp Image ... .jpeg"), which would cut the link short
 		file_url = quote(file_url)

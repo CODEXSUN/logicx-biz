@@ -50,7 +50,7 @@ Content-Type: application/json
 
 
 
-### Correct the coordinates: the URL, the map and a new Enquiry message follow.
+### Correct the coordinates: the URL, the map and a new Job Comments follow.
 PUT {{baseUrl}}/api/v2/document/Job Location/JOBLOC1
 Authorization: token {{token}}
 Content-Type: application/json
