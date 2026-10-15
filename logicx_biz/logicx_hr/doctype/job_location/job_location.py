@@ -5,7 +5,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, format_time, formatdate
 
-from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_job_comments
+from logicx_biz.logicx_hr.doctype.job_activity.job_activity import add_job_activity
 
 # Google Maps URLs "search" action: opens the Maps app on Android / iOS, the browser elsewhere
 GOOGLE_MAPS_URL = "https://www.google.com/maps/search/?api=1&query={latitude}%2C{longitude}"
@@ -60,17 +60,17 @@ class JobLocation(Document):
 
 	def on_update(self):
 		if any(self.has_value_changed(fieldname) for fieldname in TRIGGER_FIELDS):
-			self.post_job_comments()
+			self.post_job_activity()
 
-	def post_job_comments(self):
+	def post_job_activity(self):
 		if not self.job_id:
 			return
 
 		employee_name = frappe.get_cached_value("Employee", self.employee, "employee_name") or self.employee
-		comment = MESSAGE_TEMPLATE.format(
+		activity_details = MESSAGE_TEMPLATE.format(
 			employee=employee_name,
 			date=formatdate(self.date),
 			time=format_time(self.time, "hh:mm a"),
 			url=self.geolocation_url,
 		)
-		add_job_comments(self.job_type, self.job_id, comment)
+		add_job_activity(self.job_type, self.job_id, activity_details)

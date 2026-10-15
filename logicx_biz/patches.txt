@@ -15,3 +15,4 @@ logicx_biz.patches.create_api_one_echo
 logicx_biz.patches.migrate_enquiry_messages_to_job_comments
 logicx_biz.patches.create_job_types
 logicx_biz.patches.set_job_type_and_id_from_enquiry
+logicx_biz.patches.copy_job_comments_to_job_activity
