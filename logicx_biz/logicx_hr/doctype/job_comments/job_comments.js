@@ -24,9 +24,12 @@ function init_btn_whatsapp(btn_whatsapp) {
 }
 
 async function whatsapp_send(frm) {
-	// the mobile number is on the Enquiry, not on the comment
-	const { message } = await frappe.db.get_value("Enquiry", frm.doc.enquiry, "mobile");
-	const mobile = message?.mobile || "";
+	// the mobile number is on the Enquiry, not on the comment; other Job Types open WhatsApp without one
+	let mobile = "";
+	if (frm.doc.job_type === "Enquiry" && frm.doc.job_id) {
+		const { message } = await frappe.db.get_value("Enquiry", frm.doc.job_id, "mobile");
+		mobile = message?.mobile || "";
+	}
 	const comment = frm.doc.comment || "";
 	window.open(`whatsapp://send?phone=91${mobile}&text=${encodeURIComponent(comment)}`, "_blank");
 }

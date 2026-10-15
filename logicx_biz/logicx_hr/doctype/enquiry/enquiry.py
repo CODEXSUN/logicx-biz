@@ -29,14 +29,14 @@ def get_current_employee():
 	return employee_doc
 
 
-def add_job_comments(enquiry, comment):
-	"""Add an auto-generated Job Comments record for an Enquiry.
+def add_job_comments(job_type, job_id, comment):
+	"""Add an auto-generated Job Comments record for a job (an Enquiry, a Task, ...).
 
 	Used by related doctypes (Job Execution, Job Location, Job Attachment, Job Estimate) to log activity
-	against the Enquiry they belong to.
+	against the job they belong to.
 	"""
-	if not enquiry or not comment:
+	if not job_type or not job_id or not comment:
 		return
-	frappe.get_doc({"doctype": "Job Comments", "enquiry": enquiry, "comment": comment}).insert(
-		ignore_permissions=True
-	)
+	frappe.get_doc(
+		{"doctype": "Job Comments", "job_type": job_type, "job_id": job_id, "comment": comment}
+	).insert(ignore_permissions=True)

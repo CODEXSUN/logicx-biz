@@ -10,7 +10,7 @@ from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_job_comments
 # Google Maps URLs "search" action: opens the Maps app on Android / iOS, the browser elsewhere
 GOOGLE_MAPS_URL = "https://www.google.com/maps/search/?api=1&query={latitude}%2C{longitude}"
 MESSAGE_TEMPLATE = "Location captured by {employee} at {date} {time}: {url}"
-TRIGGER_FIELDS = ("enquiry", "latitude", "longitude")
+TRIGGER_FIELDS = ("job_type", "job_id", "latitude", "longitude")
 
 
 class JobLocation(Document):
@@ -63,7 +63,7 @@ class JobLocation(Document):
 			self.post_job_comments()
 
 	def post_job_comments(self):
-		if not self.enquiry:
+		if not self.job_id:
 			return
 
 		employee_name = frappe.get_cached_value("Employee", self.employee, "employee_name") or self.employee
@@ -73,4 +73,4 @@ class JobLocation(Document):
 			time=format_time(self.time, "hh:mm a"),
 			url=self.geolocation_url,
 		)
-		add_job_comments(self.enquiry, comment)
+		add_job_comments(self.job_type, self.job_id, comment)

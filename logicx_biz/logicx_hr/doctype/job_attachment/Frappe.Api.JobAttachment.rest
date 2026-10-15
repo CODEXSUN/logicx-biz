@@ -6,13 +6,15 @@ Content-Type: application/json
 {
 	"doctype": "Job Attachment",
 	"filters": [
-		[ "enquiry", "=", "ENQ109" ]
+		[ "job_type", "=", "Enquiry" ],
+		[ "job_id", "=", "ENQ109" ]
 	],
 	"order_by": "creation desc",
 	"fields": [
 		"name",
 		"creation",
-		"enquiry",
+		"job_type",
+		"job_id",
 		"date",
 		"time",
 		"employee",
@@ -62,7 +64,8 @@ Authorization: token {{token}}
 Content-Type: application/json
 
 {
-  "enquiry": "ENQ109",
+  "job_type": "Enquiry",
+  "job_id": "ENQ109",
   "employee": "HR-EMP-00003",
   "document": "/private/files/IMG_20260923_131500.jpg",
   "is_photo": 1

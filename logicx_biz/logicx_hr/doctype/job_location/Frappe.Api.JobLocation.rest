@@ -6,13 +6,15 @@ Content-Type: application/json
 {
 	"doctype": "Job Location",
 	"filters": [
-		[ "enquiry", "=", "ENQ109" ]
+		[ "job_type", "=", "Enquiry" ],
+		[ "job_id", "=", "ENQ109" ]
 	],
 	"order_by": "creation desc",
 	"fields": [
 		"name",
 		"creation",
-		"enquiry",
+		"job_type",
+		"job_id",
 		"date",
 		"time",
 		"employee",
@@ -42,7 +44,8 @@ Authorization: token {{token}}
 Content-Type: application/json
 
 {
-  "enquiry": "ENQ109",
+  "job_type": "Enquiry",
+  "job_id": "ENQ109",
   "employee": "HR-EMP-00003",
   "latitude": 13.0826802,
   "longitude": 80.2707184

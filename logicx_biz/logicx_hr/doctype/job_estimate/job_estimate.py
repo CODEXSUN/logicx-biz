@@ -13,9 +13,9 @@ class JobEstimate(Document):
 			self.post_job_comments()
 
 	def post_job_comments(self):
-		if not self.enquiry:
+		if not self.job_id:
 			return
 
 		supplier_name = frappe.get_cached_value("Supplier", self.supplier, "supplier_name") or self.supplier
 		comment = f"Estimate for {self.item_name} is received from {supplier_name} on {formatdate(self.date)}"
-		add_job_comments(self.enquiry, comment)
+		add_job_comments(self.job_type, self.job_id, comment)

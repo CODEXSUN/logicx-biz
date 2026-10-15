@@ -38,7 +38,7 @@ class JobExecution(Document):
 
 	def post_job_comments(self):
 		template = STATUS_MESSAGE_TEMPLATES.get(self.status)
-		if not template or not self.enquiry:
+		if not template or not self.job_id:
 			return
 
 		employee_name = frappe.get_cached_value("Employee", self.employee, "employee_name") or self.employee
@@ -49,4 +49,4 @@ class JobExecution(Document):
 			date=formatdate(self.date),
 			time=format_time(event_time, "hh:mm a"),
 		)
-		add_job_comments(self.enquiry, comment)
+		add_job_comments(self.job_type, self.job_id, comment)

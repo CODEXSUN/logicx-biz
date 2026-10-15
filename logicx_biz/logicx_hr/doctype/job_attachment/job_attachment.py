@@ -7,7 +7,7 @@ from frappe.utils import format_time, formatdate, get_url
 from logicx_biz.logicx_hr.doctype.enquiry.enquiry import add_job_comments
 
 MESSAGE_TEMPLATE = "{kind} attached by {employee} at {date} {time}: {url}"
-TRIGGER_FIELDS = ("enquiry", "document")
+TRIGGER_FIELDS = ("job_type", "job_id", "document")
 
 
 class JobAttachment(Document):
@@ -16,7 +16,7 @@ class JobAttachment(Document):
 			self.post_job_comments()
 
 	def post_job_comments(self):
-		if not self.enquiry or not self.document:
+		if not self.job_id or not self.document:
 			return
 
 		employee_name = frappe.get_cached_value("Employee", self.employee, "employee_name") or self.employee
@@ -27,7 +27,7 @@ class JobAttachment(Document):
 			time=format_time(self.time, "hh:mm a"),
 			url=get_file_link(self.document),
 		)
-		add_job_comments(self.enquiry, comment)
+		add_job_comments(self.job_type, self.job_id, comment)
 
 
 def get_file_link(file_url):

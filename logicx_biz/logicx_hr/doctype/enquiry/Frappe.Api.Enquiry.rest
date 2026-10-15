@@ -234,7 +234,8 @@ Content-Type: application/json
 {
 	"doctype": "Job Comments",
 	"filters": [
-		[ "enquiry", "=", "ENQ699" ]
+		[ "job_type", "=", "Enquiry" ],
+		[ "job_id", "=", "ENQ699" ]
 	],
 	"order_by": "creation asc",
 	"fields": [
@@ -255,7 +256,8 @@ Authorization: token {{token}}
 Content-Type: application/json
 
 {
-    "enquiry": "ENQ699",
+    "job_type": "Enquiry",
+    "job_id": "ENQ699",
     "comment": "Comment-2"
 }
 

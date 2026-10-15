@@ -10,7 +10,8 @@ Content-Type: application/json
 	"order_by": "creation desc",
 	"fields": [
 		"name",
-		"enquiry",
+		"job_type",
+		"job_id",
 		"date",
 		"creation",
 		"item_name",
@@ -34,7 +35,8 @@ Authorization: token {{token}}
 Content-Type: application/json
 
 {
-    "enquiry": "ENQ1",
+    "job_type": "Enquiry",
+    "job_id": "ENQ1",
     "date": "2026-07-28",
     "item_name": "Laptop RAM 8 gb",
     "supplier": "S1227",
@@ -49,7 +51,8 @@ Authorization: token {{token}}
 Content-Type: application/json
 
 {
-    "enquiry": "ENQ1",
+    "job_type": "Enquiry",
+    "job_id": "ENQ1",
     "date": "2026-07-28",
     "item_name": "Laptop RAM 8 gb",
     "supplier": "S1227",

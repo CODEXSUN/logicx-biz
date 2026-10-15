@@ -152,12 +152,6 @@
 			"reqd": 0
 		}
 	],
-	"links": [
-		{
-			"link_doctype": "Job Comments",
-			"link_fieldname": "enquiry"
-		}
-	],
 	"permissions": [
 		{
 			"if_owner": 0,
