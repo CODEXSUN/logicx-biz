@@ -11,4 +11,4 @@ class JobComments(Document):
 			self.post_job_activity()
 
 	def post_job_activity(self):
-		add_job_activity(self.job_type, self.job_id, self.comment)
+		add_job_activity(self.job_type, self.job_id, self.comment, self.doctype, self.name)

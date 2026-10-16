@@ -1,0 +1,1 @@
+"""Job Activity Type DocType."""

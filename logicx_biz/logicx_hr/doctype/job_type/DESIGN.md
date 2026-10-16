@@ -1,17 +1,14 @@
 # Job Type
 
 What a job record belongs to. Job Attachment, Job Comments, Job Estimate, Job Execution and Job
-Location used to belong to an Enquiry only. Each now names its job through two fields: **Job Type**,
-which says what kind of record the job is (an Enquiry, a Task, a Customer, ...), and **Job ID**, the
-record itself.
+Location each name their job through two fields: **Job Type**, which says what kind of record the
+job is (an Enquiry, a Task, a Customer, ...), and **Job ID**, the record itself.
 
-**Status: built, not yet run on a site.**
-
-| DocType | Module | Change |
-|---------|--------|--------|
-| **Job Type** | LogicX HR | New. One row = one kind of job, named after the DocType it stands for. |
-| **Job Attachment**, **Job Comments**, **Job Estimate**, **Job Execution**, **Job Location** | LogicX HR | New fields `job_type` and `job_id`. The old `enquiry` field stays for now, as optional and read-only. |
-| **Enquiry** | LogicX HR | Its Connections (`links` -> Job Comments by `enquiry`) are removed for now. |
+| DocType | Module | Purpose |
+|---------|--------|---------|
+| **Job Type** | LogicX HR | One row = one kind of job, named after the DocType it stands for. |
+| **Job Attachment**, **Job Comments**, **Job Estimate**, **Job Execution**, **Job Location** | LogicX HR | Name their job through `job_type` and `job_id`. |
+| **Job Activity** | LogicX HR | The job's timeline, against the same `job_type` / `job_id`. The five doctypes above post to it (see [../job_activity_type/DESIGN.md](../job_activity_type/DESIGN.md)). |
 
 ## How it works
 
@@ -74,36 +71,20 @@ The same three fields on all five doctypes:
 |-------|-------|------|-------|
 | `job_type` | Job Type | Link -> Job Type, reqd | `link_filters` limits the picker to the five default types. `remember_last_selected_value`: a new form starts with the type picked last. In list view and standard filters. |
 | `job_id` | Job ID | Dynamic Link (`options: job_type`), reqd | In list view and standard filters. |
-| `enquiry` | Enquiry | Link -> Enquiry, read-only | **Legacy, to be removed.** No longer mandatory, and gone from the list view and standard filters. Only rows that existed before the migration have it, so it stays empty, and hidden, on new rows. |
+| `enquiry` | Enquiry | Link -> Enquiry, read-only | **Legacy.** Optional, not in the list view or standard filters, and not read by any code. Only rows that predate `job_type` / `job_id` have it; on every other row it is empty, and so hidden. |
 
-The two new fields take the place of `enquiry`: first on four of the doctypes, and second on Job
-Execution, after `date`.
+`job_type` and `job_id` come first on four of the doctypes, and after `date` on Job Execution.
+Job Activity has the same `job_type` / `job_id` pair, without `enquiry`.
 
-**Title:** `title_field` is now `job_id` on Job Attachment, Job Comments, Job Execution and Job Location,
-so a link to one of them shows its Job ID. Job Estimate keeps `item_name`.
+**Title:** `title_field` is `job_id` on Job Attachment, Job Comments, Job Execution, Job Location and
+Job Activity, so a link to one of them shows its Job ID. Job Estimate's is `item_name`.
 
-### Auto-posted Job Activity
+### Job Activity
 
-The four activity doctypes post an auto-generated **Job Activity** row (until Job Activity was added,
-it went to Job Comments). Job Comments also posts every comment there, so Job Activity is the job's
-full timeline. The row goes against the same `job_type` / `job_id`, through
-`add_job_activity(job_type, job_id, activity_details)` in `job_activity.py`. Nothing is posted while
-`job_id` is empty.
-
-| DocType | Posts when | Activity Details |
-|---------|-----------|------------------|
-| Job Execution | `status` changes | "Job Started / Stopped / Cancelled by {employee} at {date} {time}" |
-| Job Location | `job_type`, `job_id`, `latitude` or `longitude` changes | "Location captured by {employee} at {date} {time}: {url}" |
-| Job Attachment | `job_type`, `job_id` or `document` changes | "Photo / Document attached by {employee} at {date} {time}: {url}" |
-| Job Estimate | `item_name`, `supplier` or `date` changes | "Estimate for {item} is received from {supplier} on {date}" |
-| Job Comments | `job_type`, `job_id` or `comment` changes | The comment, as written |
-
-On insert, Frappe treats every field as changed, so every new record posts its row. Editing a
-record posts another one.
-
-Job Comments rows from before the change, both people's comments and auto-generated rows, are
-copied to Job Activity by the `copy_job_comments_to_job_activity` patch (see
-[Migration](#migration)). They also stay in Job Comments.
+Each of the five doctypes posts a **Job Activity** row against its own `job_type` / `job_id` when it
+is saved. Job Comments posts the comment itself, so Job Activity holds the job's full timeline.
+Nothing is posted while `job_id` is empty. Which changes post a row, what it says, and how it names
+the record that posted it are in [../job_activity_type/DESIGN.md](../job_activity_type/DESIGN.md).
 
 ### WhatsApp button (Job Comments)
 
@@ -123,48 +104,43 @@ doctype):
 "filters": [ [ "job_type", "=", "Enquiry" ], [ "job_id", "=", "ENQ109" ] ]
 ```
 
-A client that still sends only `enquiry` now fails with "Missing mandatory: Job Type, Job ID".
-Nothing copies `enquiry` into the new fields.
+A request without `job_type` / `job_id` fails with "Missing mandatory: Job Type, Job ID", even when
+it sends `enquiry`: nothing copies `enquiry` into them.
 
-## Migration
+## Patches
 
-Three patches run in `post_model_sync`, after the sync has created `tabJob Type` and
-`tabJob Activity` and added the `job_type` / `job_id` columns. They come after
-`migrate_enquiry_messages_to_job_comments`, so the Job Comments rows that patch copies are filled,
-and copied to Job Activity, too.
+Both run in `post_model_sync`, after the sync has created `tabJob Type` and added the `job_type` /
+`job_id` columns. They come after `migrate_enquiry_messages_to_job_comments`, so the Job Comments
+rows that patch creates get a Job Type and Job ID too.
 
 | Patch | What it does | Run again |
 |-------|--------------|-----------|
 | `create_job_types` | Inserts the five default Job Types with idx 5 to 1. | Skips types that already exist. |
 | `set_job_type_and_id_from_enquiry` | On each of the five doctypes: `UPDATE ... SET job_type = 'Enquiry', job_id = enquiry` where `enquiry` is set and `job_id` is empty. | Skips rows that already have a Job ID. |
-| `copy_job_comments_to_job_activity` | Copies every Job Comments row that has text (comments, replies and auto-generated rows) to a new Job Activity, keeping its owner and timestamps. The Job Comments rows stay. | Skips rows whose copy (same Job Type, Job ID and creation time) already exists. |
-
-The copy inserts with `db_insert()`, so no hooks run and nothing new is posted. It prints how many
-rows it copied, how many it skipped and how many had no job.
 
 The backfill is a plain SQL UPDATE, so `modified` and the version history are untouched. It prints,
-per doctype, how many rows it filled and how many are still without a job. The second count should be
-0, because `enquiry` was mandatory until this change.
+per doctype, how many rows it filled and how many are still without a job. The second count is
+expected to be 0, as every legacy row has an `enquiry`.
 
 ## Adding a Job Type
 
 1. As TM Admin, create a Job Type and pick the DocType as Document Type.
 2. Add its name to the `link_filters` of `job_type` in all six job doctype JSONs (the five above
-   and Job Activity), then migrate. The filter
-   repeats the master's list, so a new Job Type stays out of the picker until it is added there.
+   and Job Activity), then migrate. The filter repeats the master's list, so a new Job Type stays
+   out of the picker until it is added there.
 
 `link_filters` only narrows the picker in the form. It isn't checked on save, so the API accepts any
 Job Type that exists.
 
-## Not done yet
+## Limitations
 
-- **Remove the `enquiry` field** from the five doctypes. Nothing reads it any more: the controllers,
-  the Job Comments form and the `.rest` samples all use `job_type` / `job_id`.
-- **Restore Enquiry's Connections** on `job_id`. A `links` row can't add the `job_type = "Enquiry"`
-  condition, so this needs an `enquiry_dashboard.py` with
-  `"fieldname": "job_id"` and `"dynamic_links": {"job_id": ["Enquiry", "job_type"]}`. It can list all
-  five job doctypes, not just Job Comments.
-- **WhatsApp for Customer / Supplier** could fill the number from their `mobile_no`.
+- **The `enquiry` field** is unused and can be dropped from the five doctypes. The controllers, the
+  Job Comments form and the `.rest` samples all use `job_type` / `job_id`.
+- **Enquiry has no Connections** to the job doctypes. A `links` row can't add the
+  `job_type = "Enquiry"` condition, so Connections on `job_id` need an `enquiry_dashboard.py` with
+  `"fieldname": "job_id"` and `"dynamic_links": {"job_id": ["Enquiry", "job_type"]}`. It can list
+  all five job doctypes.
+- **WhatsApp for Customer / Supplier** opens without a number, though both have a `mobile_no`.
 - **Changing Job Type in the form** doesn't clear `job_id`. The link check on save catches a
   mismatched pair.
 
@@ -174,13 +150,11 @@ Job Type that exists.
 |------|------|
 | `logicx_hr/doctype/job_type/job_type.json` | The Job Type DocType. |
 | `logicx_hr/doctype/job_type/job_type.py` | Controller (no logic). |
-| `logicx_hr/doctype/job_{attachment,comments,estimate,execution,location}/*.json` | `job_type`, `job_id`; `enquiry` made optional and read-only; `title_field`. |
+| `logicx_hr/doctype/job_{attachment,comments,estimate,execution,location}/*.json` | `job_type`, `job_id`, the legacy `enquiry`; `title_field`. |
 | `logicx_hr/doctype/job_{attachment,comments,estimate,execution,location}/*.py` | Post Job Activity against `job_type` / `job_id`. |
 | `logicx_hr/doctype/job_comments/job_comments.js` | WhatsApp button reads the Enquiry from `job_id`. |
-| `logicx_hr/doctype/job_activity/job_activity.py` | `add_job_activity(job_type, job_id, activity_details)`. |
-| `logicx_hr/doctype/enquiry/enquiry.json` | `links` removed. |
+| `logicx_hr/doctype/job_activity/job_activity.json` | `job_type`, `job_id`. |
 | `logicx_hr/doctype/*/Frappe.Api.*.rest` | REST samples using `job_type` / `job_id`. |
 | `patches/create_job_types.py` | Seeds the default Job Types. |
 | `patches/set_job_type_and_id_from_enquiry.py` | Backfills `job_type` / `job_id` from `enquiry`. |
-| `patches/copy_job_comments_to_job_activity.py` | Copies the existing Job Comments rows to Job Activity. |
-| `patches.txt` | The three patches, under `post_model_sync`. |
+| `patches.txt` | Both patches, under `post_model_sync`. |

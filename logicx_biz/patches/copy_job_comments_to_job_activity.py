@@ -6,7 +6,8 @@ and every Job Comments save posts the comment there too. Before, the auto-genera
 Job Comments (and before that to the Enquiry's Messages, which
 migrate_enquiry_messages_to_job_comments copied into Job Comments). So every existing row is
 copied: people's comments, replies and auto-generated rows alike. Each copy is a Job Activity with
-the same Job Type, Job ID and text, and keeps the owner and timestamps of its row. The Job Comments
+the same Job Type, Job ID and text, points back at its row (Job Activity Type "Job Comments",
+Job Activity ID the row's name), and keeps the owner and timestamps of its row. The Job Comments
 rows themselves stay as they are.
 
 A row whose copy already exists (same Job Type, Job ID and creation time) is skipped, so running
@@ -50,6 +51,8 @@ def execute():
 		activity = frappe.new_doc("Job Activity")
 		activity.job_type = row.job_type
 		activity.job_id = row.job_id
+		activity.job_activity_type = "Job Comments"
+		activity.job_activity_id = row.name
 		activity.activity_details = row.comment
 		activity.owner = row.owner  # preserve audit fields
 		activity.creation = row.creation

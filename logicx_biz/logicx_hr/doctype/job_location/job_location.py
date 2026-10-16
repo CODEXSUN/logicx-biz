@@ -73,4 +73,4 @@ class JobLocation(Document):
 			time=format_time(self.time, "hh:mm a"),
 			url=self.geolocation_url,
 		)
-		add_job_activity(self.job_type, self.job_id, activity_details)
+		add_job_activity(self.job_type, self.job_id, activity_details, self.doctype, self.name)

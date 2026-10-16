@@ -36,6 +36,27 @@
 			"in_standard_filter": 1
 		},
 		{
+			"label": "Job Activity Type",
+			"fieldname": "job_activity_type",
+			"fieldtype": "Link",
+			"options": "Job Activity Type",
+			"description": "The kind of record that posted this activity.",
+			"read_only": 1,
+			"no_copy": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1
+		},
+		{
+			"label": "Job Activity ID",
+			"fieldname": "job_activity_id",
+			"fieldtype": "Dynamic Link",
+			"options": "job_activity_type",
+			"description": "The record that posted this activity.",
+			"read_only": 1,
+			"no_copy": 1,
+			"in_standard_filter": 1
+		},
+		{
 			"label": "Activity Details",
 			"fieldname": "activity_details",
 			"fieldtype": "Text Editor",

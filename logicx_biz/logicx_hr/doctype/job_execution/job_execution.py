@@ -49,4 +49,4 @@ class JobExecution(Document):
 			date=formatdate(self.date),
 			time=format_time(event_time, "hh:mm a"),
 		)
-		add_job_activity(self.job_type, self.job_id, activity_details)
+		add_job_activity(self.job_type, self.job_id, activity_details, self.doctype, self.name)

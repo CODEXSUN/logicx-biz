@@ -18,4 +18,4 @@ class JobEstimate(Document):
 
 		supplier_name = frappe.get_cached_value("Supplier", self.supplier, "supplier_name") or self.supplier
 		activity_details = f"Estimate for {self.item_name} is received from {supplier_name} on {formatdate(self.date)}"
-		add_job_activity(self.job_type, self.job_id, activity_details)
+		add_job_activity(self.job_type, self.job_id, activity_details, self.doctype, self.name)
