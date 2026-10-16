@@ -9,6 +9,7 @@ its own row, so a number can be linked to several Customers and a Customer to se
 | **Mobile Contact** | LogicX HR | One row = one mobile number, named after the number. |
 | **Mobile Contact Customer** | LogicX HR | One row = one Mobile Contact linked to one Customer. Each pair appears once. |
 | **Customer** (ERPNext) | -- | The other end of the link. Its `customer_name` is copied onto each Mobile Contact Customer row. |
+| **Enquiry** | LogicX HR | Its Mobile is a Mobile Contact, and its optional Mobile Customer is a Mobile Contact Customer of that number. Its Customer is fetched from the Mobile Customer (see Enquiry). |
 
 ## How it works
 
@@ -119,6 +120,72 @@ value ERPNext's `after_rename` has just written. It updates all the rows in a si
 `frappe.db.set_value` with `update_modified=False`. The rows' `modified` stays as it was, and no
 version history is written.
 
+## Enquiry
+
+An Enquiry names its caller with three fields:
+
+| Field | Label | Type | Notes |
+|-------|-------|------|-------|
+| `mobile` | Mobile | Link -> Mobile Contact, reqd | Holds the bare number, as it did when it was a Data field. In standard filters. |
+| `mobile_customer` | Mobile Customer | Link -> Mobile Contact Customer | Optional. Comes after the WhatsApp button, and shows the Customer's name, the row's title. |
+| `customer` | Customer | Link -> Customer, read-only, `fetch_from: mobile_customer.customer` | Follows Mobile Customer, and is empty without one. In list view and standard filters. |
+
+Mobile is a Link, so a number must exist as a Mobile Contact before an Enquiry can use it, and
+the Mobile Contact's own check holds it to 10 digits. In the form, a number with no Mobile Contact
+can be created from the Mobile field's dropdown. An API client creates it first, with a POST to
+`Mobile Contact`.
+
+The form (`enquiry.js`) keeps the three fields in step:
+
+- The Mobile Customer picker lists only rows whose `mobile_contact` is the Enquiry's Mobile, and
+  none while Mobile is empty.
+- Changing Mobile clears Mobile Customer.
+- Clearing Mobile Customer clears Customer. Picking one fills Customer through the fetch.
+
+### The checks
+
+`validate_mobile_customer()` in `enquiry.py` holds the same rules for imports and the API:
+
+| # | Rule | Error |
+|---|------|-------|
+| 1 | With Mobile Customer set, its `mobile_contact` is the Enquiry's Mobile. | "Mobile Customer {0} is for Mobile {1}, not {2}." |
+| 2 | Without Mobile Customer, Customer is empty. | "Customer must be empty when Mobile Customer is not set: {0}" |
+| 3 | With Mobile Customer set, its `customer` is the Enquiry's Customer. | "Customer must be {0}, the Customer of Mobile Customer {1}, not {2}." |
+
+Frappe's link check runs before `validate`, and it fetches Customer from Mobile Customer. So on a
+normal save, from the form or the API, Customer already matches by the time check 3 runs. A
+Customer sent with a Mobile Customer is replaced by the fetched one, not refused. Check 3 catches
+saves that skip the link check (`flags.ignore_links`). The fetch never clears Customer, so check 2
+is what refuses a Customer sent without a Mobile Customer.
+
+An API client sets the Customer by sending `mobile_customer` alone:
+
+```json
+{ "mobile": "9876543210", "mobile_customer": "9876543210 - CUST-0001", "enquiry_details": "..." }
+```
+
+### Patch
+
+`set_enquiry_mobile_customer` runs in `post_model_sync`, after the sync has added the
+`mobile_customer` column and created the Mobile Contact tables. It backs the existing Enquiries
+so they pass the checks:
+
+| Step | What it does |
+|------|--------------|
+| 1 | Trims `mobile`, which a Link has to match exactly. |
+| 2 | Creates a Mobile Contact for each Enquiry Mobile without one. |
+| 3 | Creates a Mobile Contact Customer for each Mobile + Customer pair without one. |
+| 4 | Sets `mobile_customer` on each Enquiry that has a Customer. |
+
+Steps 2 and 3 insert documents, so the 10-digit check and the duplicate check run. A Mobile that
+fails the 10-digit check gets no Mobile Contact. The patch prints it and carries on, and that
+number's Enquiries can't be saved until their Mobile is corrected. Steps 1 and 4 are plain
+UPDATEs, so the Enquiries' `modified` and version history are left alone.
+
+It prints how many records each step created and which ones failed. It then prints how many
+Enquiries with a Customer are still without a Mobile Customer, which should be 0. Anything that
+already exists is skipped, so running it again is safe.
+
 ## Permissions
 
 The same on both doctypes:
@@ -130,7 +197,8 @@ The same on both doctypes:
 ## Deleting
 
 Frappe's link check refuses to delete a Mobile Contact, or a Customer, while a Mobile Contact
-Customer row links to it. A TM Admin deletes those rows first.
+Customer row or an Enquiry links to it. It refuses to delete a Mobile Contact Customer while an
+Enquiry links to it. A TM Admin deletes or relinks those records first.
 
 ## Where it shows
 
@@ -152,6 +220,8 @@ button, or by searching for it.
 - **No Connections either way.** Neither Mobile Contact nor Customer lists its Mobile Contact
   Customer rows under Connections. On Mobile Contact, the Customers button stands in for that.
   Customer would need an `override_doctype_dashboards` entry in `hooks.py`.
+- **An Enquiry's Customer comes only through Mobile Customer.** If the Enquiry's number isn't yet
+  linked to the Customer, a Mobile Contact Customer for that pair has to be created first.
 - **Separate from other mobile numbers.** Mobile Contact doesn't read or update `Customer.mobile_no`
   or Contact phone numbers, and nothing creates Mobile Contacts from them.
 
@@ -168,3 +238,8 @@ button, or by searching for it.
 | `logicx_erp/mobile_validation.py` | `validate_mobile_number()`, shared with Address, Contact, Customer and Supplier. |
 | `logicx_hr/workspace/logicx_hr_home/logicx_hr_home.json` | The Mobile Contact shortcut. |
 | `workspace_sidebar/logicx_hr.json` | The Mobile Contact link, under Masters. |
+| `logicx_hr/doctype/enquiry/enquiry.json` | `mobile`, `mobile_customer` and the fetched `customer`. |
+| `logicx_hr/doctype/enquiry/enquiry.py` | `validate_mobile_customer()`: the three checks. |
+| `logicx_hr/doctype/enquiry/enquiry.js` | The Mobile Customer filter; clears Mobile Customer and Customer to keep them in step. |
+| `patches/set_enquiry_mobile_customer.py` | Backs the existing Enquiries with Mobile Contacts and Mobile Contact Customers. |
+| `patches.txt` | The patch, under `post_model_sync`. |

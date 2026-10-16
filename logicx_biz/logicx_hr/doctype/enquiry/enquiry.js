@@ -1,5 +1,12 @@
 frappe.ui.form.on("Enquiry", {
 
+	setup(frm) {
+		// only the Customers linked to this Enquiry's Mobile; none until a Mobile is picked
+		frm.set_query("mobile_customer", () => ({
+			filters: { mobile_contact: frm.doc.mobile || "" },
+		}));
+	},
+
 	onload(frm) {
 		set_current_employee(frm);
 	},
@@ -10,8 +17,16 @@ frappe.ui.form.on("Enquiry", {
 	},
 
 	mobile(frm) {
-		if (frm.doc.mobile) {
-			frm.set_value("mobile", frm.doc.mobile.trim());
+		// a Mobile Customer belongs to one Mobile, so a new Mobile needs a new pick
+		if (frm.doc.mobile_customer) {
+			frm.set_value("mobile_customer", null);
+		}
+	},
+
+	mobile_customer(frm) {
+		// Customer is fetched from Mobile Customer, and must be empty without one
+		if (!frm.doc.mobile_customer && frm.doc.customer) {
+			frm.set_value("customer", null);
 		}
 	},
 

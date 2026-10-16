@@ -21,8 +21,8 @@
 		{
 			"label": "Mobile",
 			"fieldname": "mobile",
-			"fieldtype": "Data",
-			"options": "Phone",
+			"fieldtype": "Link",
+			"options": "Mobile Contact",
 			"reqd": 1,
 			"in_list_view": 0,
 			"in_standard_filter": 1,
@@ -34,6 +34,13 @@
 			"fieldtype": "Button",
 			"depends_on": "eval:doc.__islocal != 1",
 			"in_list_view": 0
+		},
+		{
+			"label": "Mobile Customer",
+			"fieldname": "mobile_customer",
+			"fieldtype": "Link",
+			"options": "Mobile Contact Customer",
+			"reqd": 0
 		},
 		{
 			"label": "Company Name",
@@ -52,6 +59,8 @@
 			"fieldname": "customer",
 			"fieldtype": "Link",
 			"options": "Customer",
+			"fetch_from": "mobile_customer.customer",
+			"read_only": 1,
 			"reqd": 0,
 			"in_list_view": 1,
 			"in_standard_filter": 1,

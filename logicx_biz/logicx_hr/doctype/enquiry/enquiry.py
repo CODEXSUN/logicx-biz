@@ -1,5 +1,5 @@
 import frappe
-import re
+from frappe import _
 from frappe.model.document import Document
 
 
@@ -12,11 +12,49 @@ class Enquiry(Document):
 		self.user_employee = employee_doc.name if employee_doc else None
 
 	def validate(self):
-		if self.mobile:
-			self.mobile = self.mobile.strip()
-			if not re.fullmatch(r"\d{10}", self.mobile):
-				frappe.throw("Mobile must contain exactly 10 numeric digits.")
+		# Mobile is a Link to Mobile Contact, whose own validate holds it to 10 digits
+		self.validate_mobile_customer()
 
+	def validate_mobile_customer(self):
+		"""Mobile Customer must be one of this Enquiry's Mobile, and Customer must be its Customer.
+
+		Customer is fetched from Mobile Customer, so the form keeps the two in step. These checks
+		hold the same line for imports and the API, which can send the fields in any combination.
+		"""
+		if not self.mobile_customer:
+			# the fetch fills Customer from Mobile Customer, but never clears it
+			if self.customer:
+				frappe.throw(
+					_("Customer must be empty when Mobile Customer is not set: {0}").format(
+						frappe.bold(self.customer)
+					),
+					title=_("Invalid Customer"),
+				)
+			return
+		#
+		mobile_customer = frappe.db.get_value(
+			"Mobile Contact Customer", self.mobile_customer, ["mobile_contact", "customer"], as_dict=True
+		)
+		if not mobile_customer:
+			frappe.throw(_("Mobile Customer {0} not found.").format(frappe.bold(self.mobile_customer)))
+		if mobile_customer.mobile_contact != self.mobile:
+			frappe.throw(
+				_("Mobile Customer {0} is for Mobile {1}, not {2}.").format(
+					frappe.bold(self.mobile_customer),
+					frappe.bold(mobile_customer.mobile_contact),
+					frappe.bold(self.mobile),
+				),
+				title=_("Invalid Mobile Customer"),
+			)
+		if mobile_customer.customer != self.customer:
+			frappe.throw(
+				_("Customer must be {0}, the Customer of Mobile Customer {1}, not {2}.").format(
+					frappe.bold(mobile_customer.customer),
+					frappe.bold(self.mobile_customer),
+					frappe.bold(self.customer or _("empty")),
+				),
+				title=_("Invalid Customer"),
+			)
 
 
 

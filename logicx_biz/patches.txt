@@ -17,3 +17,4 @@ logicx_biz.patches.create_job_types
 logicx_biz.patches.set_job_type_and_id_from_enquiry
 logicx_biz.patches.create_job_activity_types
 logicx_biz.patches.copy_job_comments_to_job_activity
+logicx_biz.patches.set_enquiry_mobile_customer
