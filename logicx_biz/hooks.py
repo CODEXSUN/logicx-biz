@@ -235,7 +235,12 @@ doc_events = {
 	# mobile numbers on parties must be exactly 10 digits (see mobile_validation.py)
 	"Address": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
 	"Contact": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
-	"Customer": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
+	"Customer": {
+		"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile",
+		# Mobile Contact Customer keeps a copy of customer_name (see mobile_contact/Design.md)
+		"on_update": "logicx_biz.logicx_hr.doctype.mobile_contact_customer.mobile_contact_customer.update_customer_name",
+		"after_rename": "logicx_biz.logicx_hr.doctype.mobile_contact_customer.mobile_contact_customer.update_customer_name",
+	},
 	"Supplier": {"validate": "logicx_biz.logicx_erp.mobile_validation.validate_party_mobile"},
 	# one opening Journal Entry per party and company, whether it comes from a
 	# Party Opening Balance or is keyed in directly (see journal_entry.py)
