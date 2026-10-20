@@ -7,9 +7,9 @@
  "modified": "2026-10-20 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "LogicX HR",
- "name": "enquiry-dashboard",
+ "name": "mobile-dashboard",
  "owner": "Administrator",
- "page_name": "enquiry-dashboard",
+ "page_name": "mobile-dashboard",
  "roles": [
   {
    "role": "System Manager"
@@ -25,5 +25,5 @@
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "Enquiry Dashboard"
+ "title": "Mobile Dashboard"
 }

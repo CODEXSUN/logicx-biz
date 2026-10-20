@@ -16,10 +16,10 @@
 		},
 		{
 			"idx": 2,
-			"label": "Enquiry Dashboard",
+			"label": "Mobile Dashboard",
 			"type": "Link",
 			"link_type": "Page",
-			"link_to": "enquiry-dashboard"
+			"link_to": "mobile-dashboard"
 		},
 		{
 			"idx": 3,

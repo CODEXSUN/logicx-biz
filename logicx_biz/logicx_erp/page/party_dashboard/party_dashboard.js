@@ -1942,7 +1942,7 @@
 		}
 
 		/* on the bar at the top the form group's own margin and the empty help
-		   line under each box go too, as on the Enquiry Dashboard: either would
+		   line under each box go too, as on the Mobile Dashboard: either would
 		   leave the field taller than its box, and the buttons centred beside
 		   it would sit below the box's middle */
 		.logicx-pd-filters .form-group {

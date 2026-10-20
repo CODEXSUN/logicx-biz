@@ -1,4 +1,4 @@
-"""Server side of the Enquiry Dashboard page (page/enquiry_dashboard).
+"""Server side of the Mobile Dashboard page (page/mobile_dashboard).
 
 The page asks about one mobile number at a time. `get_dashboard` says whether it
 is a Mobile Contact and, when it is, returns what each of the page's tabs lists:
@@ -72,7 +72,7 @@ HTML_TAG = re.compile(r"<[^>]*>")
 
 @frappe.whitelist()
 def get_dashboard(mobile: str) -> dict:
-	"""Everything the Enquiry Dashboard shows for `mobile`.
+	"""Everything the Mobile Dashboard shows for `mobile`.
 
 	`found` is False, and nothing else is read, when the number is not a Mobile
 	Contact. Otherwise `tabs` holds one `{rows, more}` per tab, keyed as the

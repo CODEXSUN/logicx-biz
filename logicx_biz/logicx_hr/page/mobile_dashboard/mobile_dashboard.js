@@ -1,7 +1,7 @@
 (function () {
-	const PAGE_NAME = "enquiry-dashboard";
-	const STYLE_ID = "logicx-enquiry-dashboard-styles";
-	const DASHBOARD_METHOD = "logicx_biz.logicx_hr.enquiry_dashboard.get_dashboard";
+	const PAGE_NAME = "mobile-dashboard";
+	const STYLE_ID = "logicx-mobile-dashboard-styles";
+	const DASHBOARD_METHOD = "logicx_biz.logicx_hr.mobile_dashboard.get_dashboard";
 
 	// exactly 10 digits, with no +91, spaces or dashes: the rule a Mobile Contact
 	// is saved by (see logicx_erp/mobile_validation.py), so a number turned away
@@ -16,7 +16,7 @@
 	};
 
 	// the tab strip, left to right. `key` is the one get_dashboard answers each
-	// tab under (see enquiry_dashboard.py), `columns` what its table shows --
+	// tab under (see mobile_dashboard.py), `columns` what its table shows --
 	// `type` decides how a value is formatted, and a numeric one right-aligns it;
 	// `width` is the least a column is given, stretched in proportion with the
 	// rest to fill the card (see fit_columns) -- and `target` the document a
@@ -123,24 +123,24 @@
 	let dashboard = null;
 
 	frappe.pages[PAGE_NAME].on_page_load = function (wrapper) {
-		dashboard = new EnquiryDashboard(wrapper);
+		dashboard = new MobileDashboard(wrapper);
 	};
 
 	frappe.pages[PAGE_NAME].on_page_show = function () {
 		if (dashboard) dashboard.on_show();
 	};
 
-	class EnquiryDashboard {
+	class MobileDashboard {
 		constructor(wrapper) {
 			this.page = frappe.ui.make_app_page({
 				parent: wrapper,
-				title: __("Enquiry Dashboard"),
+				title: __("Mobile Dashboard"),
 				single_column: true,
 			});
 
 			inject_styles();
 
-			this.$el = $('<div class="logicx-ed"></div>').appendTo(this.page.main).html(render_scaffold());
+			this.$el = $('<div class="logicx-md"></div>').appendTo(this.page.main).html(render_scaffold());
 
 			this.tables = {};
 			// the number searched for last -- what Enter was pressed on, not
@@ -196,7 +196,7 @@
 
 			// the mark sits just outside the box's right edge, centred on it (see
 			// the CSS)
-			this.$status = $('<span class="logicx-ed-status hidden" role="img"></span>').appendTo(
+			this.$status = $('<span class="logicx-md-status hidden" role="img"></span>').appendTo(
 				this.mobile_control.$wrapper.find(".control-input")
 			);
 		}
@@ -324,7 +324,7 @@
 		set_status(state) {
 			const status = STATUSES[state];
 			this.$status
-				.attr("class", "logicx-ed-status " + (status ? status.css : "hidden"))
+				.attr("class", "logicx-md-status " + (status ? status.css : "hidden"))
 				.attr("title", status ? status.label : null)
 				.attr("aria-label", status ? status.label : null)
 				.html(status && status.icon ? ICONS[status.icon] : "");
@@ -333,7 +333,7 @@
 		/* ---------------------------------------------------------------- tabs */
 
 		setup_events() {
-			this.$el.on("click", ".logicx-ed-tab", (e) => {
+			this.$el.on("click", ".logicx-md-tab", (e) => {
 				this.activate_tab($(e.currentTarget).attr("data-tab"));
 			});
 
@@ -341,7 +341,7 @@
 			// browser tab with Ctrl / Cmd held, as a link would. only body rows
 			// carry a row index: the header and the inline filter row above them
 			// are the table's own.
-			this.$el.on("click", ".logicx-ed-card-body.is-table .dt-row[data-row-index]", (e) => {
+			this.$el.on("click", ".logicx-md-card-body.is-table .dt-row[data-row-index]", (e) => {
 				const $row = $(e.currentTarget);
 				this.open_row(
 					$row.closest("[data-pane]").attr("data-pane"),
@@ -350,39 +350,39 @@
 				);
 			});
 
-			this.$el.on("click", ".logicx-ed-clear", () => this.clear_filters());
-			this.$el.on("click", ".logicx-ed-refresh", () => this.refresh());
+			this.$el.on("click", ".logicx-md-clear", () => this.clear_filters());
+			this.$el.on("click", ".logicx-md-refresh", () => this.refresh());
 
 			// the "..." menu: the button toggles it, a click anywhere else closes it
-			this.$el.on("click", ".logicx-ed-add-btn", (e) => {
+			this.$el.on("click", ".logicx-md-add-btn", (e) => {
 				e.stopPropagation();
 				this.toggle_add_menu();
 			});
-			this.$el.on("click", ".logicx-ed-add-menu [data-action]", (e) => {
+			this.$el.on("click", ".logicx-md-add-menu [data-action]", (e) => {
 				e.preventDefault();
 				this.toggle_add_menu(false);
 				const action = ADD_ACTIONS.find((entry) => entry.key === $(e.currentTarget).attr("data-action"));
 				if (action) action.open(this);
 			});
 			// namespaced so a reload of the page script does not stack a second one
-			$(document).off("click.logicx-ed-add").on("click.logicx-ed-add", () => this.toggle_add_menu(false));
+			$(document).off("click.logicx-md-add").on("click.logicx-md-add", () => this.toggle_add_menu(false));
 		}
 
 		toggle_add_menu(open) {
-			const $menu = this.$el.find(".logicx-ed-add-menu");
+			const $menu = this.$el.find(".logicx-md-add-menu");
 			const show = open === undefined ? !$menu.hasClass("show") : open;
 			$menu.toggleClass("show", show);
-			this.$el.find(".logicx-ed-add-btn").attr("aria-expanded", show ? "true" : "false");
+			this.$el.find(".logicx-md-add-btn").attr("aria-expanded", show ? "true" : "false");
 		}
 
 		activate_tab(key) {
 			if (!key || key === this.active_tab) return;
 			this.active_tab = key;
 
-			this.$el.find(".logicx-ed-tab").each(function () {
+			this.$el.find(".logicx-md-tab").each(function () {
 				$(this).toggleClass("is-active", $(this).attr("data-tab") === key);
 			});
-			this.$el.find(".logicx-ed-tabpane").each(function () {
+			this.$el.find(".logicx-md-tabpane").each(function () {
 				$(this).toggleClass("hidden", $(this).attr("data-pane") !== key);
 			});
 
@@ -414,14 +414,14 @@
 		set_tab(key, { rows = [], more = false }) {
 			this.results[key] = { rows, seq: this.seq };
 			// "500+" when the server stopped short of the rest (see ROW_LIMIT in
-			// enquiry_dashboard.py)
+			// mobile_dashboard.py)
 			this.set_count(key, more ? `${rows.length}+` : String(rows.length));
 			if (key === this.active_tab) this.render_table(key);
 		}
 
 		set_count(key, text) {
 			this.$el
-				.find(`.logicx-ed-tab[data-tab="${key}"] .logicx-ed-count`)
+				.find(`.logicx-md-tab[data-tab="${key}"] .logicx-md-count`)
 				.text(text)
 				.toggleClass("hidden", !text);
 		}
@@ -479,7 +479,7 @@
 		}
 
 		$card_body(key) {
-			return this.$el.find(`[data-pane="${key}"] .logicx-ed-card-body`);
+			return this.$el.find(`[data-pane="${key}"] .logicx-md-card-body`);
 		}
 
 		show_note(key, text, is_error) {
@@ -521,8 +521,8 @@
 	// its mark, and the "..." at the right end, level with the bottom of the box
 	function render_scaffold() {
 		return `
-			<div class="logicx-ed-bar">
-				<div class="logicx-ed-search" data-filter="mobile"></div>
+			<div class="logicx-md-bar">
+				<div class="logicx-md-search" data-filter="mobile"></div>
 				${render_filter_actions()}
 				${render_add_menu()}
 			</div>
@@ -533,11 +533,11 @@
 	// what the box can be told besides a number (see clear_filters, refresh)
 	function render_filter_actions() {
 		return `
-			<div class="logicx-ed-actions">
-				<button type="button" class="btn btn-default btn-sm logicx-ed-clear">
+			<div class="logicx-md-actions">
+				<button type="button" class="btn btn-default btn-sm logicx-md-clear">
 					${__("Clear Filters")}
 				</button>
-				<button type="button" class="btn btn-default btn-sm logicx-ed-refresh">
+				<button type="button" class="btn btn-default btn-sm logicx-md-refresh">
 					${__("Refresh")}
 				</button>
 			</div>
@@ -559,11 +559,11 @@
 		).join("");
 
 		return `
-			<div class="logicx-ed-add">
-				<button type="button" class="btn btn-primary logicx-ed-add-btn"
+			<div class="logicx-md-add">
+				<button type="button" class="btn btn-primary logicx-md-add-btn"
 					title="${__("Actions")}" aria-label="${__("Actions")}"
 					aria-haspopup="true" aria-expanded="false"></button>
-				<div class="dropdown-menu logicx-ed-add-menu">${items}
+				<div class="dropdown-menu logicx-md-add-menu">${items}
 				</div>
 			</div>
 		`;
@@ -573,23 +573,23 @@
 	function render_tabcard() {
 		const buttons = TABS.map(
 			(tab, i) => `
-			<button type="button" class="logicx-ed-tab${i === 0 ? " is-active" : ""}"
+			<button type="button" class="logicx-md-tab${i === 0 ? " is-active" : ""}"
 				data-tab="${tab.key}">
 				${frappe.utils.escape_html(tab.title)}
-				<span class="logicx-ed-count hidden"></span>
+				<span class="logicx-md-count hidden"></span>
 			</button>`
 		).join("");
 
 		const panes = TABS.map(
 			(tab, i) => `
-			<div class="logicx-ed-tabpane${i === 0 ? "" : " hidden"}" data-pane="${tab.key}">
-				<div class="logicx-ed-card-body is-table"></div>
+			<div class="logicx-md-tabpane${i === 0 ? "" : " hidden"}" data-pane="${tab.key}">
+				<div class="logicx-md-card-body is-table"></div>
 			</div>`
 		).join("");
 
 		return `
-			<div class="logicx-ed-tabcard">
-				<div class="logicx-ed-tabnav">${buttons}</div>
+			<div class="logicx-md-tabcard">
+				<div class="logicx-md-tabnav">${buttons}</div>
 				${panes}
 			</div>`;
 	}
@@ -597,7 +597,7 @@
 	// the muted line a tab shows in place of its table: before a search, while
 	// loading, when empty, or in red when the request failed
 	function note_html(text, is_error) {
-		const css_class = is_error ? "logicx-ed-note is-error" : "logicx-ed-note";
+		const css_class = is_error ? "logicx-md-note is-error" : "logicx-md-note";
 		return `<div class="${css_class}">${frappe.utils.escape_html(text)}</div>`;
 	}
 
@@ -731,7 +731,7 @@
 	}
 
 	const PAGE_STYLES = `
-		.logicx-ed {
+		.logicx-md {
 			display: flex;
 			flex-direction: column;
 			gap: var(--margin-sm);
@@ -740,7 +740,7 @@
 
 		/* the number at the left, the "..." pushed to the right end. bottom-aligned,
 		   so the "..." stands level with the base of the box. */
-		.logicx-ed-bar {
+		.logicx-md-bar {
 			display: flex;
 			align-items: flex-end;
 			gap: var(--margin-md);
@@ -750,8 +750,8 @@
 		/* wide enough for a 10-digit number and the placeholder, and no wider.
 		   it gives way on a narrow screen only as far as the number still
 		   reads whole. the right margin is the room the found / not-found mark
-		   takes beside the box (see .logicx-ed-status) */
-		.logicx-ed-search {
+		   takes beside the box (see .logicx-md-status) */
+		.logicx-md-search {
 			flex: 0 1 160px;
 			min-width: 120px;
 			margin-right: 30px;
@@ -760,19 +760,19 @@
 		/* frappe's control markup ships its own bottom margin and an empty help
 		   line under the box; neither has anything to space here, and either
 		   would lift the box off the bottom the "..." is aligned to */
-		.logicx-ed-search .frappe-control,
-		.logicx-ed-search .form-group {
+		.logicx-md-search .frappe-control,
+		.logicx-md-search .form-group {
 			margin-bottom: 0;
 		}
 
-		.logicx-ed-search .help-box {
+		.logicx-md-search .help-box {
 			display: none;
 		}
 
 		/* the box reads plainly from its placeholder, so its label is dropped
 		   from the layout. it stays in the markup, off-screen, so the input
 		   keeps an accessible name. */
-		.logicx-ed-search .control-label {
+		.logicx-md-search .control-label {
 			position: absolute;
 			width: 1px;
 			height: 1px;
@@ -784,11 +784,11 @@
 			border: 0;
 		}
 
-		.logicx-ed-search .control-input {
+		.logicx-md-search .control-input {
 			position: relative;
 		}
 
-		.logicx-ed-search input {
+		.logicx-md-search input {
 			font-variant-numeric: tabular-nums;
 			letter-spacing: 0.04em;
 		}
@@ -797,7 +797,7 @@
 		   the room the search's right margin keeps for it. placed against the
 		   input itself, so it centres on the box whatever else the control's
 		   markup holds. */
-		.logicx-ed-status {
+		.logicx-md-status {
 			position: absolute;
 			top: 50%;
 			left: calc(100% + 8px);
@@ -811,11 +811,11 @@
 			color: #fff;
 		}
 
-		.logicx-ed-status.hidden {
+		.logicx-md-status.hidden {
 			display: none;
 		}
 
-		.logicx-ed-status svg {
+		.logicx-md-status svg {
 			width: 14px;
 			height: 14px;
 			fill: none;
@@ -825,25 +825,25 @@
 			stroke-linejoin: round;
 		}
 
-		.logicx-ed-status.is-found {
+		.logicx-md-status.is-found {
 			background-color: var(--green-500);
 		}
 
-		.logicx-ed-status.is-missing {
+		.logicx-md-status.is-missing {
 			background-color: var(--red-500);
 		}
 
 		/* a ring with one quarter missing, turning, while the number is looked up */
-		.logicx-ed-status.is-loading {
+		.logicx-md-status.is-loading {
 			width: 18px;
 			height: 18px;
 			margin-left: 2px;
 			border: 2px solid var(--gray-300);
 			border-top-color: var(--gray-600);
-			animation: logicx-ed-spin 0.7s linear infinite;
+			animation: logicx-md-spin 0.7s linear infinite;
 		}
 
-		@keyframes logicx-ed-spin {
+		@keyframes logicx-md-spin {
 			from { transform: translateY(-50%) rotate(0deg); }
 			to { transform: translateY(-50%) rotate(360deg); }
 		}
@@ -851,7 +851,7 @@
 		/* Clear Filters and Refresh, just past the found / not-found mark --
 		   the search's right margin is what keeps them clear of it. centred on
 		   the bar, so they read level with the box beside them. */
-		.logicx-ed-actions {
+		.logicx-md-actions {
 			flex: 0 0 auto;
 			align-self: center;
 			display: flex;
@@ -861,7 +861,7 @@
 		/* the "..." takes only the room a round button needs, pushed to the far
 		   right of the bar where a page's action button sits, and anchors the
 		   menu that drops from it. on a narrow screen the box gives way to it. */
-		.logicx-ed-add {
+		.logicx-md-add {
 			position: relative;
 			flex: 0 0 auto;
 			margin-left: auto;
@@ -873,7 +873,7 @@
 		   button shape, its colours softened below, and the "..." is three dots
 		   in a row across the centre of the disc -- the middle one drawn, the
 		   two either side of it its shadows */
-		.logicx-ed-add-btn {
+		.logicx-md-add-btn {
 			position: relative;
 			width: 34px;
 			height: 34px;
@@ -882,7 +882,7 @@
 			box-shadow: var(--shadow-sm);
 		}
 
-		.logicx-ed-add-btn::before {
+		.logicx-md-add-btn::before {
 			content: "";
 			position: absolute;
 			top: 50%;
@@ -897,16 +897,16 @@
 
 		/* !important because frappe's .btn-primary sets its colours on hover,
 		   focus and active too, and these should hold through all of them */
-		.logicx-ed-add-btn,
-		.logicx-ed-add-btn:focus {
+		.logicx-md-add-btn,
+		.logicx-md-add-btn:focus {
 			color: var(--gray-300) !important;
 			background-color: var(--gray-700) !important;
 			border-color: var(--gray-700) !important;
 		}
 
-		.logicx-ed-add-btn:hover,
-		.logicx-ed-add-btn:active,
-		.logicx-ed-add-btn[aria-expanded="true"] {
+		.logicx-md-add-btn:hover,
+		.logicx-md-add-btn:active,
+		.logicx-md-add-btn[aria-expanded="true"] {
 			color: var(--gray-300) !important;
 			background-color: var(--gray-800) !important;
 			border-color: var(--gray-800) !important;
@@ -914,7 +914,7 @@
 
 		/* pinned under the button's right edge, so it opens inward from the
 		   page edge rather than off it */
-		.logicx-ed-add-menu {
+		.logicx-md-add-menu {
 			top: 100%;
 			right: 0;
 			left: auto;
@@ -922,18 +922,18 @@
 			min-width: 180px;
 		}
 
-		.logicx-ed-add-menu.show {
+		.logicx-md-add-menu.show {
 			display: block;
 		}
 
-		.logicx-ed-tabnav {
+		.logicx-md-tabnav {
 			display: flex;
 			flex-wrap: wrap;
 			gap: var(--margin-lg);
 			border-bottom: 1px solid var(--border-color);
 		}
 
-		.logicx-ed-tab {
+		.logicx-md-tab {
 			appearance: none;
 			background: none;
 			border: none;
@@ -947,16 +947,16 @@
 			white-space: nowrap;
 		}
 
-		.logicx-ed-tab:hover {
+		.logicx-md-tab:hover {
 			color: var(--text-color);
 		}
 
-		.logicx-ed-tab.is-active {
+		.logicx-md-tab.is-active {
 			color: var(--text-color);
 			border-bottom-color: var(--primary, var(--text-color));
 		}
 
-		.logicx-ed-count {
+		.logicx-md-count {
 			display: inline-block;
 			min-width: 20px;
 			margin-left: 4px;
@@ -973,53 +973,53 @@
 
 		/* frappe's desk CSS defines .hidden too; repeated here so what the tabs
 		   show never depends on that global staying put */
-		.logicx-ed-count.hidden,
-		.logicx-ed-tabpane.hidden {
+		.logicx-md-count.hidden,
+		.logicx-md-tabpane.hidden {
 			display: none;
 		}
 
-		.logicx-ed-tabpane {
+		.logicx-md-tabpane {
 			padding-top: var(--padding-md);
 		}
 
 		/* the datatable brings its own padding, so its body has none, and is
 		   clipped to the outline it is read inside */
-		.logicx-ed-card-body.is-table {
+		.logicx-md-card-body.is-table {
 			background-color: var(--card-bg);
 			border: 1px solid var(--border-color);
 			border-radius: var(--border-radius-md);
 			overflow: hidden;
 		}
 
-		.logicx-ed-card-body.is-table .datatable {
+		.logicx-md-card-body.is-table .datatable {
 			border: none;
 		}
 
 		/* every body row opens the document it stands for (see open_row) */
-		.logicx-ed-card-body.is-table .dt-row[data-row-index] {
+		.logicx-md-card-body.is-table .dt-row[data-row-index] {
 			cursor: pointer;
 		}
 
-		.logicx-ed-card-body.is-table .dt-row[data-row-index]:hover .dt-cell {
+		.logicx-md-card-body.is-table .dt-row[data-row-index]:hover .dt-cell {
 			background-color: var(--fg-hover-color, var(--gray-100));
 		}
 
 		/* each list scrolls inside its own outline instead of stretching the
 		   page. max-height rather than height so a short list still shrinks to
 		   fit; !important because frappe-datatable sets its own height inline. */
-		.logicx-ed-card-body.is-table .dt-scrollable {
+		.logicx-md-card-body.is-table .dt-scrollable {
 			max-height: 33333px !important;
 			overflow-y: auto !important;
 		}
 
-		.logicx-ed-note {
+		.logicx-md-note {
 			padding: var(--padding-lg);
 			font-size: var(--text-md);
 			color: var(--text-muted);
 			text-align: center;
 		}
 
-		.logicx-ed-note.is-error {
+		.logicx-md-note.is-error {
 			color: var(--red-500);
 		}
 	`;
