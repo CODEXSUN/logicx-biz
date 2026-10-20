@@ -2,6 +2,7 @@
 	const PAGE_NAME = "mobile-dashboard";
 	const STYLE_ID = "logicx-mobile-dashboard-styles";
 	const DASHBOARD_METHOD = "logicx_biz.logicx_hr.mobile_dashboard.get_dashboard";
+	const ENSURE_CONTACT_METHOD = "logicx_biz.logicx_hr.mobile_dashboard.ensure_mobile_contact";
 
 	// exactly 10 digits, with no +91, spaces or dashes: the rule a Mobile Contact
 	// is saved by (see logicx_erp/mobile_validation.py), so a number turned away
@@ -305,7 +306,13 @@
 					const message = (r && r.message) || {};
 					if (!message.found) {
 						this.set_status("missing");
-						this.show_notes(__("No Mobile Contact found for {0}.", [mobile]));
+						// with a way on: an Enquiry for the number all the same (see
+						// new_enquiry_for)
+						this.show_notes(
+							__("No Mobile Contact found for {0}.", [mobile]),
+							false,
+							new_enquiry_button(mobile)
+						);
 						return;
 					}
 
@@ -352,6 +359,12 @@
 
 			this.$el.on("click", ".logicx-md-clear", () => this.clear_filters());
 			this.$el.on("click", ".logicx-md-refresh", () => this.refresh());
+
+			// under "No Mobile Contact found" (see new_enquiry_button)
+			this.$el.on("click", ".logicx-md-new-enquiry", (e) => {
+				const $btn = $(e.currentTarget);
+				this.new_enquiry_for($btn.attr("data-mobile"), $btn);
+			});
 
 			// the "..." menu: the button toggles it, a click anywhere else closes it
 			this.$el.on("click", ".logicx-md-add-btn", (e) => {
@@ -482,29 +495,29 @@
 			return this.$el.find(`[data-pane="${key}"] .logicx-md-card-body`);
 		}
 
-		show_note(key, text, is_error) {
+		show_note(key, text, is_error, action_html) {
 			this.destroy_table(key);
-			this.$card_body(key).html(note_html(text, is_error));
+			this.$card_body(key).html(note_html(text, is_error, action_html));
 		}
 
 		// the same line in every tab, in place of its table, with the counts
 		// cleared: nothing is listed until a Mobile Contact has been found
-		show_notes(text, is_error) {
+		show_notes(text, is_error, action_html) {
 			this.results = {};
 			TABS.forEach((tab) => {
 				this.set_count(tab.key, "");
-				this.show_note(tab.key, text, is_error);
+				this.show_note(tab.key, text, is_error, action_html);
 			});
 		}
 
 		/* ------------------------------------------------------------ add menu */
 
-		// Enquiry's quick entry, on the number on screen when it is a Mobile
-		// Contact. once saved, the page moves to the new Enquiry's number -- the
-		// one on screen, unless it was changed in the dialog -- so the Enquiry
-		// shows up in the first tab rather than the page being left for its form.
-		new_enquiry() {
-			open_enquiry_quick_entry(this.found ? this.mobile : "", (doc) => {
+		// Enquiry's quick entry, on `mobile` when there is one. once saved, the
+		// page moves to the new Enquiry's number -- `mobile`, unless it was
+		// changed in the dialog -- so the Enquiry shows up in the first tab
+		// rather than the page being left for its form.
+		open_new_enquiry(mobile) {
+			open_enquiry_quick_entry(mobile, (doc) => {
 				frappe.show_alert({
 					message: __("Enquiry {0} created", [frappe.utils.get_form_link("Enquiry", doc.name, true)]),
 					indicator: "green",
@@ -512,6 +525,33 @@
 				this.mobile_control.set_input(doc.mobile || "");
 				this.load(doc.mobile || "");
 			});
+		}
+
+		// the "..." menu's New Enquiry: on the number on screen when it is a
+		// Mobile Contact, and on none otherwise
+		new_enquiry() {
+			this.open_new_enquiry(this.found ? this.mobile : "");
+		}
+
+		// the button under "No Mobile Contact found". an Enquiry's Mobile has to
+		// be a Mobile Contact, so the number is made one first (see
+		// ensure_mobile_contact in mobile_dashboard.py) -- and stays one should
+		// the quick entry then be closed unsaved. the page is reloaded to show
+		// the number found, and the quick entry opens on it.
+		new_enquiry_for(mobile, $btn) {
+			const seq = this.seq;
+			frappe
+				// `btn` disables the button while this runs, so it cannot go twice
+				.call({ method: ENSURE_CONTACT_METHOD, args: { mobile }, btn: $btn })
+				.then(() => {
+					// another number searched for since: the contact is made, but it
+					// is no longer the number on screen to open the Enquiry on
+					if (seq !== this.seq) return;
+					this.load(mobile);
+					this.open_new_enquiry(mobile);
+				})
+				// frappe has already shown the server's reason
+				.catch(() => {});
 		}
 	}
 
@@ -595,10 +635,21 @@
 	}
 
 	// the muted line a tab shows in place of its table: before a search, while
-	// loading, when empty, or in red when the request failed
-	function note_html(text, is_error) {
+	// loading, when empty, or in red when the request failed -- and under it,
+	// when there is one, the button that does something about it
+	function note_html(text, is_error, action_html) {
 		const css_class = is_error ? "logicx-md-note is-error" : "logicx-md-note";
-		return `<div class="${css_class}">${frappe.utils.escape_html(text)}</div>`;
+		const action = action_html ? `<div class="logicx-md-note-action">${action_html}</div>` : "";
+		return `<div class="${css_class}"><div>${frappe.utils.escape_html(text)}</div>${action}</div>`;
+	}
+
+	// what goes under "No Mobile Contact found" (see new_enquiry_for)
+	function new_enquiry_button(mobile) {
+		return `
+			<button type="button" class="btn btn-primary btn-sm logicx-md-new-enquiry"
+				data-mobile="${frappe.utils.escape_html(mobile)}">
+				${frappe.utils.escape_html(__("New Enquiry for {0}", [mobile]))}
+			</button>`;
 	}
 
 	/* ================================================================== add menu */
@@ -1021,6 +1072,11 @@
 
 		.logicx-md-note.is-error {
 			color: var(--red-500);
+		}
+
+		/* the button under a note, set apart from it (see note_html) */
+		.logicx-md-note-action {
+			margin-top: var(--margin-md);
 		}
 	`;
 })();

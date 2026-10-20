@@ -3,7 +3,9 @@
 The page asks about one mobile number at a time. `get_dashboard` says whether it
 is a Mobile Contact and, when it is, returns what each of the page's tabs lists:
 the contact's Enquiries, and the Job Activity, Job Execution and Job Estimate
-rows posted against them -- every tab newest first.
+rows posted against them -- every tab newest first. When it is not,
+`ensure_mobile_contact` makes it one, for the page's "New Enquiry for {number}"
+button.
 
 A job row names its Enquiry through `job_type` / `job_id` (see
 doctype/job_type/DESIGN.md), so the three job tabs are read off the names of the
@@ -78,11 +80,7 @@ def get_dashboard(mobile: str) -> dict:
 	Contact. Otherwise `tabs` holds one `{rows, more}` per tab, keyed as the
 	page's TABS are; `more` says the tab was cut at ROW_LIMIT rows.
 	"""
-	mobile = (mobile or "").strip()
-	if not mobile:
-		frappe.throw(_("Mobile Number is mandatory"))
-	# the same 10-digit check a Mobile Contact is saved with
-	validate_mobile_number(mobile, _("Mobile Number"))
+	mobile = _clean_mobile(mobile)
 
 	if not frappe.get_list("Mobile Contact", filters={"name": mobile}, pluck="name", limit=1):
 		return {"mobile": mobile, "found": False}
@@ -124,6 +122,35 @@ def get_dashboard(mobile: str) -> dict:
 			),
 		},
 	}
+
+
+@frappe.whitelist(methods=["POST"])
+def ensure_mobile_contact(mobile: str) -> str:
+	"""The Mobile Contact for `mobile`, made first when there is none yet.
+
+	Backs the dashboard's "New Enquiry for {number}" button: an Enquiry's Mobile
+	is a Link to Mobile Contact, so the number has to be one before an Enquiry can
+	be opened on it. One made since the page last looked -- from another tab, say
+	-- is used as it is. insert() holds the user to Mobile Contact's own create
+	permission.
+	"""
+	mobile = _clean_mobile(mobile)
+	if not frappe.db.exists("Mobile Contact", mobile):
+		frappe.get_doc({"doctype": "Mobile Contact", "mobile_number": mobile}).insert()
+	return mobile
+
+
+def _clean_mobile(mobile: str | None) -> str:
+	"""`mobile` trimmed, once it is known to be 10 digits.
+
+	The same check a Mobile Contact is saved with, so a number failing it could
+	never have been one.
+	"""
+	mobile = (mobile or "").strip()
+	if not mobile:
+		frappe.throw(_("Mobile Number is mandatory"))
+	validate_mobile_number(mobile, _("Mobile Number"))
+	return mobile
 
 
 def _job_rows(doctype: str, fields: tuple, enquiry_names: list) -> list:
