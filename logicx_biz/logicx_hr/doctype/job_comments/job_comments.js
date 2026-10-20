@@ -7,11 +7,29 @@ frappe.ui.form.on("Job Comments", {
 		init_btn_whatsapp(frm.fields_dict.btn_whatsapp);
 	},
 
+	job_type(frm) {
+		set_mobile(frm);
+	},
+
+	job_id(frm) {
+		set_mobile(frm);
+	},
+
 	btn_whatsapp(frm) {
 		whatsapp_send(frm);
 	},
 
 });
+
+async function set_mobile(frm) {
+	// same as JobComments.set_mobile, so the form shows it before saving
+	let mobile = "";
+	if (frm.doc.job_type === "Enquiry" && frm.doc.job_id) {
+		const { message } = await frappe.db.get_value("Enquiry", frm.doc.job_id, "mobile");
+		mobile = message?.mobile || "";
+	}
+	frm.set_value("mobile", mobile);
+}
 
 function init_btn_whatsapp(btn_whatsapp) {
 	btn_whatsapp.df.label = '<i class="fa fa-whatsapp" style="color:green; margin-right:4px;"></i> WhatsApp';

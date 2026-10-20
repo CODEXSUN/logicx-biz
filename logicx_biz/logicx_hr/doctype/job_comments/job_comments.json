@@ -36,6 +36,14 @@
 			"in_standard_filter": 1
 		},
 		{
+			"label": "Mobile",
+			"fieldname": "mobile",
+			"fieldtype": "Link",
+			"options": "Mobile Contact",
+			"read_only": 1,
+			"in_filter": 1
+		},
+		{
 			"label": "Enquiry",
 			"fieldname": "enquiry",
 			"fieldtype": "Link",
