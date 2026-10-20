@@ -333,7 +333,7 @@
 		.concat(CARDS)
 		.concat([{ key: COMMENTS_TAB, title: __("Comments") }]);
 
-	// the "+" menu, top to bottom. an entry naming `party_types` is shown for
+	// the "..." menu, top to bottom. an entry naming `party_types` is shown for
 	// that side of the book only, the way a source is (see applies_to): a
 	// Customer is sold and delivered to, a Supplier bought and received from.
 	// `open` is handed the party picked at the top of the page (see
@@ -547,6 +547,21 @@
 			this.load(this.selected_party_type(), (this.controls.party.get_value() || "").trim());
 		}
 
+		// the party goes, and every card's own filters go back to what they
+		// opened on. the party type stays: it is which side of the book the
+		// page reads, rather than a filter on it. the party is let go of here
+		// and now, so the reloads the cleared fields set off afterwards find no
+		// party to ask for.
+		clear_filters() {
+			this.controls.party.set_value("");
+			this.load(this.selected_party_type(), "");
+			Object.keys(this.card_controls).forEach((key) => {
+				this.card_controls[key].forEach((control) => {
+					control.set_value(control.df.default !== undefined ? control.df.default : "");
+				});
+			});
+		}
+
 		apply_prefill() {
 			// the router copies the URL's query string into route_options on every
 			// route change, so this covers a refresh and the Back button as well
@@ -750,7 +765,11 @@
 				open_report_in_new_tab(card, this.ctx_for(card));
 			});
 
-			// the "+" menu: the button toggles it, a click anywhere else closes it
+			this.$el.on("click", ".logicx-pd-clear", () => this.clear_filters());
+			// the party in the box asked for again, card filters and all
+			this.$el.on("click", ".logicx-pd-refresh", () => this.reload());
+
+			// the "..." menu: the button toggles it, a click anywhere else closes it
 			this.$el.on("click", ".logicx-pd-add-btn", (e) => {
 				e.stopPropagation();
 				this.toggle_add_menu();
@@ -783,7 +802,7 @@
 			if (action && applies_to(action, pick.party_type)) action.open(pick);
 		}
 
-		// the party the "+" menu opens things on. read off the controls rather
+		// the party the "..." menu opens things on. read off the controls rather
 		// than this.party, which lags the picker by the debounce -- "current"
 		// here means what the user can see in the box
 		picked_party() {
@@ -825,7 +844,7 @@
 					.toggleClass("hidden", !shown.includes(true));
 			});
 
-			// and the "+" menu keeps only what this side of the book can open
+			// and the "..." menu keeps only what this side of the book can open
 			ADD_ACTIONS.forEach((action) => {
 				this.$el
 					.find(`.logicx-pd-add-menu [data-action="${action.key}"]`)
@@ -1079,6 +1098,7 @@
 					<div class="logicx-pd-filters">
 						<div class="logicx-pd-filter" data-filter="party_type"></div>
 						<div class="logicx-pd-filter" data-filter="party"></div>
+						${render_filter_actions()}
 						${render_add_menu()}
 					</div>
 				</div>
@@ -1087,14 +1107,29 @@
 		`;
 	}
 
-	// the round "+" at the right end of the filter bar, where a page's action
+	// what the filters above can be told besides a party (see clear_filters,
+	// reload), just past the party they act on
+	function render_filter_actions() {
+		return `
+			<div class="logicx-pd-actions">
+				<button type="button" class="btn btn-default btn-sm logicx-pd-clear">
+					${__("Clear Filters")}
+				</button>
+				<button type="button" class="btn btn-default btn-sm logicx-pd-refresh">
+					${__("Refresh")}
+				</button>
+			</div>
+		`;
+	}
+
+	// the round "..." at the right end of the filter bar, where a page's action
 	// button sits, and the menu of what it can open against the party picked
 	// (see ADD_ACTIONS). it is shown and hidden by hand (see setup_events) rather
 	// than by bootstrap's data attributes, so it works the same whichever
 	// bootstrap the desk ships; only the .dropdown-menu look and its .show
-	// state are borrowed. the "+" is drawn in css (see .logicx-pd-add-btn) rather
-	// than set as a glyph or the icon sprite: a glyph sits on a text baseline
-	// and never quite centres in a disc, and the sprite's stroke weight is
+	// state are borrowed. the "..." is drawn in css (see .logicx-pd-add-btn)
+	// rather than set as a glyph or the icon sprite: a glyph sits on a text
+	// baseline and never quite centres in a disc, and the sprite's weight is
 	// fixed inside the symbol. the button's aria-label names it.
 	function render_add_menu() {
 		const items = ADD_ACTIONS.map(
@@ -1107,7 +1142,7 @@
 		return `
 			<div class="logicx-pd-filter logicx-pd-add" data-filter="add">
 				<button type="button" class="btn btn-primary logicx-pd-add-btn"
-					title="${__("New")}" aria-label="${__("New")}"
+					title="${__("Actions")}" aria-label="${__("Actions")}"
 					aria-haspopup="true" aria-expanded="false"></button>
 				<div class="dropdown-menu logicx-pd-add-menu">${items}
 				</div>
@@ -1877,9 +1912,12 @@
 			overflow: hidden;
 		}
 
+		/* everything on the bar is centred on the one line, so the buttons read
+		   level with the boxes beside them (see the form-group rules below) */
 		.logicx-pd-filters {
 			display: flex;
 			flex-wrap: wrap;
+			align-items: center;
 			gap: var(--margin-md);
 		}
 
@@ -1903,7 +1941,28 @@
 			margin-bottom: 0;
 		}
 
-		/* the "+" takes only the room a round button needs, pushed to the far
+		/* on the bar at the top the form group's own margin and the empty help
+		   line under each box go too, as on the Enquiry Dashboard: either would
+		   leave the field taller than its box, and the buttons centred beside
+		   it would sit below the box's middle */
+		.logicx-pd-filters .form-group {
+			margin-bottom: 0;
+		}
+
+		.logicx-pd-filters .help-box {
+			display: none;
+		}
+
+		/* Clear Filters and Refresh, just past the party: only the room their
+		   labels take, centred on the row as the "..." is */
+		.logicx-pd-actions {
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			gap: var(--margin-sm);
+		}
+
+		/* the "..." takes only the room a round button needs, pushed to the far
 		   right of the bar where a page's action button sits, and anchors the
 		   menu that drops from it */
 		.logicx-pd-filter[data-filter="add"] {
@@ -1928,29 +1987,26 @@
 			box-shadow: var(--shadow-sm);
 		}
 
-		/* the "+" itself: two bars crossing at the exact centre of the disc, in
-		   the button's text colour. 16px across at 3px is a semi-bold plus that
-		   leaves the disc some room; width is its size and height its weight,
-		   should either change. */
-		.logicx-pd-add-btn::before,
-		.logicx-pd-add-btn::after {
+		/* the "..." itself: three dots in a row across the exact centre of the
+		   disc, in the button's text colour -- the middle one drawn, the two
+		   either side of it its shadows. 4px dots 7px apart span 18px, which
+		   leaves the disc some room; width and height are a dot's size and the
+		   shadow offsets their spacing, should either change. */
+		.logicx-pd-add-btn::before {
 			content: "";
 			position: absolute;
 			top: 50%;
 			left: 50%;
-			width: 16px;
-			height: 3px;
-			border-radius: 1.5px;
+			width: 4px;
+			height: 4px;
+			border-radius: 50%;
 			background-color: currentColor;
+			box-shadow: -7px 0 0 currentColor, 7px 0 0 currentColor;
 			transform: translate(-50%, -50%);
 		}
 
-		.logicx-pd-add-btn::after {
-			transform: translate(-50%, -50%) rotate(90deg);
-		}
-
 		/* a mid-grey disc rather than the near-black .btn-primary gives it, with
-		   a light grey "+" rather than white, so the button sits a little softer
+		   light grey dots rather than white, so the button sits a little softer
 		   on the bar; hover and press go one step darker. !important because
 		   frappe's .btn-primary sets its colours on hover, focus and active too,
 		   and these should hold through all of them. */

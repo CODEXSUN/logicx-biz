@@ -98,7 +98,7 @@ def set_party_comments(party_type: str, party: str, comments: str | None = None)
 
 @frappe.whitelist()
 def new_payment_entry(payment_type: str, party_type: str, party: str):
-	"""A new, unsaved Payment Entry against the party, for the dashboard's "+" menu.
+	"""A new, unsaved Payment Entry against the party, for the dashboard's "..." menu.
 
 	Made here and opened from what comes back, the way ERPNext opens the Payment
 	Entry it makes from an invoice, because a new form opened on the party loses

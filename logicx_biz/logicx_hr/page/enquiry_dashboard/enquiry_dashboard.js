@@ -92,7 +92,7 @@
 		},
 	];
 
-	// the "+" menu, top to bottom. `open` is handed the dashboard, whose number
+	// the "..." menu, top to bottom. `open` is handed the dashboard, whose number
 	// on screen is the one the new entry is opened on.
 	const ADD_ACTIONS = [
 		{
@@ -206,6 +206,19 @@
 			// the box shows what was searched for, spaces and all trimmed off
 			this.mobile_control.set_input(mobile);
 			this.load(mobile);
+		}
+
+		// an empty box puts the page back as it opened (see load), ready for
+		// the next number to be typed
+		clear_filters() {
+			this.search("");
+			this.mobile_control.$input.trigger("focus");
+		}
+
+		// Enter pressed on whatever the box holds: the number on screen asked
+		// for again, or one typed since and not yet searched for
+		refresh() {
+			this.search(this.mobile_control.$input.val());
 		}
 
 		on_show() {
@@ -337,7 +350,10 @@
 				);
 			});
 
-			// the "+" menu: the button toggles it, a click anywhere else closes it
+			this.$el.on("click", ".logicx-ed-clear", () => this.clear_filters());
+			this.$el.on("click", ".logicx-ed-refresh", () => this.refresh());
+
+			// the "..." menu: the button toggles it, a click anywhere else closes it
 			this.$el.on("click", ".logicx-ed-add-btn", (e) => {
 				e.stopPropagation();
 				this.toggle_add_menu();
@@ -501,23 +517,38 @@
 
 	/* ==================================================================== markup */
 
-	// the number at the left of the bar, and the "+" at its right end, level
-	// with the bottom of the box
+	// the number at the left of the bar, Clear Filters and Refresh just past
+	// its mark, and the "..." at the right end, level with the bottom of the box
 	function render_scaffold() {
 		return `
 			<div class="logicx-ed-bar">
 				<div class="logicx-ed-search" data-filter="mobile"></div>
+				${render_filter_actions()}
 				${render_add_menu()}
 			</div>
 			${render_tabcard()}
 		`;
 	}
 
-	// the round "+" and the menu of what it can open on the number on screen
+	// what the box can be told besides a number (see clear_filters, refresh)
+	function render_filter_actions() {
+		return `
+			<div class="logicx-ed-actions">
+				<button type="button" class="btn btn-default btn-sm logicx-ed-clear">
+					${__("Clear Filters")}
+				</button>
+				<button type="button" class="btn btn-default btn-sm logicx-ed-refresh">
+					${__("Refresh")}
+				</button>
+			</div>
+		`;
+	}
+
+	// the round "..." and the menu of what it can open on the number on screen
 	// (see ADD_ACTIONS). shown and hidden by hand (see setup_events) rather than
 	// by bootstrap's data attributes, so it works the same whichever bootstrap
 	// the desk ships; only the .dropdown-menu look and its .show state are
-	// borrowed. the "+" is drawn in css, as on the Party Dashboard, and the
+	// borrowed. the "..." is drawn in css, as on the Party Dashboard, and the
 	// button's aria-label names it.
 	function render_add_menu() {
 		const items = ADD_ACTIONS.map(
@@ -530,7 +561,7 @@
 		return `
 			<div class="logicx-ed-add">
 				<button type="button" class="btn btn-primary logicx-ed-add-btn"
-					title="${__("New")}" aria-label="${__("New")}"
+					title="${__("Actions")}" aria-label="${__("Actions")}"
 					aria-haspopup="true" aria-expanded="false"></button>
 				<div class="dropdown-menu logicx-ed-add-menu">${items}
 				</div>
@@ -707,8 +738,8 @@
 			padding: var(--padding-sm) var(--padding-md) var(--padding-lg);
 		}
 
-		/* the number at the left, the "+" pushed to the right end. bottom-aligned,
-		   so the "+" stands level with the base of the box. */
+		/* the number at the left, the "..." pushed to the right end. bottom-aligned,
+		   so the "..." stands level with the base of the box. */
 		.logicx-ed-bar {
 			display: flex;
 			align-items: flex-end;
@@ -716,17 +747,19 @@
 			padding: var(--padding-md) 0 var(--padding-xs);
 		}
 
-		/* the right margin is the room the found / not-found mark takes beside
-		   the box (see .logicx-ed-status) */
+		/* wide enough for a 10-digit number and the placeholder, and no wider.
+		   it gives way on a narrow screen only as far as the number still
+		   reads whole. the right margin is the room the found / not-found mark
+		   takes beside the box (see .logicx-ed-status) */
 		.logicx-ed-search {
-			flex: 0 1 320px;
-			min-width: 160px;
+			flex: 0 1 160px;
+			min-width: 120px;
 			margin-right: 30px;
 		}
 
 		/* frappe's control markup ships its own bottom margin and an empty help
 		   line under the box; neither has anything to space here, and either
-		   would lift the box off the bottom the "+" is aligned to */
+		   would lift the box off the bottom the "..." is aligned to */
 		.logicx-ed-search .frappe-control,
 		.logicx-ed-search .form-group {
 			margin-bottom: 0;
@@ -815,7 +848,17 @@
 			to { transform: translateY(-50%) rotate(360deg); }
 		}
 
-		/* the "+" takes only the room a round button needs, pushed to the far
+		/* Clear Filters and Refresh, just past the found / not-found mark --
+		   the search's right margin is what keeps them clear of it. centred on
+		   the bar, so they read level with the box beside them. */
+		.logicx-ed-actions {
+			flex: 0 0 auto;
+			align-self: center;
+			display: flex;
+			gap: var(--margin-sm);
+		}
+
+		/* the "..." takes only the room a round button needs, pushed to the far
 		   right of the bar where a page's action button sits, and anchors the
 		   menu that drops from it. on a narrow screen the box gives way to it. */
 		.logicx-ed-add {
@@ -827,8 +870,9 @@
 		}
 
 		/* as on the Party Dashboard: .btn-primary gives it the desk's action
-		   button shape, its colours softened below, and the "+" is two bars
-		   crossing at the centre of the disc */
+		   button shape, its colours softened below, and the "..." is three dots
+		   in a row across the centre of the disc -- the middle one drawn, the
+		   two either side of it its shadows */
 		.logicx-ed-add-btn {
 			position: relative;
 			width: 34px;
@@ -838,21 +882,17 @@
 			box-shadow: var(--shadow-sm);
 		}
 
-		.logicx-ed-add-btn::before,
-		.logicx-ed-add-btn::after {
+		.logicx-ed-add-btn::before {
 			content: "";
 			position: absolute;
 			top: 50%;
 			left: 50%;
-			width: 16px;
-			height: 3px;
-			border-radius: 1.5px;
+			width: 4px;
+			height: 4px;
+			border-radius: 50%;
 			background-color: currentColor;
+			box-shadow: -7px 0 0 currentColor, 7px 0 0 currentColor;
 			transform: translate(-50%, -50%);
-		}
-
-		.logicx-ed-add-btn::after {
-			transform: translate(-50%, -50%) rotate(90deg);
 		}
 
 		/* !important because frappe's .btn-primary sets its colours on hover,
