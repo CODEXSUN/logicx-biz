@@ -4,6 +4,10 @@
 	const DASHBOARD_METHOD = "logicx_biz.logicx_hr.mobile_dashboard.get_dashboard";
 	const ENSURE_CONTACT_METHOD = "logicx_biz.logicx_hr.mobile_dashboard.ensure_mobile_contact";
 
+	// what the Comment button saves: a Job Comments on the number alone, with no
+	// job (see JobComments.validate_job_or_mobile)
+	const COMMENT_DOCTYPE = "Job Comments";
+
 	// exactly 10 digits, with no +91, spaces or dashes: the rule a Mobile Contact
 	// is saved by (see logicx_erp/mobile_validation.py), so a number turned away
 	// here could never have been found anyway
@@ -21,7 +25,8 @@
 	// `type` decides how a value is formatted, and a numeric one right-aligns it;
 	// `width` is the least a column is given, stretched in proportion with the
 	// rest to fill the card (see fit_columns) -- and `target` the document a
-	// click on one of its rows opens.
+	// click on one of its rows opens. a tab with `cards` shows a card per row
+	// instead of a table, under the comment box when it has `composer`.
 	const TABS = [
 		{
 			key: "enquiries",
@@ -55,6 +60,14 @@
 				row.job_activity_type && row.job_activity_id
 					? [row.job_activity_type, row.job_activity_id]
 					: ["Job Activity", row.name],
+		},
+		{
+			// cards rather than a table: a comment runs to as many lines as it
+			// was written in
+			key: "comments",
+			title: __("Comments"),
+			cards: true,
+			composer: true,
 		},
 		{
 			key: "job_execution",
@@ -166,6 +179,7 @@
 			this.datatable_ready = ensure_datatable();
 
 			this.setup_mobile();
+			this.setup_composer();
 			this.setup_events();
 			this.load("");
 		}
@@ -271,6 +285,60 @@
 			history.replaceState(history.state, "", window.location.pathname + search + window.location.hash);
 		}
 
+		/* ------------------------------------------------------------ composer */
+
+		// the box above the Comments cards. its label stays in the markup,
+		// off-screen as the number's is, so the box keeps an accessible name.
+		setup_composer() {
+			this.comment_control = frappe.ui.form.make_control({
+				parent: this.$el.find('[data-field="comment"]'),
+				df: {
+					fieldname: "comment",
+					label: __("Comment"),
+					fieldtype: "Small Text",
+				},
+				render_input: true,
+			});
+
+			// Ctrl+Enter (Cmd+Enter on a Mac) posts without leaving the keyboard,
+			// a plain Enter still breaks the line
+			this.comment_control.$input.on("keydown", (e) => {
+				if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+					e.preventDefault();
+					this.post_comment();
+				}
+			});
+		}
+
+		// the button and Ctrl+Enter both land here. the comment is saved as a
+		// Job Comments on the number on screen, as its form would save it; the
+		// box is cleared only once that has succeeded, so a failed post leaves
+		// the text to retry. the number is then read again, quietly, for the
+		// new card.
+		post_comment() {
+			const text = (this.comment_control.get_value() || "").trim();
+			if (!text || !this.found || this.posting) return;
+
+			this.posting = true;
+			const $post = this.$el.find(".logicx-md-post").prop("disabled", true);
+			const seq = this.seq;
+
+			frappe.db
+				.insert({ doctype: COMMENT_DOCTYPE, mobile: this.mobile, comment: text_to_html(text) })
+				.then(() => {
+					this.comment_control.set_value("");
+					frappe.show_alert({ message: __("Comment added"), indicator: "green" });
+					// another number searched for since is already being read
+					if (seq === this.seq) this.load(this.mobile, { quiet: true });
+				})
+				// frappe has already shown the server's reason
+				.catch(() => {})
+				.finally(() => {
+					this.posting = false;
+					$post.prop("disabled", false);
+				});
+		}
+
 		/* ------------------------------------------------------------- loading */
 
 		// everything on the page follows the number searched for: the mark beside
@@ -278,12 +346,15 @@
 		// number that is not 10 digits is turned away without asking the server.
 		// pressing Enter again on the same number asks again, which is how the
 		// page is refreshed.
-		load(mobile) {
+		// `quiet` is the number on screen read again after a comment is posted:
+		// what the page shows stays until the answer replaces it, and is left
+		// alone if none comes.
+		load(mobile, { quiet = false } = {}) {
 			this.seq += 1;
 			const seq = this.seq;
 			this.mobile = mobile;
-			this.found = false;
 			this.write_url_params();
+			if (!quiet) this.set_found(false);
 
 			if (!mobile) {
 				this.set_status(null);
@@ -296,8 +367,10 @@
 				return;
 			}
 
-			this.set_status("loading");
-			this.show_notes(__("Loading..."));
+			if (!quiet) {
+				this.set_status("loading");
+				this.show_notes(__("Loading..."));
+			}
 
 			frappe
 				.call({ method: DASHBOARD_METHOD, args: { mobile } })
@@ -305,6 +378,7 @@
 					if (seq !== this.seq) return;
 					const message = (r && r.message) || {};
 					if (!message.found) {
+						this.set_found(false);
 						this.set_status("missing");
 						// with a way on: an Enquiry for the number all the same (see
 						// new_enquiry_for)
@@ -316,16 +390,27 @@
 						return;
 					}
 
-					this.found = true;
+					this.set_found(true);
 					this.set_status("found");
 					const tabs = message.tabs || {};
 					TABS.forEach((tab) => this.set_tab(tab.key, tabs[tab.key] || {}));
 				})
-				.catch(() => {
+				.catch((error) => {
 					if (seq !== this.seq) return;
+					if (quiet) {
+						console.error(error);
+						return;
+					}
 					this.set_status(null);
 					this.show_notes(__("Could not load the dashboard."), true);
 				});
+		}
+
+		// whether the number on screen is a Mobile Contact. a comment's Mobile
+		// has to be one, so the comment box is shown only then.
+		set_found(found) {
+			this.found = found;
+			this.$el.find(".logicx-md-composer").toggleClass("hidden", !found);
 		}
 
 		set_status(state) {
@@ -359,6 +444,7 @@
 
 			this.$el.on("click", ".logicx-md-clear", () => this.clear_filters());
 			this.$el.on("click", ".logicx-md-refresh", () => this.refresh());
+			this.$el.on("click", ".logicx-md-post", () => this.post_comment());
 
 			// under "No Mobile Contact found" (see new_enquiry_button)
 			this.$el.on("click", ".logicx-md-new-enquiry", (e) => {
@@ -400,7 +486,7 @@
 			});
 
 			// build the datatable now that its pane is visible (see this.results)
-			this.render_table(key);
+			this.render_tab(key);
 		}
 
 		// the row's index is datatable's own, which stays with the row however
@@ -429,7 +515,7 @@
 			// "500+" when the server stopped short of the rest (see ROW_LIMIT in
 			// mobile_dashboard.py)
 			this.set_count(key, more ? `${rows.length}+` : String(rows.length));
-			if (key === this.active_tab) this.render_table(key);
+			if (key === this.active_tab) this.render_tab(key);
 		}
 
 		set_count(key, text) {
@@ -441,13 +527,22 @@
 
 		// called both when a result lands and when its tab is opened, whichever
 		// comes second; `rendered` is what keeps it from building twice
-		render_table(key) {
+		render_tab(key) {
 			const result = this.results[key];
 			if (!result || result.seq !== this.seq || result.rendered) return;
 			result.rendered = true;
 
 			if (!result.rows.length) {
 				this.show_note(key, __("No records"));
+				return;
+			}
+
+			// cards need no bundle, and are built at once as one string: a
+			// card per append would reflow the page once per card
+			const tab = TABS.find((entry) => entry.key === key);
+			if (tab.cards) {
+				const cards = result.rows.map(render_comment_card).join("");
+				this.$card_body(key).html(`<div class="logicx-md-cards">${cards}</div>`);
 				return;
 			}
 
@@ -623,7 +718,8 @@
 		const panes = TABS.map(
 			(tab, i) => `
 			<div class="logicx-md-tabpane${i === 0 ? "" : " hidden"}" data-pane="${tab.key}">
-				<div class="logicx-md-card-body is-table"></div>
+				${tab.composer ? render_composer() : ""}
+				<div class="logicx-md-card-body ${tab.cards ? "is-cards" : "is-table"}"></div>
 			</div>`
 		).join("");
 
@@ -641,6 +737,50 @@
 		const css_class = is_error ? "logicx-md-note is-error" : "logicx-md-note";
 		const action = action_html ? `<div class="logicx-md-note-action">${action_html}</div>` : "";
 		return `<div class="${css_class}"><div>${frappe.utils.escape_html(text)}</div>${action}</div>`;
+	}
+
+	// the comment box, and under it the Comment button. hidden until a Mobile
+	// Contact is found (see set_found).
+	function render_composer() {
+		return `
+			<div class="logicx-md-composer hidden">
+				<div class="logicx-md-composer-field" data-field="comment"></div>
+				<div class="logicx-md-composer-foot">
+					<button type="button" class="btn btn-primary btn-sm logicx-md-post"
+						title="${__("Ctrl+Enter")}">
+						${__("Comment")}
+					</button>
+				</div>
+			</div>`;
+	}
+
+	// a comment: when it was made and who made it on the header, and what was
+	// written beneath, line for line. the text is plain already (see
+	// _multiline_text in mobile_dashboard.py), and escaped here like every
+	// value the page shows. the time is the desk's own Datetime format, as
+	// the Activity tab gives it.
+	function render_comment_card(row) {
+		const time = row.creation ? frappe.datetime.str_to_user(row.creation) : "";
+		const head = `${time} - ${row.owner_name || row.owner || ""}:`;
+		const body = row.text
+			? `<div class="logicx-md-entry-body">${frappe.utils.escape_html(row.text)}</div>`
+			: `<div class="logicx-md-entry-body is-empty">${__("Empty")}</div>`;
+
+		return `
+			<article class="logicx-md-entry">
+				<header class="logicx-md-entry-head">${frappe.utils.escape_html(head)}</header>
+				${body}
+			</article>`;
+	}
+
+	// the box's plain text as the HTML a Text Editor holds -- a paragraph per
+	// line, an empty one written as the editor writes it -- so the comment
+	// opens on its form line for line
+	function text_to_html(text) {
+		return text
+			.split("\n")
+			.map((line) => `<p>${frappe.utils.escape_html(line) || "<br>"}</p>`)
+			.join("");
 	}
 
 	// what goes under "No Mobile Contact found" (see new_enquiry_for)
@@ -822,8 +962,9 @@
 
 		/* the box reads plainly from its placeholder, so its label is dropped
 		   from the layout. it stays in the markup, off-screen, so the input
-		   keeps an accessible name. */
-		.logicx-md-search .control-label {
+		   keeps an accessible name. the comment box goes without one too. */
+		.logicx-md-search .control-label,
+		.logicx-md-composer-field .control-label {
 			position: absolute;
 			width: 1px;
 			height: 1px;
@@ -1025,7 +1166,8 @@
 		/* frappe's desk CSS defines .hidden too; repeated here so what the tabs
 		   show never depends on that global staying put */
 		.logicx-md-count.hidden,
-		.logicx-md-tabpane.hidden {
+		.logicx-md-tabpane.hidden,
+		.logicx-md-composer.hidden {
 			display: none;
 		}
 
@@ -1061,6 +1203,89 @@
 		.logicx-md-card-body.is-table .dt-scrollable {
 			max-height: 33333px !important;
 			overflow-y: auto !important;
+		}
+
+		/* the comment box, and under it the Comment button on the left; above
+		   the cards */
+		.logicx-md-composer {
+			display: flex;
+			flex-direction: column;
+			gap: var(--margin-sm);
+			padding-bottom: var(--padding-md);
+		}
+
+		/* as on the number's box: frappe's bottom margin and empty help line
+		   have nothing to space, the composer's own gap does that */
+		.logicx-md-composer-field .frappe-control,
+		.logicx-md-composer-field .form-group {
+			margin-bottom: 0;
+		}
+
+		.logicx-md-composer-field .help-box {
+			display: none;
+		}
+
+		.logicx-md-composer-field textarea {
+			min-height: 80px;
+		}
+
+		/* a row of its own, so the button keeps its own width rather than
+		   stretching across the composer's column */
+		.logicx-md-composer-foot {
+			display: flex;
+		}
+
+		/* the cards bring their own outlines, so their body draws none */
+		.logicx-md-cards {
+			display: flex;
+			flex-direction: column;
+			gap: var(--margin-sm);
+		}
+
+		.logicx-md-entry {
+			background-color: var(--card-bg);
+			border: 1px solid var(--border-color);
+			border-radius: var(--border-radius-md);
+			overflow: hidden;
+		}
+
+		/* when and by whom, left-aligned on a band the comment sits under: two
+		   steps darker than the body's tint, as on the Loom Dashboard, so the
+		   two read as two surfaces, and dark enough to take the full text
+		   colour */
+		.logicx-md-entry-head {
+			padding: var(--padding-xs) var(--padding-md);
+			background-color: var(--bg-dark-gray, var(--gray-300));
+			border-bottom: 1px solid var(--border-color);
+			font-size: var(--text-sm);
+			font-weight: 600;
+			color: var(--text-color);
+			text-align: left;
+		}
+
+		/* the comment keeps its line breaks and wraps long ones rather than
+		   scrolling sideways, on the tint the desk gives its inputs */
+		.logicx-md-entry-body {
+			padding: var(--padding-sm) var(--padding-md);
+			background-color: var(--control-bg, var(--bg-light-gray));
+			white-space: pre-wrap;
+			overflow-wrap: anywhere;
+			font-size: var(--text-md);
+			line-height: 1.5;
+			color: var(--text-color);
+		}
+
+		.logicx-md-entry-body.is-empty {
+			font-style: italic;
+			color: var(--text-muted);
+		}
+
+		/* an empty / loading / error line where there are no cards gets the
+		   outline a table would have given it */
+		.logicx-md-card-body.is-cards > .logicx-md-note {
+			background-color: var(--card-bg);
+			border: 1px solid var(--border-color);
+			border-radius: var(--border-radius-md);
 		}
 
 		.logicx-md-note {

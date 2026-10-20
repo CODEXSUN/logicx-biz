@@ -2,8 +2,9 @@
 
 The page asks about one mobile number at a time. `get_dashboard` says whether it
 is a Mobile Contact and, when it is, returns what each of the page's tabs lists:
-the contact's Enquiries, and the Job Activity, Job Execution and Job Estimate
-rows posted against them -- every tab newest first. When it is not,
+the contact's Enquiries, the Job Activity, Job Execution and Job Estimate
+rows posted against them, and the Job Comments carrying the number as their
+Mobile -- every tab newest first. When it is not,
 `ensure_mobile_contact` makes it one, for the page's "New Enquiry for {number}"
 button.
 
@@ -68,8 +69,15 @@ JOB_EXECUTION_FIELDS = (
 	"status",
 )
 JOB_ESTIMATE_FIELDS = ("name", "job_id", "date", "item_name", "supplier", "price")
+JOB_COMMENT_FIELDS = ("name", "creation", "comment", "owner")
 
 HTML_TAG = re.compile(r"<[^>]*>")
+# where a Text Editor value breaks its line: a <br>, or the close of a paragraph
+# or other block. an empty line is written <p><br></p>, so a <br> just before a
+# close is one break with it, not two.
+LINE_BREAK = re.compile(
+	r"(?:<br\s*/?>\s*)?</(?:p|div|li|h[1-6]|blockquote|pre)\s*>|<br\s*/?>", re.IGNORECASE
+)
 
 
 @frappe.whitelist()
@@ -103,6 +111,20 @@ def get_dashboard(mobile: str) -> dict:
 			"enquiries": _tab(_enquiry_view(enquiries[: ROW_LIMIT + 1])),
 			"job_activity": _tab(
 				_activity_view(_job_rows("Job Activity", JOB_ACTIVITY_FIELDS, enquiry_names))
+			),
+			# by the comment's own Mobile rather than through the Enquiries, which
+			# takes in the comments made on the number alone, with no job (see
+			# JobComments.set_mobile)
+			"comments": _tab(
+				_comment_view(
+					frappe.get_list(
+						"Job Comments",
+						filters={"mobile": mobile},
+						fields=list(JOB_COMMENT_FIELDS),
+						order_by=ORDER_BY,
+						limit=ROW_LIMIT + 1,
+					)
+				)
 			),
 			"job_execution": _tab(
 				_with_titles(
@@ -192,6 +214,14 @@ def _activity_view(rows: list) -> list:
 	return rows
 
 
+def _comment_view(rows: list) -> list:
+	"""Job Comments rows with the comment as text, lines kept, and who wrote each by name."""
+	for row in rows:
+		row.text = _multiline_text(row.pop("comment", None))
+		row.owner_name = get_fullname(row.owner)
+	return rows
+
+
 def _with_titles(rows: list, link_field: str, doctype: str, title_field: str) -> list:
 	"""Rows with the `doctype` each links to through `link_field` named, as `title_field`.
 
@@ -226,3 +256,19 @@ def _plain_text(value: str | None) -> str:
 	"""
 	text = html.unescape(HTML_TAG.sub(" ", value or ""))
 	return " ".join(text.split())
+
+
+def _multiline_text(value: str | None) -> str:
+	"""A Text Editor value as plain text, a line per line written, for a card.
+
+	Stripped here for the reason _plain_text gives. In HTML a newline is only
+	whitespace, so a line ends at a <br> or a closed block instead. A value with
+	no markup at all -- posted as plain text, by an API client say -- has only
+	its newlines to go by. Each line is trimmed, and blank ones at either end
+	dropped.
+	"""
+	text = value or ""
+	if HTML_TAG.search(text):
+		text = " ".join(text.split())
+		text = html.unescape(HTML_TAG.sub("", LINE_BREAK.sub("\n", text)))
+	return "\n".join(" ".join(line.split()) for line in text.splitlines()).strip()

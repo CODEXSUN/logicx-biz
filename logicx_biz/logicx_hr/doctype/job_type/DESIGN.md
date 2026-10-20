@@ -76,6 +76,22 @@ The same three fields on all five doctypes:
 `job_type` and `job_id` come first on four of the doctypes, and after `date` on Job Execution.
 Job Activity has the same `job_type` / `job_id` pair, without `enquiry`.
 
+**Job Comments** is the exception: a comment can be on a mobile number alone, with no job, so
+neither `job_type` nor `job_id` is reqd there. Its `mobile` (Link -> Mobile Contact) says which:
+
+| The comment has | Then | `mobile` |
+|-----------------|------|----------|
+| `job_type` = `Enquiry` and `job_id` | on that Enquiry | The Enquiry's Mobile, fetched on save. Read-only. |
+| another `job_type` and `job_id` | on that job | Empty. Read-only. |
+| neither | on the number | Entered by hand, and required. |
+
+`JobComments.validate_job_or_mobile` enforces this on save: Job Type and Job ID are set together or
+not at all, and with neither, Mobile is required. A Job Type without a Job ID, or no job and no
+Mobile, is refused. The form marks the fields required and read-only to match (`set_job_or_mobile`
+in `job_comments.js`). That is done in the form script rather than with `mandatory_depends_on`,
+whose expression would need JS's `!`. A comment on a number alone posts no Job Activity, as it has
+no job to post to.
+
 **Title:** `title_field` is `job_id` on Job Attachment, Job Comments, Job Execution, Job Location and
 Job Activity, so a link to one of them shows its Job ID. Job Estimate's is `item_name`.
 
@@ -88,8 +104,9 @@ the record that posted it are in [../job_activity_type/DESIGN.md](../job_activit
 
 ### WhatsApp button (Job Comments)
 
-The button looks up the mobile number on the Enquiry when Job Type is `Enquiry`. For any other type,
-it opens WhatsApp with the comment and no number, and the user picks the contact.
+The button sends to the comment's own `mobile`: the Enquiry's when Job Type is `Enquiry`, or the
+number the comment was made on when it has no job. For any other type, it opens WhatsApp with the
+comment and no number, and the user picks the contact.
 
 ## API
 
@@ -105,7 +122,12 @@ doctype):
 ```
 
 A request without `job_type` / `job_id` fails with "Missing mandatory: Job Type, Job ID", even when
-it sends `enquiry`: nothing copies `enquiry` into them.
+it sends `enquiry`: nothing copies `enquiry` into them. Job Comments instead accepts a `mobile` in
+their place (see above), and refuses a request with none of the three:
+
+```json
+{ "mobile": "9876543210", "comment": "Called back, will visit on Monday" }
+```
 
 ## Patches
 
@@ -152,7 +174,8 @@ Job Type that exists.
 | `logicx_hr/doctype/job_type/job_type.py` | Controller (no logic). |
 | `logicx_hr/doctype/job_{attachment,comments,estimate,execution,location}/*.json` | `job_type`, `job_id`, the legacy `enquiry`; `title_field`. |
 | `logicx_hr/doctype/job_{attachment,comments,estimate,execution,location}/*.py` | Post Job Activity against `job_type` / `job_id`. |
-| `logicx_hr/doctype/job_comments/job_comments.js` | WhatsApp button reads the Enquiry from `job_id`. |
+| `logicx_hr/doctype/job_comments/job_comments.py` | Fetches `mobile` from the Enquiry; requires a job or a `mobile`. |
+| `logicx_hr/doctype/job_comments/job_comments.js` | Marks the job or `mobile` required to match; WhatsApp button sends to `mobile`. |
 | `logicx_hr/doctype/job_activity/job_activity.json` | `job_type`, `job_id`. |
 | `logicx_hr/doctype/*/Frappe.Api.*.rest` | REST samples using `job_type` / `job_id`. |
 | `patches/create_job_types.py` | Seeds the default Job Types. |
