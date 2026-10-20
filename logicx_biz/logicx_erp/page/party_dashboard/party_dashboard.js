@@ -902,9 +902,14 @@
 			const card = CARDS.find((c) => c.key === key);
 
 			this.tables[key] = new DataTableClass($body.get(0), {
-				columns: result.columns.map((col) => to_datatable_column(col, card)),
+				columns: fit_columns(
+					result.columns.map((col) => to_datatable_column(col, card)),
+					$body.get(0).clientWidth
+				),
 				data: result.rows,
-				layout: "fluid",
+				// "fixed" keeps the widths it is handed, where "fluid" would throw
+				// them away (see fit_columns)
+				layout: "fixed",
 				inlineFilters: true,
 				serialNoColumn: false,
 				checkboxColumn: false,
@@ -1716,6 +1721,30 @@
 			sortable: true, // sortable
 			format: (value, row, column, data) => format_cell(value, col, data, card),
 		};
+	}
+
+	// frappe-datatable's "fluid" layout keeps none of the widths it is handed: it
+	// measures each column by its header text and shares whatever room is left
+	// out equally, so every column comes out much the same. the table is built
+	// "fixed" instead, which keeps the widths the report asks for, and they are
+	// stretched here in proportion to fill the card -- never shrunk, so a
+	// statement wider than the card scrolls sideways rather than cramping every
+	// column to fit.
+	function fit_columns(columns, available) {
+		// each cell draws a 1px border beside the width its content is given,
+		// and a couple of pixels are kept spare so rounding never tips the row
+		// past the card into a scrollbar
+		const room = available - columns.length - 2;
+		const total = columns.reduce((sum, col) => sum + col.width, 0);
+		if (!(room > total)) return columns;
+
+		const fitted = columns.map((col) =>
+			Object.assign({}, col, { width: Math.floor((col.width * room) / total) })
+		);
+		// whatever the flooring left over goes to the last column, so the row
+		// ends flush with the card
+		fitted[fitted.length - 1].width += room - fitted.reduce((sum, col) => sum + col.width, 0);
+		return fitted;
 	}
 
 	function format_cell(value, col, data, card) {

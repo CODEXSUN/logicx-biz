@@ -17,8 +17,10 @@
 
 	// the tab strip, left to right. `key` is the one get_dashboard answers each
 	// tab under (see enquiry_dashboard.py), `columns` what its table shows --
-	// `type` decides how a value is formatted, and a numeric one right-aligns it
-	// -- and `target` the document a click on one of its rows opens.
+	// `type` decides how a value is formatted, and a numeric one right-aligns it;
+	// `width` is the least a column is given, stretched in proportion with the
+	// rest to fill the card (see fit_columns) -- and `target` the document a
+	// click on one of its rows opens.
 	const TABS = [
 		{
 			key: "enquiries",
@@ -441,9 +443,11 @@
 
 			const tab = TABS.find((entry) => entry.key === key);
 			this.tables[key] = new DataTableClass($body.get(0), {
-				columns: tab.columns.map(to_datatable_column),
+				columns: fit_columns(tab.columns.map(to_datatable_column), $body.get(0).clientWidth),
 				data: result.rows,
-				layout: "fluid",
+				// "fixed" keeps the widths it is handed, where "fluid" would throw
+				// them away (see fit_columns)
+				layout: "fixed",
 				inlineFilters: true,
 				serialNoColumn: false,
 				checkboxColumn: false,
@@ -608,6 +612,29 @@
 			sortable: true, // sortable
 			format: (value) => format_cell(value, col),
 		};
+	}
+
+	// frappe-datatable's "fluid" layout keeps none of the widths it is handed: it
+	// measures each column by its header text and shares whatever room is left
+	// out equally, so every column comes out much the same. the table is built
+	// "fixed" instead, which keeps them, and they are stretched here in
+	// proportion to fill the card -- never shrunk, so a list wider than the card
+	// scrolls sideways rather than cramping every column to fit.
+	function fit_columns(columns, available) {
+		// each cell draws a 1px border beside the width its content is given,
+		// and a couple of pixels are kept spare so rounding never tips the row
+		// past the card into a scrollbar
+		const room = available - columns.length - 2;
+		const total = columns.reduce((sum, col) => sum + col.width, 0);
+		if (!(room > total)) return columns;
+
+		const fitted = columns.map((col) =>
+			Object.assign({}, col, { width: Math.floor((col.width * room) / total) })
+		);
+		// whatever the flooring left over goes to the last column, so the row
+		// ends flush with the card
+		fitted[fitted.length - 1].width += room - fitted.reduce((sum, col) => sum + col.width, 0);
+		return fitted;
 	}
 
 	// every value is escaped on its way in: the rows are whatever was typed
