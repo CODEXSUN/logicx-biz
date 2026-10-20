@@ -16,6 +16,13 @@
 		},
 		{
 			"idx": 2,
+			"label": "Enquiry Dashboard",
+			"type": "Link",
+			"link_type": "Page",
+			"link_to": "enquiry-dashboard"
+		},
+		{
+			"idx": 3,
 			"label": "Enquiry",
 			"type": "Link",
 			"link_type": "DocType",
