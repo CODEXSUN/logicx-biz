@@ -25,9 +25,10 @@ A click opens a dialog, **WhatsApp to {number}**:
 
 **Send** then:
 
-1. saves the message as a Job Comments on the number, with **Shared via WhatsApp** added as its last
-   line after a blank one. The dashboard reads the number again, so the new card shows up under
-   Comments;
+1. saves the message as a Job Comments on the number, with **- Shared via WhatsApp -** added as its
+   last line after a blank one, in the desk's muted grey -- an inline colour, so the Job Comments
+   form shows it dulled too, and the Comments card dulls the line where it comes last. The
+   dashboard reads the number again, so the new card shows up under Comments;
 2. opens `whatsapp://send?phone=91{number}&text={message}` -- the message as written, URL-encoded,
    without the Shared via WhatsApp line. `91` is India's code, as on the Enquiry and Job Comments
    forms.
@@ -59,8 +60,12 @@ and the dashboard builds it with the page (`setup_whatsapp`), handing it:
 - `$wrapper` -- the button's empty place in the bar, `[data-slot="whatsapp"]`. Where that place sits
   is the dashboard's CSS; the button's own look is this script's, injected under the `logicx-mw-`
   prefix;
-- `save_comment(mobile, text)` -- the dashboard's, the same one its comment box saves through. It
-  saves the comment, reads the number again for the new card, and returns the save's promise.
+- `save_comment(mobile, text, note)` -- the dashboard's, the same one its comment box saves through.
+  It saves the comment, with `note` (the script's `SHARED_NOTE`) as a dulled last line, reads the
+  number again for the new card, and returns the save's promise.
+
+The class carries `SHARED_NOTE` as a static too, which the dashboard keeps for its cards to tell the
+line by.
 
 The dashboard then calls `set_mobile(mobile)` whenever the number on screen changes: the Mobile
 Contact's number, or `""` when there is none, which disables the button.

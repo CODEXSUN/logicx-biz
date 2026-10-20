@@ -9,10 +9,11 @@
 	const STYLE_ID = "logicx-mobile-whatsapp-styles";
 
 	// what the dialog picks its message from. the message is saved as a
-	// comment too, with SHARED_NOTE as its last line, and sent to the number in
-	// India, as the Enquiry and Job Comments forms send it.
+	// comment too, with SHARED_NOTE as its last line (dulled, see the
+	// dashboard's save_comment), and sent to the number in India, as the
+	// Enquiry and Job Comments forms send it.
 	const TEMPLATE_DOCTYPE = "WhatsApp Template";
-	const SHARED_NOTE = __("Shared via WhatsApp");
+	const SHARED_NOTE = __("- Shared via WhatsApp -");
 	const WHATSAPP_COUNTRY_CODE = "91";
 
 	// WhatsApp's own mark, drawn rather than set as a glyph for the reason the
@@ -23,9 +24,9 @@
 
 	class MobileWhatsApp {
 		// built by the dashboard with the page, into the button's place in the
-		// bar. `save_comment(mobile, text)` is the dashboard's own, the one its
-		// comment box saves through: it saves the comment, shows the new card,
-		// and returns the save's promise.
+		// bar. `save_comment(mobile, text, note)` is the dashboard's own, the one
+		// its comment box saves through: it saves the comment, with `note` as a
+		// dulled last line, shows the new card, and returns the save's promise.
 		constructor({ $wrapper, save_comment }) {
 			inject_styles();
 
@@ -132,7 +133,7 @@
 			const mobile = this.dialog_mobile;
 			const $send = dialog.get_primary_btn().prop("disabled", true);
 
-			this.save_comment(mobile, `${text}\n\n${SHARED_NOTE}`)
+			this.save_comment(mobile, text, SHARED_NOTE)
 				.then(() => {
 					// first, while the browser still counts it as the click's doing
 					// (see open_whatsapp_chat)
@@ -148,8 +149,10 @@
 		}
 	}
 
-	// handed to the dashboard, which reads it once the page's whole script has run
+	// handed to the dashboard, which reads it once the page's whole script has
+	// run -- SHARED_NOTE with it, for its cards to dull the line by
 	frappe.provide("logicx_biz.mobile_dashboard");
+	MobileWhatsApp.SHARED_NOTE = SHARED_NOTE;
 	logicx_biz.mobile_dashboard.whatsapp = MobileWhatsApp;
 
 	/* ================================================================= whatsapp */

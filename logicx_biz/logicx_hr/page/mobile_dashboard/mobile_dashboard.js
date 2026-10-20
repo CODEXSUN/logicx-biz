@@ -337,14 +337,16 @@
 		}
 
 		// `text` saved as a Job Comments on `mobile`, as its form would save it
-		// -- for the comment box and the WhatsApp button both -- and the number
+		// -- for the comment box and the WhatsApp button both -- with `note`,
+		// when given, as a dulled last line (see note_to_html), and the number
 		// on screen then read again, quietly, for the new card. the promise is
 		// the save's, so a caller can tell a failed one, whose reason frappe has
 		// already shown.
-		save_comment(mobile, text) {
+		save_comment(mobile, text, note) {
 			const seq = this.seq;
+			const comment = text_to_html(text) + note_to_html(note);
 			return frappe.db
-				.insert({ doctype: COMMENT_DOCTYPE, mobile, comment: text_to_html(text) })
+				.insert({ doctype: COMMENT_DOCTYPE, mobile, comment })
 				.then((doc) => {
 					frappe.show_alert({ message: __("Comment added"), indicator: "green" });
 					// another number searched for since is already being read
@@ -358,7 +360,8 @@
 		// the WhatsApp button, in its own folder (mobile_whatsapp/), built into
 		// its place in the bar just left of the "...". it is told the number to
 		// send to whenever that changes (see set_found), and saves its message
-		// through save_comment, as the comment box does. should its script not
+		// through save_comment, as the comment box does, its SHARED_NOTE kept
+		// for the cards to dull (see render_comment_card). should its script not
 		// have been appended -- hooks.py's page_js does not list it, or the
 		// site's cached hooks are from before it did -- or fail to build, the
 		// place is left empty and the rest of the page works on.
@@ -370,10 +373,11 @@
 				);
 				return;
 			}
+			this.shared_note = WhatsApp.SHARED_NOTE || "";
 			try {
 				this.whatsapp = new WhatsApp({
 					$wrapper: this.$el.find('[data-slot="whatsapp"]'),
-					save_comment: (mobile, text) => this.save_comment(mobile, text),
+					save_comment: (mobile, text, note) => this.save_comment(mobile, text, note),
 				});
 			} catch (error) {
 				console.error(error);
@@ -584,7 +588,7 @@
 			// card per append would reflow the page once per card
 			const tab = TABS.find((entry) => entry.key === key);
 			if (tab.cards) {
-				const cards = result.rows.map(render_comment_card).join("");
+				const cards = result.rows.map((row) => render_comment_card(row, this.shared_note)).join("");
 				this.$card_body(key).html(`<div class="logicx-md-cards">${cards}</div>`);
 				return;
 			}
@@ -802,13 +806,14 @@
 	// a comment: when it was made and who made it on the header, and what was
 	// written beneath, line for line. the text is plain already (see
 	// _multiline_text in mobile_dashboard.py), and escaped here like every
-	// value the page shows. the time is the desk's own Datetime format, as
-	// the Activity tab gives it.
-	function render_comment_card(row) {
+	// value the page shows; a last line that is `note`, the WhatsApp button's,
+	// is dulled as save_comment saved it. the time is the desk's own Datetime
+	// format, as the Activity tab gives it.
+	function render_comment_card(row, note) {
 		const time = row.creation ? frappe.datetime.str_to_user(row.creation) : "";
 		const head = `${time} - ${row.owner_name || row.owner || ""}:`;
 		const body = row.text
-			? `<div class="logicx-md-entry-body">${frappe.utils.escape_html(row.text)}</div>`
+			? `<div class="logicx-md-entry-body">${comment_text_html(row.text, note)}</div>`
 			: `<div class="logicx-md-entry-body is-empty">${__("Empty")}</div>`;
 
 		return `
@@ -826,6 +831,24 @@
 			.split("\n")
 			.map((line) => `<p>${frappe.utils.escape_html(line) || "<br>"}</p>`)
 			.join("");
+	}
+
+	// `note` as the comment's last line, after a blank one, in the desk's muted
+	// grey -- an inline colour, which the Text Editor keeps where it would drop
+	// a class, so the form shows it dulled too. "" when there is no note.
+	function note_to_html(note) {
+		if (!note) return "";
+		const line = `<span style="color: var(--text-muted, #7c7c7c);">${frappe.utils.escape_html(note)}</span>`;
+		return `<p><br></p><p>${line}</p>`;
+	}
+
+	// a card's text escaped, its last line dulled when that line is `note`
+	function comment_text_html(text, note) {
+		if (!note || (text !== note && !text.endsWith(`\n${note}`))) {
+			return frappe.utils.escape_html(text);
+		}
+		const rest = text.slice(0, text.length - note.length);
+		return `${frappe.utils.escape_html(rest)}<span class="logicx-md-entry-note">${frappe.utils.escape_html(note)}</span>`;
 	}
 
 	// what goes under "No Mobile Contact found" (see new_enquiry_for)
@@ -1331,6 +1354,11 @@
 
 		.logicx-md-entry-body.is-empty {
 			font-style: italic;
+			color: var(--text-muted);
+		}
+
+		/* the WhatsApp button's note under its message, dulled as on the form */
+		.logicx-md-entry-note {
 			color: var(--text-muted);
 		}
 
