@@ -8,6 +8,12 @@
 	// job (see JobComments.validate_job_or_mobile)
 	const COMMENT_DOCTYPE = "Job Comments";
 
+	// where the WhatsApp button's script, in its own folder (mobile_whatsapp/),
+	// puts its class. hooks.py's page_js appends it to this one when the page
+	// is loaded, so it runs after this and is read only from on_page_load on
+	// (see setup_whatsapp).
+	frappe.provide("logicx_biz.mobile_dashboard");
+
 	// exactly 10 digits, with no +91, spaces or dashes: the rule a Mobile Contact
 	// is saved by (see logicx_erp/mobile_validation.py), so a number turned away
 	// here could never have been found anyway
@@ -180,6 +186,7 @@
 
 			this.setup_mobile();
 			this.setup_composer();
+			this.setup_whatsapp();
 			this.setup_events();
 			this.load("");
 		}
@@ -310,33 +317,67 @@
 			});
 		}
 
-		// the button and Ctrl+Enter both land here. the comment is saved as a
-		// Job Comments on the number on screen, as its form would save it; the
-		// box is cleared only once that has succeeded, so a failed post leaves
-		// the text to retry. the number is then read again, quietly, for the
-		// new card.
+		// the button and Ctrl+Enter both land here. the box is cleared only
+		// once the comment is saved, so a failed post leaves the text to retry.
 		post_comment() {
 			const text = (this.comment_control.get_value() || "").trim();
 			if (!text || !this.found || this.posting) return;
 
 			this.posting = true;
 			const $post = this.$el.find(".logicx-md-post").prop("disabled", true);
-			const seq = this.seq;
 
-			frappe.db
-				.insert({ doctype: COMMENT_DOCTYPE, mobile: this.mobile, comment: text_to_html(text) })
-				.then(() => {
-					this.comment_control.set_value("");
-					frappe.show_alert({ message: __("Comment added"), indicator: "green" });
-					// another number searched for since is already being read
-					if (seq === this.seq) this.load(this.mobile, { quiet: true });
-				})
+			this.save_comment(this.mobile, text)
+				.then(() => this.comment_control.set_value(""))
 				// frappe has already shown the server's reason
 				.catch(() => {})
 				.finally(() => {
 					this.posting = false;
 					$post.prop("disabled", false);
 				});
+		}
+
+		// `text` saved as a Job Comments on `mobile`, as its form would save it
+		// -- for the comment box and the WhatsApp button both -- and the number
+		// on screen then read again, quietly, for the new card. the promise is
+		// the save's, so a caller can tell a failed one, whose reason frappe has
+		// already shown.
+		save_comment(mobile, text) {
+			const seq = this.seq;
+			return frappe.db
+				.insert({ doctype: COMMENT_DOCTYPE, mobile, comment: text_to_html(text) })
+				.then((doc) => {
+					frappe.show_alert({ message: __("Comment added"), indicator: "green" });
+					// another number searched for since is already being read
+					if (seq === this.seq) this.load(this.mobile, { quiet: true });
+					return doc;
+				});
+		}
+
+		/* ------------------------------------------------------------ whatsapp */
+
+		// the WhatsApp button, in its own folder (mobile_whatsapp/), built into
+		// its place in the bar just left of the "...". it is told the number to
+		// send to whenever that changes (see set_found), and saves its message
+		// through save_comment, as the comment box does. should its script not
+		// have been appended -- hooks.py's page_js does not list it, or the
+		// site's cached hooks are from before it did -- or fail to build, the
+		// place is left empty and the rest of the page works on.
+		setup_whatsapp() {
+			const WhatsApp = logicx_biz.mobile_dashboard.whatsapp;
+			if (!WhatsApp) {
+				console.error(
+					"Mobile Dashboard: the WhatsApp button's script did not load. It is listed in hooks.py's page_js; after a change there, clear the site's cache."
+				);
+				return;
+			}
+			try {
+				this.whatsapp = new WhatsApp({
+					$wrapper: this.$el.find('[data-slot="whatsapp"]'),
+					save_comment: (mobile, text) => this.save_comment(mobile, text),
+				});
+			} catch (error) {
+				console.error(error);
+			}
 		}
 
 		/* ------------------------------------------------------------- loading */
@@ -407,10 +448,12 @@
 		}
 
 		// whether the number on screen is a Mobile Contact. a comment's Mobile
-		// has to be one, so the comment box is shown only then.
+		// has to be one, so the comment box is shown, and the WhatsApp button
+		// (which saves a comment too) enabled, only then.
 		set_found(found) {
 			this.found = found;
 			this.$el.find(".logicx-md-composer").toggleClass("hidden", !found);
+			if (this.whatsapp) this.whatsapp.set_mobile(found ? this.mobile : "");
 		}
 
 		set_status(state) {
@@ -653,12 +696,14 @@
 	/* ==================================================================== markup */
 
 	// the number at the left of the bar, Clear Filters and Refresh just past
-	// its mark, and the "..." at the right end, level with the bottom of the box
+	// its mark, and WhatsApp and the "..." at the right end, level with the
+	// bottom of the box
 	function render_scaffold() {
 		return `
 			<div class="logicx-md-bar">
 				<div class="logicx-md-search" data-filter="mobile"></div>
 				${render_filter_actions()}
+				<div class="logicx-md-whatsapp" data-slot="whatsapp"></div>
 				${render_add_menu()}
 			</div>
 			${render_tabcard()}
@@ -1050,13 +1095,22 @@
 			gap: var(--margin-sm);
 		}
 
-		/* the "..." takes only the room a round button needs, pushed to the far
-		   right of the bar where a page's action button sits, and anchors the
-		   menu that drops from it. on a narrow screen the box gives way to it. */
+		/* the WhatsApp button's place (mobile_whatsapp/ draws the button),
+		   pushed to the right end of the bar just ahead of the "...". empty,
+		   should its script not load, it still pushes the "..." there. */
+		.logicx-md-whatsapp {
+			flex: 0 0 auto;
+			margin-left: auto;
+			display: flex;
+			align-items: center;
+		}
+
+		/* the "..." takes only the room a round button needs, at the far right
+		   of the bar where a page's action button sits, and anchors the menu
+		   that drops from it. on a narrow screen the box gives way to it. */
 		.logicx-md-add {
 			position: relative;
 			flex: 0 0 auto;
-			margin-left: auto;
 			display: flex;
 			align-items: center;
 		}

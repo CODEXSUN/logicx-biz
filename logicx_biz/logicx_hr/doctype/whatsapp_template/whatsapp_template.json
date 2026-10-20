@@ -25,6 +25,7 @@
 			"label": "Message Template",
 			"fieldname": "message_template",
 			"fieldtype": "Text",
+			"description": "*text in Bold*<br>_text in Italic_<br>~text in Strikethrough~<br>Note: The formatting marks must enclose the text tightly (no space between mark and text).",
 			"reqd": 1
 		}
 	],

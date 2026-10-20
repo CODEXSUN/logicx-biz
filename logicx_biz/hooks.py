@@ -121,6 +121,12 @@ page_js = {
 		"logicx_banking/page/brs_dashboard/brs_import/brs_import.js",
 		"logicx_banking/page/brs_dashboard/brs_transaction_report/brs_transaction_report.js",
 	],
+	# the Mobile Dashboard's WhatsApp button, in its own folder under the page:
+	# appended to mobile_dashboard.js when the page is loaded
+	# (page/mobile_dashboard/mobile_whatsapp/Mobile-WhatsApp.MD)
+	"mobile-dashboard": [
+		"logicx_hr/page/mobile_dashboard/mobile_whatsapp/mobile_whatsapp.js",
+	],
 }
 
 # include js in doctype views
