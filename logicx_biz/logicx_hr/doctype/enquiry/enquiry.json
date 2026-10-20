@@ -8,6 +8,7 @@
 	"is_submittable": 0,
 	"allow_rename": 1,
 	"allow_import": 1,
+	"quick_entry": 1,
 	"title_field": "title",
 	"sort_field": "creation",
 	"sort_order": "DESC",
@@ -24,6 +25,7 @@
 			"fieldtype": "Link",
 			"options": "Mobile Contact",
 			"reqd": 1,
+			"allow_in_quick_entry": 1,
 			"in_list_view": 0,
 			"in_standard_filter": 1,
 			"in_filter": 1
@@ -40,7 +42,8 @@
 			"fieldname": "mobile_customer",
 			"fieldtype": "Link",
 			"options": "Mobile Contact Customer",
-			"reqd": 0
+			"reqd": 0,
+			"allow_in_quick_entry": 1
 		},
 		{
 			"label": "Company Name",
@@ -70,13 +73,15 @@
 			"label": "Title",
 			"fieldname": "title",
 			"fieldtype": "Data",
-			"reqd": 0
+			"reqd": 0,
+			"allow_in_quick_entry": 1
 		},
 		{
 			"label": "Enquiry Details",
 			"fieldname": "enquiry_details",
 			"fieldtype": "Text Editor",
-			"reqd": 1
+			"reqd": 1,
+			"allow_in_quick_entry": 1
 		},
 		{
 			"label": "List in",
@@ -85,6 +90,7 @@
 			"options": "Enquiry Group",
 			"default": "",
 			"reqd": 0,
+			"allow_in_quick_entry": 1,
 			"in_list_view": 1,
 			"in_standard_filter": 1,
 			"in_filter": 1
@@ -139,6 +145,7 @@
 			"read_only": 0,
 			"options": "Employee",
 			"reqd": 0,
+			"allow_in_quick_entry": 1,
 			"in_list_view": 1,
 			"in_standard_filter": 1,
 			"in_filter": 1
