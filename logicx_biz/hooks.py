@@ -99,6 +99,9 @@ app_include_js = [
 	# quick entry classes are looked up by doctype name at desk boot, and quick
 	# entry is raised from the list view and awesomebar, not just the form
 	"/assets/logicx_biz/js/party_opening_balance_quick_entry.js",
+	# the Activity button on the Enquiry, SOP Item, Customer and Supplier forms:
+	# one refresh handler for all four, two of which are ERPNext's forms
+	"/assets/logicx_biz/js/job_activity_menu.js",
 ]
 
 # include js, css files in header of web template

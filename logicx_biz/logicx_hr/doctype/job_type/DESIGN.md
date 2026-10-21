@@ -108,6 +108,24 @@ The button sends to the comment's own `mobile`: the Enquiry's when Job Type is `
 number the comment was made on when it has no job. For any other type, it opens WhatsApp with the
 comment and no number, and the user picks the contact.
 
+## Activity menu
+
+The Enquiry, SOP Item, Customer and Supplier forms have an **Activity** button. Task's form does
+not. Its menu has Job Activity, Job Comments, Job Estimate, Job Execution, Job Location and Job
+Attachment, in that order, and each one opens that doctype's list on the record: on Enquiry
+`ENQ109`, Activity > Job Execution opens the Job Execution list filtered on Job Type `Enquiry` and
+Job ID `ENQ109`. The Job Type is the form's DocType, as a Job Type is named after its DocType. The
+two filters are the list's standard ones, so they can be changed or cleared there. Job Comments made
+on a mobile number alone have no job, so they aren't in the list.
+
+The button is on saved records only. It lists only the doctypes the user can read, and isn't shown
+when they can read none: the job doctypes grant only TM User and TM Admin, and a Customer or
+Supplier may be opened by a user with neither role.
+
+`public/js/job_activity_menu.js` adds it, through one `refresh` handler on all four forms. It is
+loaded at desk boot from `app_include_js` rather than from the forms' own scripts, because Customer
+and Supplier are ERPNext's. The forms and the menu items are the two lists at the top of the file.
+
 ## API
 
 Clients send and filter by `job_type` + `job_id` (see the `Frappe.Api.*.rest` files next to each
@@ -150,6 +168,8 @@ expected to be 0, as every legacy row has an `enquiry`.
 2. Add its name to the `link_filters` of `job_type` in all six job doctype JSONs (the five above
    and Job Activity), then migrate. The filter repeats the master's list, so a new Job Type stays
    out of the picker until it is added there.
+3. For an Activity button on its form, add its name to `JOB_ACTIVITY_MENU_JOB_TYPES` in
+   `public/js/job_activity_menu.js`.
 
 `link_filters` only narrows the picker in the form. It isn't checked on save, so the API accepts any
 Job Type that exists.
@@ -158,8 +178,9 @@ Job Type that exists.
 
 - **The `enquiry` field** is unused and can be dropped from the five doctypes. The controllers, the
   Job Comments form and the `.rest` samples all use `job_type` / `job_id`.
-- **Enquiry has no Connections** to the job doctypes. A `links` row can't add the
-  `job_type = "Enquiry"` condition, so Connections on `job_id` need an `enquiry_dashboard.py` with
+- **Enquiry has no Connections** to the job doctypes; its Activity menu opens their lists instead
+  (see [Activity menu](#activity-menu)). A `links` row can't add the `job_type = "Enquiry"`
+  condition, so Connections on `job_id` need an `enquiry_dashboard.py` with
   `"fieldname": "job_id"` and `"dynamic_links": {"job_id": ["Enquiry", "job_type"]}`. It can list
   all five job doctypes.
 - **WhatsApp for Customer / Supplier** opens without a number, though both have a `mobile_no`.
@@ -178,6 +199,8 @@ Job Type that exists.
 | `logicx_hr/doctype/job_comments/job_comments.js` | Marks the job or `mobile` required to match; WhatsApp button sends to `mobile`. |
 | `logicx_hr/doctype/job_activity/job_activity.json` | `job_type`, `job_id`. |
 | `logicx_hr/doctype/*/Frappe.Api.*.rest` | REST samples using `job_type` / `job_id`. |
+| `public/js/job_activity_menu.js` | The Activity button on the Enquiry, SOP Item, Customer and Supplier forms. |
+| `hooks.py` | Loads `job_activity_menu.js` at desk boot, through `app_include_js`. |
 | `patches/create_job_types.py` | Seeds the default Job Types. |
 | `patches/set_job_type_and_id_from_enquiry.py` | Backfills `job_type` / `job_id` from `enquiry`. |
 | `patches.txt` | Both patches, under `post_model_sync`. |
