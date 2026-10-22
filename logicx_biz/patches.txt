@@ -20,3 +20,4 @@ logicx_biz.patches.copy_job_comments_to_job_activity
 logicx_biz.patches.set_enquiry_mobile_customer
 logicx_biz.patches.delete_enquiry_dashboard_page
 logicx_biz.patches.set_job_comments_mobile_from_enquiry
+logicx_biz.patches.set_enquiry_title_from_details
