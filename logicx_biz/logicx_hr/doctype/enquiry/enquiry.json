@@ -2,7 +2,7 @@
 	"doctype": "DocType",
 	"name": "Enquiry",
 	"module": "LogicX HR",
-	"autoname": "ENQ.#",
+	"autoname": "Q.#",
 	"track_changes": 1,
 	"track_views": 1,
 	"is_submittable": 0,
@@ -107,7 +107,7 @@
 			"label": "Enquiry Details",
 			"fieldname": "enquiry_details",
 			"fieldtype": "Text Editor",
-			"reqd": 1,
+			"reqd": 0,
 			"allow_in_quick_entry": 1
 		},
 		{
