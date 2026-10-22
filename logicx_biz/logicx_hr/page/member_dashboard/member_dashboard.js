@@ -11,10 +11,11 @@
 	// the tab strip, left to right. `key` is the tab get_tab is asked for (see
 	// TAB_FIELDS in member_dashboard.py), `show_closed` the label of the box
 	// above its table, and `columns` what that table shows -- `type` decides
-	// how a value is formatted, and `width` is the least a column is given,
-	// stretched in proportion with the rest to fill the card (see
-	// fit_columns). every row carries its Enquiry's Mobile too, though no
-	// column shows it: it is where a click on the row goes (see open_row).
+	// how a value is formatted, `align` where it sits in its cell (left unless
+	// given), and `width` is what a column is given, the one marked `stretch`
+	// taking whatever room the card has left over on top (see fit_columns).
+	// every row carries its Enquiry's Mobile too, though no column shows it: it
+	// is where a click on the row goes (see open_row).
 	const TABS = [
 		{
 			// the Enquiries assigned to the member
@@ -23,12 +24,12 @@
 			show_closed: __("Show Closed Jobs"),
 			columns: [
 				{ id: "name", name: __("Q#"), width: 100 },
-				{ id: "date", name: __("Date"), type: "Date", width: 100 },
-				{ id: "title", name: __("Title"), width: 180 },
-				{ id: "customer_name", name: __("Customer"), width: 180 },
-				{ id: "group", name: __("List in"), width: 120 },
-				{ id: "created_by_name", name: __("Created By"), width: 150 },
-				{ id: "status", name: __("Status"), width: 110 },
+				{ id: "date", name: __("Date"), type: "Date", width: 125, align: "center" },
+				{ id: "title", name: __("Title"), width: 180, stretch: true },
+				{ id: "customer_name", name: __("Customer"), width: 200 },
+				{ id: "group", name: __("List in"), width: 125 },
+				{ id: "created_by_name", name: __("Created By"), width: 200 },
+				{ id: "status", name: __("Status"), width: 125 },
 			],
 		},
 		{
@@ -38,12 +39,12 @@
 			show_closed: __("Show Closed Leads"),
 			columns: [
 				{ id: "name", name: __("Q#"), width: 100 },
-				{ id: "date", name: __("Date"), type: "Date", width: 100 },
-				{ id: "title", name: __("Title"), width: 180 },
-				{ id: "customer_name", name: __("Customer"), width: 180 },
-				{ id: "group", name: __("List in"), width: 120 },
-				{ id: "assigned_to_name", name: __("Assigned To"), width: 150 },
-				{ id: "status", name: __("Status"), width: 110 },
+				{ id: "date", name: __("Date"), type: "Date", width: 125, align: "center" },
+				{ id: "title", name: __("Title"), width: 180, stretch: true },
+				{ id: "customer_name", name: __("Customer"), width: 200 },
+				{ id: "group", name: __("List in"), width: 125 },
+				{ id: "assigned_to_name", name: __("Assigned To"), width: 200 },
+				{ id: "status", name: __("Status"), width: 125 },
 			],
 		},
 	];
@@ -294,7 +295,7 @@
 
 			const tab = TABS.find((entry) => entry.key === key);
 			this.tables[key] = new DataTableClass($body.get(0), {
-				columns: fit_columns(tab.columns.map(to_datatable_column), $body.get(0).clientWidth),
+				columns: fit_columns(tab.columns, $body.get(0).clientWidth).map(to_datatable_column),
 				data: result.rows,
 				// "fixed" keeps the widths it is handed, where "fluid" would throw
 				// them away (see fit_columns)
@@ -392,6 +393,11 @@
 			id: col.id,
 			name: col.name,
 			width: col.width || 120,
+			// set on every column, left unless it says otherwise: left unset,
+			// frappe-datatable right-aligns a column whose first row holds a
+			// number -- and a blank counts as one, so an Enquiry with no List in,
+			// or a Lead not yet assigned, on top turned that whole column right
+			align: col.align || "left",
 			editable: false,
 			focusable: false,
 			dropdown: true, // sortable
@@ -403,9 +409,10 @@
 	// frappe-datatable's "fluid" layout keeps none of the widths it is handed: it
 	// measures each column by its header text and shares whatever room is left
 	// out equally, so every column comes out much the same. the table is built
-	// "fixed" instead, which keeps them, and they are stretched here in
-	// proportion to fill the card -- never shrunk, so a list wider than the card
-	// scrolls sideways rather than cramping every column to fit.
+	// "fixed" instead, which keeps them, and the room the card has beyond them
+	// all goes to the column marked `stretch` (Title), so the row ends flush
+	// with the card. none is ever shrunk: a list wider than the card scrolls
+	// sideways rather than cramping every column to fit.
 	function fit_columns(columns, available) {
 		// each cell draws a 1px border beside the width its content is given,
 		// and a couple of pixels are kept spare so rounding never tips the row
@@ -414,13 +421,9 @@
 		const total = columns.reduce((sum, col) => sum + col.width, 0);
 		if (!(room > total)) return columns;
 
-		const fitted = columns.map((col) =>
-			Object.assign({}, col, { width: Math.floor((col.width * room) / total) })
+		return columns.map((col) =>
+			col.stretch ? Object.assign({}, col, { width: col.width + room - total }) : col
 		);
-		// whatever the flooring left over goes to the last column, so the row
-		// ends flush with the card
-		fitted[fitted.length - 1].width += room - fitted.reduce((sum, col) => sum + col.width, 0);
-		return fitted;
 	}
 
 	// every value is escaped on its way in: the rows are whatever was typed
