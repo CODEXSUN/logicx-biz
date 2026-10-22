@@ -80,13 +80,6 @@
 			"allow_in_quick_entry": 1
 		},
 		{
-			"label": "Enquiry Details",
-			"fieldname": "enquiry_details",
-			"fieldtype": "Text Editor",
-			"reqd": 1,
-			"allow_in_quick_entry": 1
-		},
-		{
 			"label": "List in",
 			"fieldname": "group",
 			"fieldtype": "Link",
@@ -97,6 +90,25 @@
 			"in_list_view": 1,
 			"in_standard_filter": 1,
 			"in_filter": 1
+		},
+		{
+			"label": "Assigned To",
+			"fieldname": "assigned_to_employee",
+			"fieldtype": "Link",
+			"read_only": 0,
+			"options": "Employee",
+			"reqd": 0,
+			"allow_in_quick_entry": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Enquiry Details",
+			"fieldname": "enquiry_details",
+			"fieldtype": "Text Editor",
+			"reqd": 1,
+			"allow_in_quick_entry": 1
 		},
 		{
 			"label": "Due Date",
@@ -139,18 +151,6 @@
 			"read_only": 1,
 			"default": "Today",
 			"reqd": 1,
-			"in_list_view": 1,
-			"in_standard_filter": 1,
-			"in_filter": 1
-		},
-		{
-			"label": "Assigned To",
-			"fieldname": "assigned_to_employee",
-			"fieldtype": "Link",
-			"read_only": 0,
-			"options": "Employee",
-			"reqd": 0,
-			"allow_in_quick_entry": 1,
 			"in_list_view": 1,
 			"in_standard_filter": 1,
 			"in_filter": 1
