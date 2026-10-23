@@ -6,8 +6,6 @@ Enquiry rows keep resolving (the stored value is the status name, which is also
 the new docname).
 
 Each status also carries a `status_group`, the coarse bucket it belongs to.
-"Closed" is new -- it was not one of the Select options -- and is seeded
-alongside the old values.
 
 `idx` is set in descending order because the link-field dropdown and the list
 view are ordered by `idx desc`, which keeps the picker in the same order the
@@ -28,6 +26,7 @@ DEFAULT_STATUSES = [
 	("Lost", "Closed"),
 	("Closed", "Closed"),
 	("Re-open", "New"),
+	("Duplicate", "Closed"),
 ]
 
 

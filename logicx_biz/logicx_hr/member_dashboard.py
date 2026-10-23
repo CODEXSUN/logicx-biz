@@ -25,7 +25,7 @@ TAB_FIELDS = {
 }
 
 # the Status Group a tab leaves out until its "Show Closed" box is ticked: every
-# Enquiry Status in it -- Closed, Won and Lost as seeded (see
+# Enquiry Status in it -- Won, Lost, Closed and Duplicate as seeded (see
 # patches/create_enquiry_statuses.py), and any put in it since
 CLOSED_GROUP = "Closed"
 

@@ -159,7 +159,7 @@
 
 		// the box above each tab's table, unticked as the page opens: until it
 		// is ticked the tab leaves out the Enquiries whose Status is in the
-		// Closed group -- Closed, Won and Lost as seeded (see get_tab).
+		// Closed group -- Won, Lost, Closed and Duplicate as seeded (see get_tab).
 		// ticking it reads that one tab again -- the other has not moved.
 		setup_show_closed() {
 			this.show_closed = {};
