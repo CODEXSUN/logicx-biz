@@ -1,5 +1,5 @@
 from frappe.model.document import Document
 
 
-class SOPReporting(Document):
+class SOP(Document):
 	pass

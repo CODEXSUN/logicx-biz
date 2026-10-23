@@ -14,8 +14,8 @@ job is (an Enquiry, a Task, a Customer, ...), and **Job ID**, the record itself.
 
 ```
 Job Execution JOBEXE7
-   job_type = "SOP Item"  ------> Job Type "SOP Item"     (a master row, named after DocType "SOP Item")
-   job_id   = "SOP-12"    ------> SOP Item "SOP-12"       (Dynamic Link: its DocType is the value of job_type)
+   job_type = "Duty"      ------> Job Type "Duty"         (a master row, named after DocType "Duty")
+   job_id   = "ASSIGN7"   ------> Duty "ASSIGN7"          (Dynamic Link: its DocType is the value of job_type)
 
 Job Execution JOBEXE8
    job_type = "Enquiry"   ------> Job Type "Enquiry"
@@ -32,7 +32,7 @@ empty and `job_id` is set, it fails with "Job Type must be set first".
 
 ## Job Type
 
-Naming: `field:document_type`, so the name is the DocType's name, e.g. `Enquiry`, `SOP Item`. Rename
+Naming: `field:document_type`, so the name is the DocType's name, e.g. `Enquiry`, `Duty`. Rename
 is off: a renamed Job Type would no longer match its DocType.
 
 | Field | Label | Type | Notes |
@@ -55,10 +55,14 @@ Seeded by the `create_job_types` patch, in this order:
 | Job Type | DocType from | Job ID looks like |
 |----------|--------------|-------------------|
 | Enquiry | LogicX HR | `ENQ109` |
-| SOP Item | LogicX HR | `SOP-12` |
+| Duty | LogicX HR | `ASSIGN7` |
 | Task | ERPNext (Projects) | `TASK-2026-00012` |
 | Customer | ERPNext (Selling) | the customer's name / ID |
 | Supplier | ERPNext (Buying) | `S1227` |
+
+Duty used to be SOP Item (now SOP). The `rename_sop_doctypes` patch replaced the "SOP Item" Job Type
+with "Duty". Job rows already against SOP Item stay on an "SOP" Job Type, which is out of the picker;
+on a site with no such rows, the type was deleted.
 
 A type whose DocType is missing on the site is skipped with a printed note rather than failing the
 migrate.
@@ -110,7 +114,7 @@ comment and no number, and the user picks the contact.
 
 ## Activity menu
 
-The Enquiry, SOP Item, Customer and Supplier forms have an **Activity** button. Task's form does
+The Enquiry, Duty, Customer and Supplier forms have an **Activity** button. Task's form does
 not. Its menu has Job Activity, Job Comments, Job Estimate, Job Execution, Job Location and Job
 Attachment, in that order, and each one opens that doctype's list on the record: on Enquiry
 `ENQ109`, Activity > Job Execution opens the Job Execution list filtered on Job Type `Enquiry` and
@@ -199,8 +203,9 @@ Job Type that exists.
 | `logicx_hr/doctype/job_comments/job_comments.js` | Marks the job or `mobile` required to match; WhatsApp button sends to `mobile`. |
 | `logicx_hr/doctype/job_activity/job_activity.json` | `job_type`, `job_id`. |
 | `logicx_hr/doctype/*/Frappe.Api.*.rest` | REST samples using `job_type` / `job_id`. |
-| `public/js/job_activity_menu.js` | The Activity button on the Enquiry, SOP Item, Customer and Supplier forms. |
+| `public/js/job_activity_menu.js` | The Activity button on the Enquiry, Duty, Customer and Supplier forms. |
 | `hooks.py` | Loads `job_activity_menu.js` at desk boot, through `app_include_js`. |
 | `patches/create_job_types.py` | Seeds the default Job Types. |
 | `patches/set_job_type_and_id_from_enquiry.py` | Backfills `job_type` / `job_id` from `enquiry`. |
+| `patches/rename_sop_doctypes.py` | Replaces the SOP Item Job Type with Duty (`pre_model_sync`). |
 | `patches.txt` | Both patches, under `post_model_sync`. |

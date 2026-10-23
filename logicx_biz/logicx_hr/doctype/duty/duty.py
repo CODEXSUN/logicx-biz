@@ -4,13 +4,13 @@
 import frappe
 from frappe.model.document import Document
 
-class SOPAssigned(Document):
+class Duty(Document):
 
 	def validate(self):
 		exists = frappe.db.exists(
-			"SOP Assigned",
+			"Duty",
 			{
-				"sop_item": self.sop_item,
+				"sop": self.sop,
 				"user": self.user,
 				"name": ["!=", self.name]
 			}

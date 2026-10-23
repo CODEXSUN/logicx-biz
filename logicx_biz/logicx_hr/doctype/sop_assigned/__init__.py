@@ -1,1 +1,0 @@
-"""SOP Assigned DocType."""

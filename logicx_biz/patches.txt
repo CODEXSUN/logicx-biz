@@ -4,6 +4,7 @@
 logicx_biz.patches.move_brs_to_logicx_banking
 logicx_biz.patches.rename_estimate_to_job_estimate
 logicx_biz.patches.carry_enquiry_number_to_q_series
+logicx_biz.patches.rename_sop_doctypes
 
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
@@ -23,3 +24,4 @@ logicx_biz.patches.delete_enquiry_dashboard_page
 logicx_biz.patches.set_job_comments_mobile_from_enquiry
 logicx_biz.patches.set_enquiry_title_from_details
 logicx_biz.patches.set_empty_enquiry_status_to_new
+logicx_biz.patches.rename_sop_item_field_to_sop

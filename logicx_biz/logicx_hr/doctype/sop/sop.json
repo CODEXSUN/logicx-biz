@@ -1,6 +1,6 @@
 {
 	"doctype": "DocType",
-	"name": "SOP Item",
+	"name": "SOP",
 	"module": "LogicX HR",
 	"autoname": "SOP-.#",
 	"track_changes": 1,

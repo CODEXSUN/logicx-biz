@@ -1,4 +1,4 @@
-// The Activity button on the job forms: Enquiry, SOP Item, Customer and Supplier. Its menu opens
+// The Activity button on the job forms: Enquiry, Duty, Customer and Supplier. Its menu opens
 // the Job Activity, Job Comments, Job Estimate, Job Execution, Job Location or Job Attachment list
 // on the record: Job Type = the form's doctype, Job ID = the record's name
 // (see logicx_hr/doctype/job_type/DESIGN.md).
@@ -8,7 +8,7 @@
 
 // the forms that get the button: every default Job Type but Task. A Job Type is named after its
 // DocType, so the form's doctype is the Job Type to filter on
-const JOB_ACTIVITY_MENU_JOB_TYPES = ["Enquiry", "SOP Item", "Customer", "Supplier"];
+const JOB_ACTIVITY_MENU_JOB_TYPES = ["Enquiry", "Duty", "Customer", "Supplier"];
 
 // the menu, top to bottom: the doctypes that name their job through job_type + job_id
 const JOB_ACTIVITY_MENU_ITEMS = [

@@ -4,7 +4,7 @@ Authorization: token {{token}}
 Content-Type: application/json
 
 {
-	"doctype": "SOP Reporting",
+	"doctype": "Duty Reporting",
 	"filters": [],
 	"order_by": "creation desc",
 	"fields": [
@@ -13,19 +13,19 @@ Content-Type: application/json
 }
 
 
-### Read SOP Reporting by ID.
+### Read Duty Reporting by ID.
 
-GET {{baseUrl}}/api/v2/document/SOP Reporting/REPORTING222
+GET {{baseUrl}}/api/v2/document/Duty Reporting/REPORTING222
 Authorization: token {{token}}
 
 
 ### Create
-POST {{baseUrl}}/api/v2/document/SOP Reporting
+POST {{baseUrl}}/api/v2/document/Duty Reporting
 Authorization: token {{token}}
 Content-Type: application/json
 
 {
-    "sop_item": "SOP-9",
+    "sop": "SOP-9",
     "user": "HR-EMP-00014",
     "date": "HR-EMP-00014",
     "date": "2026-07-11",

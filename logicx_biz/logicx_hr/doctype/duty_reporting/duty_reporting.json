@@ -1,8 +1,8 @@
 {
 	"doctype": "DocType",
-	"name": "SOP Assigned",
+	"name": "Duty Reporting",
 	"module": "LogicX HR",
-	"autoname": "ASSIGN.#",
+	"autoname": "REPORTING.#",
 	"track_changes": 1,
 	"track_views": 1,
 	"is_submittable": 0,
@@ -20,10 +20,10 @@
 			"fieldtype": "Section Break"
 		},
 		{
-			"label": "SOP Item",
-			"fieldname": "sop_item",
+			"label": "SOP",
+			"fieldname": "sop",
 			"fieldtype": "Link",
-			"options": "SOP Item",
+			"options": "SOP",
 			"reqd": 1,
 			"in_list_view": 1
 		},
@@ -38,10 +38,14 @@
 			"in_filter": 1
 		},
 		{
-			"label": "Index",
-			"fieldname": "index",
-			"fieldtype": "Int",
-			"reqd": 1
+			"label": "Date",
+			"fieldname": "date",
+			"fieldtype": "Date",
+			"default": "Today",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
 		},
 		{
 			"fieldname": "section1_column2",
@@ -51,21 +55,21 @@
 			"label": "SOP Name",
 			"fieldname": "sop_name",
 			"fieldtype": "Read Only",
-			"fetch_from": "sop_item.sop_name",
+			"fetch_from": "sop.sop_name",
 			"in_list_view": 1
 		},
 		{
 			"label": "Department",
 			"fieldname": "department",
 			"fieldtype": "Read Only",
-			"fetch_from": "sop_item.department",
+			"fetch_from": "sop.department",
 			"in_list_view": 1
 		},
 		{
 			"label": "Frequency",
 			"fieldname": "frequency",
 			"fieldtype": "Read Only",
-			"fetch_from": "sop_item.frequency",
+			"fetch_from": "sop.frequency",
 			"in_list_view": 1
 		},
 		{
@@ -73,11 +77,17 @@
 			"fieldtype": "Section Break"
 		},
 		{
+			"label": "Actions",
+			"fieldname": "actions",
+			"fieldtype": "Text Editor",
+			"reqd": 1
+		},
+		{
 			"label": "Steps",
 			"fieldname": "steps",
 			"fieldtype": "Text Editor",
 			"read_only": 1,
-			"fetch_from": "sop_item.steps"
+			"fetch_from": "sop.steps"
 		}
 	],
 	"permissions": [
@@ -86,8 +96,8 @@
 			"permlevel": 0,
 			"role": "TM User",
 			"read": 1,
-			"create": 0,
-			"write": 0,
+			"create": 1,
+			"write": 1,
 			"delete": 0,
 			"select": 1,
 			"report": 1,

@@ -72,24 +72,24 @@
 		},
 		{
 			"idx": 10,
-			"label": "SOP Item",
+			"label": "SOP",
 			"type": "Link",
 			"link_type": "DocType",
-			"link_to": "SOP Item"
+			"link_to": "SOP"
 		},
 		{
 			"idx": 11,
-			"label": "SOP Assigned",
+			"label": "Duty",
 			"type": "Link",
 			"link_type": "DocType",
-			"link_to": "SOP Assigned"
+			"link_to": "Duty"
 		},
 		{
 			"idx": 12,
-			"label": "SOP Reporting",
+			"label": "Duty Reporting",
 			"type": "Link",
 			"link_type": "DocType",
-			"link_to": "SOP Reporting"
+			"link_to": "Duty Reporting"
 		},
 		{
 			"idx": 13,

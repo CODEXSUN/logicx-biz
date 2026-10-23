@@ -1,5 +1,5 @@
 from frappe.model.document import Document
 
 
-class SOPItem(Document):
+class DutyReporting(Document):
 	pass

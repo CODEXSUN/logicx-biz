@@ -12,7 +12,7 @@ later through the UI get idx 0 and sort last.
 
 import frappe
 
-DEFAULT_JOB_TYPES = ["Enquiry", "SOP Item", "Task", "Customer", "Supplier"]
+DEFAULT_JOB_TYPES = ["Enquiry", "Duty", "Task", "Customer", "Supplier"]
 
 
 def execute():

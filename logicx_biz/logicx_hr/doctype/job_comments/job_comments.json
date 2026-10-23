@@ -20,7 +20,7 @@
 			"fieldname": "job_type",
 			"fieldtype": "Link",
 			"options": "Job Type",
-			"link_filters": "[[\"Job Type\",\"name\",\"in\",[\"Enquiry\",\"SOP Item\",\"Task\",\"Customer\",\"Supplier\"]]]",
+			"link_filters": "[[\"Job Type\",\"name\",\"in\",[\"Enquiry\",\"Duty\",\"Task\",\"Customer\",\"Supplier\"]]]",
 			"reqd": 0,
 			"remember_last_selected_value": 1,
 			"in_list_view": 1,
