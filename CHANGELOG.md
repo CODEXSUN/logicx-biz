@@ -11,6 +11,39 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.94] - 2026-10-24
+
+### Database Changes
+
+- **Enquiry's `mobile_customer` field removed.** The sync takes it off the
+  DocType; the column stays in `tabEnquiry`, values and all, unused.
+- **DocType Mobile Contact Customer deleted** -- its files are gone, so
+  migrate's "Removing orphan doctypes" step deletes its DocType record, with
+  its fields and permissions. `tabMobile Contact Customer` and its rows stay in
+  the database, as Frappe never drops a table there. `bench --site <site>
+  trim-database` removes the table, and `trim-tables` the `mobile_customer`
+  column; both take `--dry-run` to list what they would drop.
+- No new patch. `set_enquiry_mobile_customer` (0.1.76) loses its Mobile Contact
+  Customer steps and now only trims Mobile and creates Mobile Contacts. It
+  does not run again where it has run already.
+
+### Changed
+
+- **Enquiry: Customer is picked directly** -- an editable Link to Customer, no
+  longer read-only or fetched, and offered in the quick entry where Mobile
+  Customer was. It is not tied to the Mobile: any Customer can go with any
+  number. The checks that held Mobile Customer to the Mobile, and Customer to
+  Mobile Customer, are gone, so imports and the API send `customer` alone.
+  Existing Customers are left as they are.
+
+### Removed
+
+- **Mobile Contact Customer DocType** (from 0.1.75), with the Mobile Contact
+  form's **Customers** button and the Customer `on_update` / `after_rename`
+  hooks that kept its Customer Name in step.
+- **Enquiry: Mobile Customer** field (from 0.1.76), and the filter the Mobile
+  Dashboard put on it in the Enquiry quick entry.
+
 ## [0.1.93] - 2026-10-23
 
 ### Database Changes

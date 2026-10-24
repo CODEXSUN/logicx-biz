@@ -872,18 +872,8 @@
 		frappe.model.with_doctype("Enquiry", () => {
 			const doc = frappe.model.get_new_doc("Enquiry");
 			if (mobile) doc.mobile = mobile;
-			frappe.ui.form.make_quick_entry("Enquiry", after_insert, limit_mobile_customer, doc);
+			frappe.ui.form.make_quick_entry("Enquiry", after_insert, null, doc);
 		});
-	}
-
-	// the Enquiry form lists only its Mobile's own Mobile Customers (see
-	// enquiry.js), but the quick entry is a dialog that form script never
-	// reaches, so the same filter is put on it here. no dialog means the quick
-	// entry fell back to the full form, which has the filter already.
-	function limit_mobile_customer(dialog) {
-		const field = dialog && dialog.fields_dict && dialog.fields_dict.mobile_customer;
-		if (!field) return;
-		field.get_query = () => ({ filters: { mobile_contact: dialog.get_value("mobile") || "" } });
 	}
 
 	/* ==================================================================== tables */

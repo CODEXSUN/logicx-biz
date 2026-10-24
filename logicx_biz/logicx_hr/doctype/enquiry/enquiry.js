@@ -1,12 +1,5 @@
 frappe.ui.form.on("Enquiry", {
 
-	setup(frm) {
-		// only the Customers linked to this Enquiry's Mobile; none until a Mobile is picked
-		frm.set_query("mobile_customer", () => ({
-			filters: { mobile_contact: frm.doc.mobile || "" },
-		}));
-	},
-
 	onload(frm) {
 		set_current_employee(frm);
 	},
@@ -14,20 +7,6 @@ frappe.ui.form.on("Enquiry", {
 	refresh(frm) {
 		set_current_employee(frm);
 		init_btn_whatsapp(frm.fields_dict.btn_whatsapp);
-	},
-
-	mobile(frm) {
-		// a Mobile Customer belongs to one Mobile, so a new Mobile needs a new pick
-		if (frm.doc.mobile_customer) {
-			frm.set_value("mobile_customer", null);
-		}
-	},
-
-	mobile_customer(frm) {
-		// Customer is fetched from Mobile Customer, and must be empty without one
-		if (!frm.doc.mobile_customer && frm.doc.customer) {
-			frm.set_value("customer", null);
-		}
 	},
 
 	btn_whatsapp(frm, cdt, cdn) {
