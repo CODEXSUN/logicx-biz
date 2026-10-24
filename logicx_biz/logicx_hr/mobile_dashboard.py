@@ -69,7 +69,15 @@ JOB_EXECUTION_FIELDS = (
 	"status",
 )
 JOB_ESTIMATE_FIELDS = ("name", "job_id", "date", "item_name", "supplier", "price")
-JOB_COMMENT_FIELDS = ("name", "creation", "comment", "owner")
+JOB_COMMENT_FIELDS = (
+	"name",
+	"creation",
+	"comment",
+	"owner",
+	# the job a comment is on, when it is on one, named in its card's header
+	"job_type",
+	"job_id",
+)
 
 HTML_TAG = re.compile(r"<[^>]*>")
 # where a Text Editor value breaks its line: a <br>, or the close of a paragraph

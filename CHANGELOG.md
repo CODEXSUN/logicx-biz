@@ -37,6 +37,15 @@ data for it: what the model sync does, and what each patch does.
   filled in. A click on a row opens its document. Read with the user's own
   permissions.
 
+### Changed
+
+- **Comment cards on the Mobile and Customer Dashboards** are headed
+  `24-10-2026 18:35  ◦  Ashok Kumar  ◦  Enquiry: Q930` -- when, to the minute,
+  who, and the job the comment is on, by its Job Type and Job ID. The header
+  stops at who for a comment made on a number alone, which has no job, and on
+  the Customer Dashboard for one filed on the Customer itself -- the Customer
+  the page is about. It used to read `{when} - {who}:`.
+
 ## [0.1.94] - 2026-10-24
 
 ### Database Changes

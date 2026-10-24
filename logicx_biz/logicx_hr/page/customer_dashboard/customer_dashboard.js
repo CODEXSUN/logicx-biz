@@ -787,15 +787,23 @@
 			</div>`;
 	}
 
-	// a comment: when it was made and who made it on the header, and what was
+	// what sets the parts of a comment card's header apart, two spaces either
+	// side (see render_comment_card): U+25E6, the white bullet
+	const ENTRY_SEPARATOR = "  ◦  ";
+
+	// a comment: on the header when it was made, who made it and the job it is
+	// on, as "Enquiry: Q930" -- save for one filed on the Customer itself, which
+	// is on the Customer the page is about and so names no job; and what was
 	// written beneath, line for line. the text is plain already (see
-	// _multiline_text in mobile_dashboard.py), and escaped here like every
-	// value the page shows; a last line that is `note`, the WhatsApp button's,
-	// is dulled as save_comment saved it. the time is the desk's own Datetime
-	// format, as the Activity tab gives it.
+	// _multiline_text in mobile_dashboard.py), and escaped here like every value
+	// the page shows; a last line that is `note`, the WhatsApp button's, is
+	// dulled as save_comment saved it.
 	function render_comment_card(row, note) {
-		const time = row.creation ? frappe.datetime.str_to_user(row.creation) : "";
-		const head = `${time} - ${row.owner_name || row.owner || ""}:`;
+		const on_job = row.job_type && row.job_id && row.job_type !== CUSTOMER_JOB_TYPE;
+		const job = on_job ? `${__(row.job_type)}: ${row.job_id}` : "";
+		const head = [comment_time(row.creation), row.owner_name || row.owner || "", job]
+			.filter(Boolean)
+			.join(ENTRY_SEPARATOR);
 		const body = row.text
 			? `<div class="logicx-cd-entry-body">${comment_text_html(row.text, note)}</div>`
 			: `<div class="logicx-cd-entry-body is-empty">${__("Empty")}</div>`;
@@ -805,6 +813,12 @@
 				<header class="logicx-cd-entry-head">${frappe.utils.escape_html(head)}</header>
 				${body}
 			</article>`;
+	}
+
+	// when a comment was made, in the desk's own Datetime format as the Activity
+	// tab gives it, but to the minute: the seconds add nothing to a card
+	function comment_time(creation) {
+		return creation ? frappe.datetime.str_to_user(creation).replace(/(\d+:\d+):\d+/, "$1") : "";
 	}
 
 	// the box's plain text as the HTML a Text Editor holds -- a paragraph per
@@ -1234,10 +1248,11 @@
 			overflow: hidden;
 		}
 
-		/* when and by whom, left-aligned on a band the comment sits under: two
-		   steps darker than the body's tint, as on the Loom Dashboard, so the
-		   two read as two surfaces, and dark enough to take the full text
-		   colour */
+		/* when, by whom and on what job, left-aligned on a band the comment sits
+		   under: two steps darker than the body's tint, as on the Loom
+		   Dashboard, so the two read as two surfaces, and dark enough to take
+		   the full text colour. pre-wrap keeps the two spaces either side of
+		   each separator, and still wraps on a narrow screen. */
 		.logicx-cd-entry-head {
 			padding: var(--padding-xs) var(--padding-md);
 			background-color: var(--bg-dark-gray, var(--gray-300));
@@ -1246,6 +1261,7 @@
 			font-weight: 600;
 			color: var(--text-color);
 			text-align: left;
+			white-space: pre-wrap;
 		}
 
 		/* the comment keeps its line breaks and wraps long ones rather than
