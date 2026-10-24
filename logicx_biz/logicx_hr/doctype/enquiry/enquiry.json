@@ -125,7 +125,7 @@
 			"fieldtype": "Column Break"
 		},
 		{
-			"label": "User",
+			"label": "Lead By",
 			"fieldname": "user_employee",
 			"fieldtype": "Link",
 			"read_only": 1,
