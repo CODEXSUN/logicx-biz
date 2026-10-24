@@ -11,6 +11,22 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.96] - 2026-10-24
+
+### Added
+
+- **Customers** page (`customers`, `LogicX HR`; System Manager, TM Admin, TM
+  User), in the LogicX HR sidebar just above the Customer Dashboard: the
+  active Customers (not Disabled), by name, up to 500. Columns ID, Name,
+  Mobile, Email and GSTIN -- India Compliance's GSTIN / UIN when that app is
+  installed, ERPNext's Tax ID when it is not. Two boxes narrow the list as you
+  type, **Mobile No** and **Name**, each matching anywhere in the Customer's
+  Mobile No or Customer Name; both together match both. They are kept in the
+  URL as `?mobile=` and `?customer_name=`. A click on a row opens the
+  Customer Dashboard on that Customer (Ctrl / Cmd + click: in a new tab).
+  Read with the user's own permissions: a user who may only select
+  Customers sees Email and GSTIN blank.
+
 ## [0.1.95] - 2026-10-24
 
 ### Added
