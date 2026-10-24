@@ -130,6 +130,11 @@ page_js = {
 	"mobile-dashboard": [
 		"logicx_hr/page/mobile_dashboard/mobile_whatsapp/mobile_whatsapp.js",
 	],
+	# the same WhatsApp button, on the Customer Dashboard's bar: appended to
+	# customer_dashboard.js, which sends to the Customer's Mobile No
+	"customer-dashboard": [
+		"logicx_hr/page/mobile_dashboard/mobile_whatsapp/mobile_whatsapp.js",
+	],
 }
 
 # include js in doctype views

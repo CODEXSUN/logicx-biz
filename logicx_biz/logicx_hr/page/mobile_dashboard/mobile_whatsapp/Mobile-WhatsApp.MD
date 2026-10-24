@@ -7,9 +7,9 @@ a message to the number on screen on WhatsApp, and keeps a copy of it in the num
 
 | | |
 |---|---|
-| **Button** | in the bar of `/app/mobile-dashboard` (`../mobile_dashboard.json`) |
+| **Button** | in the bar of `/app/mobile-dashboard` (`../mobile_dashboard.json`), and of `/app/customer-dashboard` (see [On the Customer Dashboard](#on-the-customer-dashboard)) |
 | **Reads** | **WhatsApp Template** (`Title`, `Message Template`) |
-| **Saves** | a **Job Comments** on the number, through the dashboard's own `save_comment` |
+| **Saves** | a **Job Comments** on the number -- on the Customer Dashboard, under the Customer -- through the dashboard's own `save_comment` |
 | **Files** | `mobile_whatsapp.js` (the button and its dialog) -- no server side |
 
 ## What it does
@@ -75,3 +75,18 @@ rest of the page works on; the browser console says which.
 
 **After a change to `page_js`, clear the site's cache** (`bench --site <site> clear-cache`): Frappe
 caches the hooks.
+
+## On the Customer Dashboard
+
+`/app/customer-dashboard` (`../../customer_dashboard/`) has the same button: `hooks.py` lists this
+script under `"customer-dashboard"` too, and that page builds it as the Mobile Dashboard does, in the
+same place in its bar. The script is the same file, unchanged; what differs is the number the page
+gives it and what the page's own `save_comment` does with the message:
+
+- the button is enabled while the Customer on screen was found and its **Mobile No** is exactly 10
+  digits -- the number the dialog is titled with and WhatsApp is opened on. A Customer with no Mobile
+  No, or one saved before the 10-digit rule, leaves it disabled;
+- **Send** saves the message as a Job Comments filed on the **Customer** itself (Job Type `Customer`,
+  Job ID the Customer), not on the number, so it needs no Mobile Contact. The card shows up under
+  that page's Comments, the Shared via WhatsApp line dulled, and the Job Activity the comment posts
+  under its Activity.

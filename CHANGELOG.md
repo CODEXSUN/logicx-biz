@@ -11,6 +11,32 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.95] - 2026-10-24
+
+### Added
+
+- **Customer Dashboard** page (`customer-dashboard`, `LogicX HR`; System
+  Manager, TM Admin, TM User), in the LogicX HR sidebar after the Mobile
+  Dashboard -- the Mobile Dashboard for one Customer instead of one number.
+  The Customer is its only filter, picked in a link field and kept in the URL
+  as `?customer=`; there is no Mobile Number filter. Five tabs, newest first
+  and up to 500 each:
+  - **Enquiries** whose Customer it is, with Mobile in place of the Customer
+    column;
+  - **Activity**, **Comments**, **Executions** and **Estimates** -- the rows
+    posted on those Enquiries, together with the ones filed on the Customer
+    itself (Job Type Customer), whose Enquiry column is blank.
+
+  The comment box files its comments on the Customer (Job Type Customer, Job
+  ID the Customer), which also posts a Job Activity there. The Mobile
+  Dashboard's **WhatsApp** button sends to the Customer's Mobile No when it is
+  10 digits, and saves the message as a comment on the Customer. A Customer
+  with no Enquiry is offered **New Enquiry for {Customer Name}**, as the "..."
+  menu's New Enquiry offers at any time: the Customer's Mobile No is made a
+  Mobile Contact first, and the quick entry opens with Customer and Mobile
+  filled in. A click on a row opens its document. Read with the user's own
+  permissions.
+
 ## [0.1.94] - 2026-10-24
 
 ### Database Changes

@@ -4,7 +4,9 @@
 //
 // Not a page of its own. hooks.py's page_js appends this file to
 // mobile_dashboard.js when the page is loaded, and the dashboard builds the
-// button out of the class this registers, into its place in the bar.
+// button out of the class this registers, into its place in the bar. The
+// Customer Dashboard has it appended and builds it the same way, sending to
+// the Customer's Mobile No and saving under the Customer.
 (function () {
 	const STYLE_ID = "logicx-mobile-whatsapp-styles";
 
