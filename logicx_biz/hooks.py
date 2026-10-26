@@ -135,6 +135,15 @@ page_js = {
 	"customer-dashboard": [
 		"logicx_hr/page/mobile_dashboard/mobile_whatsapp/mobile_whatsapp.js",
 	],
+	# the Member Dashboard itself, in its own folder under the page: appended to
+	# member_dashboard.js, and to member_self_dashboard.js, which builds the
+	# same dashboard on the logged-in user's own Employee
+	"member-dashboard": [
+		"logicx_hr/page/member_dashboard/member_dashboard_view/member_dashboard_view.js",
+	],
+	"member-self-dashboard": [
+		"logicx_hr/page/member_dashboard/member_dashboard_view/member_dashboard_view.js",
+	],
 }
 
 # include js in doctype views

@@ -1,18 +1,28 @@
-"""Server side of the Member Dashboard page (page/member_dashboard).
+"""Server side of the Member Dashboard (page/member_dashboard/member_dashboard_view),
+which two pages build:
 
-The page is about the member looking at it: the Employee whose User is the one
-logged in. `get_tab` names that Employee and lists the Enquiries one of the
-page's tabs holds for them -- Jobs, the ones assigned to them, or Leads, the ones
-they created -- newest first, with the closed ones (a Status in the Closed
-group) left out until the tab's "Show Closed" box is ticked.
+- the Member Dashboard (page/member_dashboard), on any member: the Employee
+  picked on the page, which only PAGE_ROLES may name;
+- the Member Self Dashboard (page/member_self_dashboard), on the member looking
+  at it: the Employee whose User is the one logged in.
 
-The Enquiries are read through `frappe.get_list`, so a member sees only what
-their own permissions allow.
+`get_tab` names the member and lists the Enquiries one of the dashboard's tabs
+holds for them -- Jobs, the ones assigned to them, or Leads, the ones they
+created -- newest first, with the closed ones (a Status in the Closed group)
+left out until the tab's "Show Closed" box is ticked.
+
+The Enquiries are read through `frappe.get_list`, so a user sees only what
+their own permissions allow, whoever the member is.
 """
 
 import frappe
 from frappe import _
 from frappe.utils import escape_html
+
+# the roles the Member Dashboard is limited to (page/member_dashboard.json): only
+# they may name the member a tab is read for. the Member Self Dashboard names
+# none, and is answered for the logged-in user's own Employee.
+PAGE_ROLES = ("System Manager", "TM Admin")
 
 # which Enquiries each tab lists: the ones whose field named here is the
 # member. keyed as the page's TABS are.
@@ -56,17 +66,23 @@ ENQUIRY_FIELDS = (
 
 
 @frappe.whitelist()
-def get_tab(tab: str, show_closed: bool = False) -> dict:
+def get_tab(tab: str, show_closed: bool = False, member: str | None = None) -> dict:
 	"""The member, and the Enquiries `tab` lists for them.
 
-	`employee` is None, and nothing else is read, when no Employee is linked to
-	the logged-in User. Otherwise `rows` holds the tab's Enquiries -- the closed
-	ones only with `show_closed` -- and `more` says they were cut at ROW_LIMIT.
+	The member is `member`, an Employee ID, when one is named -- by PAGE_ROLES
+	only -- and the Employee linked to the logged-in User when none is.
+	`employee` is None, and nothing else is read, when there is no such
+	Employee. Otherwise `rows` holds the tab's Enquiries -- the closed ones only
+	with `show_closed` -- and `more` says they were cut at ROW_LIMIT.
 	"""
 	if tab not in TAB_FIELDS:
 		frappe.throw(_("Unknown tab: {0}").format(escape_html(tab)))
 
-	employee = _current_employee()
+	if member:
+		frappe.only_for(PAGE_ROLES)
+		employee = _employee(member)
+	else:
+		employee = _current_employee()
 	if not employee:
 		return {"employee": None}
 
@@ -101,6 +117,11 @@ def _current_employee() -> frappe._dict | None:
 	return frappe.db.get_value(
 		"Employee", {"user_id": frappe.session.user}, ["name", "employee_name"], as_dict=True
 	)
+
+
+def _employee(member: str) -> frappe._dict | None:
+	"""The Employee `member`, by ID and name, as _current_employee gives it."""
+	return frappe.db.get_value("Employee", member, ["name", "employee_name"], as_dict=True)
 
 
 def _closed_statuses() -> list:

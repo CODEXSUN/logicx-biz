@@ -11,6 +11,30 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.97] - 2026-10-26
+
+### Added
+
+- **Member Self Dashboard** page (`member-self-dashboard`, `LogicX HR`;
+  System Manager, TM Admin, TM User), in the LogicX HR sidebar just after the
+  Member Dashboard -- the Member Dashboard as it was until now: the Enquiries
+  of the member looking at it, as the Employee linked to their User, with the
+  same Jobs and Leads tabs, Show Closed boxes and row clicks.
+
+### Changed
+
+- **Member Dashboard is for any member, and no longer for TM User** (System
+  Manager, TM Admin). The member is picked in a link field (Employee), with
+  their name beside it, and kept in the URL as `?member=`, so
+  `/app/member-dashboard?member=HR-EMP-00001` opens on that Employee. With no
+  member picked the tabs say "Select a member to begin.", and an ID that is no
+  Employee "Member {ID} not found.". A TM User has the Member Self Dashboard
+  instead. `get_tab` takes the member as `member`, and refuses it to any role
+  but System Manager and TM Admin; without it, it still answers for the
+  logged-in user's own Employee.
+- The dashboard's script moves to `page/member_dashboard/member_dashboard_view/`,
+  which `page_js` appends to both pages.
+
 ## [0.1.96] - 2026-10-24
 
 ### Added
