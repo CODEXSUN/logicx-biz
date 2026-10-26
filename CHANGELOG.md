@@ -11,6 +11,20 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.98] - 2026-10-26
+
+### Added
+
+- **Members** page (`members`, `LogicX HR`; System Manager, TM Admin), in the
+  LogicX HR sidebar just above the Member Dashboard: the active Employees
+  (Status Active), by name, up to 500. Columns ID, Name, Mobile, Email (the
+  Employee's User ID), Biometric ID (Attendance Device ID), Department and
+  Designation. One **Search** box narrows the list as you type, matching
+  anywhere in the Name, Email, Department or Designation, and is kept in the
+  URL as `?search=`. A click on a row opens the Member Dashboard on that
+  Employee (Ctrl / Cmd + click: in a new tab). Read with the user's own
+  permissions.
+
 ## [0.1.97] - 2026-10-26
 
 ### Added
