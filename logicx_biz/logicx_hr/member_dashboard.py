@@ -3,8 +3,8 @@ which two pages build:
 
 - the Member Dashboard (page/member_dashboard), on any member: the Employee
   picked on the page, which only PAGE_ROLES may name;
-- the Member Self Dashboard (page/member_self_dashboard), on the member looking
-  at it: the Employee whose User is the one logged in.
+- My Member Dashboard (page/my_member_dashboard), on the member looking at it:
+  the Employee whose User is the one logged in.
 
 `get_tab` names the member and lists what one of the dashboard's tabs holds
 for them:
@@ -24,8 +24,8 @@ from frappe import _
 from frappe.utils import escape_html
 
 # the roles the Member Dashboard is limited to (page/member_dashboard.json): only
-# they may name the member a tab is read for. the Member Self Dashboard names
-# none, and is answered for the logged-in user's own Employee.
+# they may name the member a tab is read for. My Member Dashboard names none,
+# and is answered for the logged-in user's own Employee.
 PAGE_ROLES = ("System Manager", "TM Admin")
 
 # which Enquiries Jobs and Leads list: the ones whose field named here is the

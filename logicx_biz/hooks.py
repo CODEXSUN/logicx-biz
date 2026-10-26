@@ -136,12 +136,12 @@ page_js = {
 		"logicx_hr/page/mobile_dashboard/mobile_whatsapp/mobile_whatsapp.js",
 	],
 	# the Member Dashboard itself, in its own folder under the page: appended to
-	# member_dashboard.js, and to member_self_dashboard.js, which builds the
+	# member_dashboard.js, and to my_member_dashboard.js, which builds the
 	# same dashboard on the logged-in user's own Employee
 	"member-dashboard": [
 		"logicx_hr/page/member_dashboard/member_dashboard_view/member_dashboard_view.js",
 	],
-	"member-self-dashboard": [
+	"my-member-dashboard": [
 		"logicx_hr/page/member_dashboard/member_dashboard_view/member_dashboard_view.js",
 	],
 }

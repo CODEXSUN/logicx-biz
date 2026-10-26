@@ -3,9 +3,9 @@
 //
 // - the Member Dashboard (member-dashboard), on the member picked in its box
 //   and kept in the URL as ?member= -- MemberDashboard;
-// - the Member Self Dashboard (member-self-dashboard), on the member looking
-//   at it -- MemberSelfDashboard, the same dashboard with the member left to
-//   the server, which knows who is logged in.
+// - My Member Dashboard (my-member-dashboard), on the member looking at it --
+//   MyMemberDashboard, the same dashboard with the member left to the server,
+//   which knows who is logged in.
 //
 // Not a page of its own. hooks.py's page_js appends this file to both pages'
 // scripts when they are loaded, and each builds its dashboard out of the class
@@ -333,7 +333,7 @@
 		}
 
 		// the member's name on the bar. every answer says who the member is --
-		// on the Member Self Dashboard only the server knows -- and the
+		// on My Member Dashboard only the server knows -- and the
 		// Employee ID is kept for the name's tooltip.
 		set_member({ employee, employee_name }) {
 			this.show_member_name(employee ? employee_name : "—", employee);
@@ -553,9 +553,9 @@
 	// the Member Dashboard on the member looking at it: the Employee linked to
 	// the logged-in User. there is no box to pick one in, and nothing is kept in
 	// the URL -- get_tab is told of no member, and answers for the one logged in.
-	class MemberSelfDashboard extends MemberDashboard {
+	class MyMemberDashboard extends MemberDashboard {
 		title() {
-			return __("Member Self Dashboard");
+			return __("My Dashboard");
 		}
 
 		// "Member : <name>", filled in once the first tab has answered (see
@@ -596,7 +596,7 @@
 	// handed to the pages, which read them once the page's whole script has run
 	frappe.provide("logicx_biz.member_dashboard");
 	logicx_biz.member_dashboard.MemberDashboard = MemberDashboard;
-	logicx_biz.member_dashboard.MemberSelfDashboard = MemberSelfDashboard;
+	logicx_biz.member_dashboard.MyMemberDashboard = MyMemberDashboard;
 
 	/* ====================================================================== rows */
 

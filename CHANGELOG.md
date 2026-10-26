@@ -11,6 +11,22 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.101] - 2026-10-26
+
+### Database Changes
+
+- **Page `member-self-dashboard` replaced by `my-member-dashboard`** -- the
+  sync creates the new Page record, and patch
+  `delete_member_self_dashboard_page` (post_model_sync) deletes the stale one.
+
+### Changed
+
+- **The Member Self Dashboard is now My Member Dashboard** -- page
+  `my-member-dashboard` (was `member-self-dashboard`), titled **My Dashboard**
+  on the page and in the LogicX HR sidebar. Its files move to
+  `page/my_member_dashboard/`, and its class to
+  `logicx_biz.member_dashboard.MyMemberDashboard`.
+
 ## [0.1.100] - 2026-10-26
 
 ### Added

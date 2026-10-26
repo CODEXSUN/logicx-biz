@@ -7,9 +7,9 @@
  "modified": "2026-10-26 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "LogicX HR",
- "name": "member-self-dashboard",
+ "name": "my-member-dashboard",
  "owner": "Administrator",
- "page_name": "member-self-dashboard",
+ "page_name": "my-member-dashboard",
  "roles": [
   {
    "role": "System Manager"
@@ -25,5 +25,5 @@
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "Member Self Dashboard"
+ "title": "My Member Dashboard"
 }

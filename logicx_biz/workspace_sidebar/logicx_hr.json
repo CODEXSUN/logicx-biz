@@ -58,10 +58,10 @@
 		},
 		{
 			"idx": 8,
-			"label": "Member Self Dashboard",
+			"label": "My Dashboard",
 			"type": "Link",
 			"link_type": "Page",
-			"link_to": "member-self-dashboard"
+			"link_to": "my-member-dashboard"
 		},
 		{
 			"idx": 9,
