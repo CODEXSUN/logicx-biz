@@ -37,104 +37,111 @@
 		},
 		{
 			"idx": 5,
+			"label": "Leads",
+			"type": "Link",
+			"link_type": "Page",
+			"link_to": "leads"
+		},
+		{
+			"idx": 6,
 			"label": "Customer Dashboard",
 			"type": "Link",
 			"link_type": "Page",
 			"link_to": "customer-dashboard"
 		},
 		{
-			"idx": 6,
+			"idx": 7,
 			"label": "Member Dashboard",
 			"type": "Link",
 			"link_type": "Page",
 			"link_to": "member-dashboard"
 		},
 		{
-			"idx": 7,
+			"idx": 8,
 			"label": "Member Self Dashboard",
 			"type": "Link",
 			"link_type": "Page",
 			"link_to": "member-self-dashboard"
 		},
 		{
-			"idx": 8,
+			"idx": 9,
 			"label": "Enquiry",
 			"type": "Link",
 			"link_type": "DocType",
 			"link_to": "Enquiry"
 		},
 		{
-			"idx": 9,
+			"idx": 10,
 			"label": "Scheme",
 			"type": "Link",
 			"link_type": "DocType",
 			"link_to": "Scheme"
 		},
 		{
-			"idx": 10,
+			"idx": 11,
 			"label": "Renewal Remainder",
 			"type": "Link",
 			"link_type": "DocType",
 			"link_to": "Renewal Remainder"
 		},
 		{
-			"idx": 11,
+			"idx": 12,
 			"label": "Renewal Entry",
 			"type": "Link",
 			"link_type": "DocType",
 			"link_to": "Renewal Entry"
 		},
 		{
-			"idx": 12,
+			"idx": 13,
 			"label": "Notice",
 			"type": "Link",
 			"link_type": "DocType",
 			"link_to": "Notice"
 		},
 		{
-			"idx": 13,
+			"idx": 14,
 			"label": "Staff Request",
 			"type": "Link",
 			"link_type": "DocType",
 			"link_to": "Staff Request"
 		},
 		{
-			"idx": 14,
+			"idx": 15,
 			"label": "SOP",
 			"type": "Link",
 			"link_type": "DocType",
 			"link_to": "SOP"
 		},
 		{
-			"idx": 15,
+			"idx": 16,
 			"label": "Duty",
 			"type": "Link",
 			"link_type": "DocType",
 			"link_to": "Duty"
 		},
 		{
-			"idx": 16,
+			"idx": 17,
 			"label": "Duty Reporting",
 			"type": "Link",
 			"link_type": "DocType",
 			"link_to": "Duty Reporting"
 		},
 		{
-			"idx": 17,
+			"idx": 18,
 			"label": "Apparel Dashboard",
 			"type": "Link",
 			"link_type": "Page",
 			"link_to": "apparel-dashboard"
 		},
 		{
-			"idx": 18,
+			"idx": 19,
 			"label": "Loom Dashboard",
 			"type": "Link",
 			"link_type": "Page",
 			"link_to": "loom-dashboard"
 		},
 		{
-			"idx": 19,
+			"idx": 20,
 			"label": "Masters",
 			"type": "Section Break",
 			"icon": "file-text",
@@ -144,7 +151,7 @@
 			"child": 0
 		},
 		{
-			"idx": 22,
+			"idx": 23,
 			"label": "Mobile Contact",
 			"type": "Link",
 			"link_type": "DocType",
@@ -152,7 +159,7 @@
 			"child": 1
 		},
 		{
-			"idx": 20,
+			"idx": 21,
 			"label": "Enquiry Group",
 			"type": "Link",
 			"link_type": "DocType",
@@ -160,7 +167,7 @@
 			"child": 1
 		},
 		{
-			"idx": 21,
+			"idx": 22,
 			"label": "Enquiry Status",
 			"type": "Link",
 			"link_type": "DocType",
@@ -168,7 +175,7 @@
 			"child": 1
 		},
 		{
-			"idx": 23,
+			"idx": 24,
 			"label": "Reports",
 			"type": "Section Break",
 			"icon": "file-text",
@@ -178,7 +185,7 @@
 			"child": 0
 		},
 		{
-			"idx": 24,
+			"idx": 25,
 			"label": "Enquiry List-In wise Status",
 			"type": "Link",
 			"link_type": "Report",
@@ -186,7 +193,7 @@
 			"child": 1
 		},
 		{
-			"idx": 25,
+			"idx": 26,
 			"label": "Enquiry Owner wise Status",
 			"type": "Link",
 			"link_type": "Report",

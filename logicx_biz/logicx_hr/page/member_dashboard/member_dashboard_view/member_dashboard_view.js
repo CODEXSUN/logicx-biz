@@ -42,7 +42,7 @@
 				{ id: "title", name: __("Title"), width: 180, stretch: true },
 				{ id: "customer_name", name: __("Customer"), width: 200 },
 				{ id: "group", name: __("List in"), width: 125 },
-				{ id: "created_by_name", name: __("Created By"), width: 200 },
+				{ id: "created_by_name", name: __("Lead By"), width: 200 },
 				{ id: "status", name: __("Status"), width: 125 },
 			],
 		},

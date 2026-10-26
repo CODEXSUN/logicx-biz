@@ -11,6 +11,29 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.99] - 2026-10-26
+
+### Added
+
+- **Leads** page (`leads`, `LogicX HR`; System Manager, TM Admin, TM User), in
+  the LogicX HR sidebar just below Members: the Enquiries, newest first, up to
+  500, with the closed ones (a Status in the Closed group) left out until
+  **Show Closed** is ticked. Columns Q#, Date, Title, Customer, List in, Lead
+  By, Assigned To and Status. Boxes above the list narrow it: **Q#** (the
+  Enquiry itself; a bare number is the Q-series one, `58` being `Q58`),
+  **Title** (matching anywhere in it, as you type), **Mobile** (that number,
+  once it is 10 digits; anything short of that narrows nothing), **Date**,
+  **Customer**, **List in**, **Lead By**, **Assigned To** and **Status** (the
+  one picked), and **Status Group** (the Statuses in it; its options are
+  Enquiry Status's own, and the Status box then offers only that group's
+  Statuses). A Status or Status Group picked is listed whether Show Closed is
+  ticked or not. Every box and Show Closed is kept in the URL (`?enquiry=`,
+  `?date=`, `?title=`, `?mobile=`, `?customer=`, `?list_in=`, `?lead_by=`,
+  `?assigned_to=`, `?status_group=`, `?status=`, `?show_closed=1`). A click on
+  a row opens the Mobile Dashboard on the Enquiry's Mobile, or the Enquiry
+  itself when it has none (Ctrl / Cmd + click: in a new tab). Read with the
+  user's own permissions.
+
 ## [0.1.98] - 2026-10-26
 
 ### Added
