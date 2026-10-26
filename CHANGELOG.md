@@ -11,6 +11,20 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.100] - 2026-10-26
+
+### Added
+
+- **Duty tab on the Member Dashboard and Member Self Dashboard**, after Leads:
+  the member's Duties (the ones whose User is their Employee), by Index, up to
+  500. Columns Index, SOP Name, Department and Frequency. Two boxes above the
+  table narrow it to the **Department** and **Frequency** picked; Frequency's
+  options are SOP's own. A click on a row opens the **Duty Reporting** list
+  filtered by the member and that SOP, as
+  `/desk/duty-reporting?user=<Employee>&sop=<SOP>` (Ctrl / Cmd + click: in a
+  new tab). Read with the user's own permissions. `get_tab` takes the tab as
+  `duty`, with `department` and `frequency`.
+
 ## [0.1.99] - 2026-10-26
 
 ### Added

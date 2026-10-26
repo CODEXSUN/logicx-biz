@@ -1,5 +1,5 @@
-// The Member Dashboard: the Enquiries of one member -- an Employee -- in two
-// tabs, Jobs and Leads. Two pages build it:
+// The Member Dashboard: one member -- an Employee -- in three tabs: Jobs and
+// Leads, their Enquiries, and Duty, their SOPs. Two pages build it:
 //
 // - the Member Dashboard (member-dashboard), on the member picked in its box
 //   and kept in the URL as ?member= -- MemberDashboard;
@@ -17,25 +17,36 @@
 	const STYLE_ID = "logicx-member-dashboard-styles";
 	const TAB_METHOD = "logicx_biz.logicx_hr.member_dashboard.get_tab";
 
-	// where a click on a row goes: the Mobile Dashboard, opened on the
-	// Enquiry's Mobile, which that page reads off route_options or the URL's
-	// ?mobile= (see its apply_prefill)
+	// where a click on a Jobs or Leads row goes: the Mobile Dashboard, opened
+	// on the Enquiry's Mobile, which that page reads off route_options or the
+	// URL's ?mobile= (see its apply_prefill)
 	const MOBILE_DASHBOARD = "mobile-dashboard";
 
+	// where a click on a Duty row goes: this list, filtered by the member and
+	// the row's SOP (see open_duty_reporting)
+	const DUTY_REPORTING = "Duty Reporting";
+
+	// the box above the Jobs and Leads tables, unticked as the page opens: until
+	// it is ticked the tab leaves out the Enquiries whose Status is in the Closed
+	// group -- Won, Lost, Closed and Duplicate as seeded (see get_tab)
+	const show_closed = (label) => ({ key: "show_closed", label, fieldtype: "Check" });
+
 	// the tab strip, left to right. `key` is the tab get_tab is asked for (see
-	// TAB_FIELDS in member_dashboard.py), `show_closed` the label of the box
-	// above its table, and `columns` what that table shows -- `type` decides
-	// how a value is formatted, `align` where it sits in its cell (left unless
-	// given), and `width` is what a column is given, the one marked `stretch`
-	// taking whatever room the card has left over on top (see fit_columns).
-	// every row carries its Enquiry's Mobile too, though no column shows it: it
-	// is where a click on the row goes (see open_row).
+	// member_dashboard.py), `filters` the boxes above its table -- each sent to
+	// get_tab under its `key` (see filter_values) -- and `columns` what that
+	// table shows: `type` decides how a value is formatted, `align` where it
+	// sits in its cell (left unless given), and `width` is what a column is
+	// given, the one marked `stretch` taking whatever room the card has left
+	// over on top (see fit_columns). `open` is where a click on a row goes,
+	// handed the row and whether Ctrl / Cmd was held (see open_row): every row
+	// carries what that needs, though no column may show it.
 	const TABS = [
 		{
 			// the Enquiries assigned to the member
 			key: "jobs",
 			title: __("Jobs"),
-			show_closed: __("Show Closed Jobs"),
+			filters: [show_closed(__("Show Closed Jobs"))],
+			open: open_enquiry,
 			columns: [
 				{ id: "name", name: __("Q#"), width: 100 },
 				{ id: "date", name: __("Date"), type: "Date", width: 125, align: "center" },
@@ -50,7 +61,8 @@
 			// the Enquiries the member created
 			key: "leads",
 			title: __("Leads"),
-			show_closed: __("Show Closed Leads"),
+			filters: [show_closed(__("Show Closed Leads"))],
+			open: open_enquiry,
 			columns: [
 				{ id: "name", name: __("Q#"), width: 100 },
 				{ id: "date", name: __("Date"), type: "Date", width: 125, align: "center" },
@@ -59,6 +71,30 @@
 				{ id: "group", name: __("List in"), width: 125 },
 				{ id: "assigned_to_name", name: __("Assigned To"), width: 200 },
 				{ id: "status", name: __("Status"), width: 125 },
+			],
+		},
+		{
+			// the SOPs the member is assigned, as Duties, by Index
+			key: "duty",
+			title: __("Duty"),
+			filters: [
+				{ key: "department", label: __("Department"), fieldtype: "Link", options: "Department" },
+				// its options are SOP's own Frequency ones -- Daily, Weekly,
+				// Monthly and Yearly as shipped -- filled in once they are read
+				// (see load_options)
+				{
+					key: "frequency",
+					label: __("Frequency"),
+					fieldtype: "Select",
+					options_from: ["SOP", "frequency"],
+				},
+			],
+			open: open_duty_reporting,
+			columns: [
+				{ id: "index", name: __("Index"), width: 90, align: "right" },
+				{ id: "sop_name", name: __("SOP Name"), width: 260, stretch: true },
+				{ id: "department", name: __("Department"), width: 200 },
+				{ id: "frequency", name: __("Frequency"), width: 125 },
 			],
 		},
 	];
@@ -102,7 +138,7 @@
 			this.datatable_ready = ensure_datatable();
 
 			this.setup_member();
-			this.setup_show_closed();
+			this.setup_filters();
 			this.setup_events();
 			this.load();
 		}
@@ -252,12 +288,14 @@
 			TABS.forEach((tab) => this.load_tab(tab.key, { quiet }));
 		}
 
-		// one tab read afresh, on what its box says. `quiet` keeps what is on
+		// one tab read afresh, on what its boxes say. `quiet` keeps what is on
 		// screen until the answer replaces it, and leaves it alone if none comes.
 		// with no member picked there is nothing to read, and an answer still on
 		// its way for the one before is dropped all the same.
 		load_tab(key, { quiet = false } = {}) {
 			const seq = (this.seqs[key] = (this.seqs[key] || 0) + 1);
+			const filters = this.filter_values(key);
+			this.asked[key] = JSON.stringify(filters);
 			if (!this.member_picked()) {
 				this.set_count(key, "");
 				this.show_note(key, __("Select a member to begin."));
@@ -271,10 +309,7 @@
 			frappe
 				.call({
 					method: TAB_METHOD,
-					args: Object.assign(
-						{ tab: key, show_closed: this.show_closed[key].get_value() ? 1 : 0 },
-						this.member_args()
-					),
+					args: Object.assign({ tab: key }, filters, this.member_args()),
 				})
 				.then((r) => {
 					if (seq !== this.seqs[key]) return;
@@ -311,26 +346,69 @@
 				.attr("title", employee || null);
 		}
 
-		/* --------------------------------------------------------- show closed */
+		/* ------------------------------------------------------------- filters */
 
-		// the box above each tab's table, unticked as the page opens: until it
-		// is ticked the tab leaves out the Enquiries whose Status is in the
-		// Closed group -- Won, Lost, Closed and Duplicate as seeded (see get_tab).
-		// ticking it reads that one tab again -- the other has not moved.
-		setup_show_closed() {
-			this.show_closed = {};
+		// the boxes above each tab's table (see TABS). a change reads that one
+		// tab again -- the others have not moved -- once the box has settled on
+		// a value: a Link once it has checked what was picked, a Select as it is
+		// picked, a Check as it is ticked.
+		setup_filters() {
+			this.controls = {};
+			// what each tab was last read for, kept so a Link that fires its
+			// change again for the same pick does not read the tab twice (see
+			// on_filter_change)
+			this.asked = {};
 			TABS.forEach((tab) => {
-				this.show_closed[tab.key] = frappe.ui.form.make_control({
-					parent: this.$el.find(`[data-pane="${tab.key}"] .logicx-mbd-show-closed`),
-					df: {
-						fieldname: `show_closed_${tab.key}`,
-						label: tab.show_closed,
-						fieldtype: "Check",
-						change: () => this.load_tab(tab.key),
-					},
-					render_input: true,
+				this.controls[tab.key] = {};
+				tab.filters.forEach((filter) => {
+					this.controls[tab.key][filter.key] = frappe.ui.form.make_control({
+						parent: this.$el.find(`[data-pane="${tab.key}"] [data-filter="${filter.key}"]`),
+						df: {
+							fieldname: `${filter.key}_${tab.key}`,
+							label: filter.label,
+							// a box's label is off-screen, so the field names itself
+							// here; a Check keeps its own beside it
+							placeholder: filter.label,
+							fieldtype: filter.fieldtype,
+							options: filter.options,
+							change: () => this.on_filter_change(tab.key),
+						},
+						render_input: true,
+					});
+					if (filter.options_from) this.load_options(tab.key, filter);
 				});
 			});
+		}
+
+		// a Select's options, read off the field `options_from` names, so one
+		// added there is offered here too
+		load_options(key, filter) {
+			const [doctype, fieldname] = filter.options_from;
+			frappe.model.with_doctype(doctype, () => {
+				const field = frappe.meta.get_docfield(doctype, fieldname);
+				const options = String((field && field.options) || "")
+					.split("\n")
+					.filter(Boolean);
+				const control = this.controls[key][filter.key];
+				control.df.options = ["", ...options];
+				control.set_input(control.value || "");
+			});
+		}
+
+		on_filter_change(key) {
+			if (JSON.stringify(this.filter_values(key)) !== this.asked[key]) this.load_tab(key);
+		}
+
+		// what a tab's boxes say, as get_tab is asked by them: a Check 1 or 0,
+		// any other the value it last settled on -- so a Link still being typed
+		// in is read as it was before -- or "" for none
+		filter_values(key) {
+			const values = {};
+			TABS.find((tab) => tab.key === key).filters.forEach((filter) => {
+				const value = this.controls[key][filter.key].value;
+				values[filter.key] = filter.fieldtype === "Check" ? (value ? 1 : 0) : String(value || "").trim();
+			});
+			return values;
 		}
 
 		/* ---------------------------------------------------------------- tabs */
@@ -340,10 +418,10 @@
 				this.activate_tab($(e.currentTarget).attr("data-tab"));
 			});
 
-			// a row is an Enquiry, and a click opens the Mobile Dashboard on its
-			// Mobile -- in a new browser tab with Ctrl / Cmd held, as a link would.
-			// only body rows carry a row index: the header and the inline filter
-			// row above them are the table's own.
+			// a click on a row opens what its tab opens (see TABS) -- in a new
+			// browser tab with Ctrl / Cmd held, as a link would. only body rows
+			// carry a row index: the header and the inline filter row above them
+			// are the table's own.
 			this.$el.on("click", ".logicx-mbd-card-body .dt-row[data-row-index]", (e) => {
 				const $row = $(e.currentTarget);
 				this.open_row(
@@ -373,24 +451,12 @@
 
 		// the row's index is datatable's own, which stays with the row however
 		// the table is sorted or filtered, so it reads straight off the rows the
-		// table was built from. an Enquiry with no Mobile -- one from before
-		// Mobile was mandatory -- has no Mobile Dashboard to open, and opens
-		// itself instead.
+		// table was built from
 		open_row(key, index, in_new_tab) {
+			const tab = TABS.find((entry) => entry.key === key);
 			const result = this.results[key];
 			const row = result && result.rendered ? result.rows[index] : null;
-			if (!row) return;
-
-			if (!row.mobile) {
-				if (in_new_tab) window.open(frappe.utils.get_form_link("Enquiry", row.name), "_blank");
-				else frappe.set_route("Form", "Enquiry", row.name);
-				return;
-			}
-			if (in_new_tab) {
-				window.open(mobile_dashboard_url(row.mobile), "_blank");
-				return;
-			}
-			frappe.set_route(MOBILE_DASHBOARD, { mobile: row.mobile });
+			if (tab && row) tab.open(row, in_new_tab);
 		}
 
 		/* -------------------------------------------------------------- tables */
@@ -518,8 +584,9 @@
 		}
 
 		// back on the page -- from the Mobile Dashboard a row opened, say, where
-		// a job may have been closed or handed on -- so what it lists may be out
-		// of date. the first show is the page opening, already being read.
+		// a job may have been closed or handed on, or a Duty assigned -- so what
+		// it lists may be out of date. the first show is the page opening,
+		// already being read.
 		on_show() {
 			if (this.shown) this.load({ quiet: true });
 			this.shown = true;
@@ -530,6 +597,41 @@
 	frappe.provide("logicx_biz.member_dashboard");
 	logicx_biz.member_dashboard.MemberDashboard = MemberDashboard;
 	logicx_biz.member_dashboard.MemberSelfDashboard = MemberSelfDashboard;
+
+	/* ====================================================================== rows */
+
+	// a Jobs or Leads row is an Enquiry: the Mobile Dashboard on its Mobile. an
+	// Enquiry with no Mobile -- one from before Mobile was mandatory -- has no
+	// Mobile Dashboard to open, and opens itself instead.
+	function open_enquiry(row, in_new_tab) {
+		if (!row.mobile) {
+			if (in_new_tab) window.open(frappe.utils.get_form_link("Enquiry", row.name), "_blank");
+			else frappe.set_route("Form", "Enquiry", row.name);
+			return;
+		}
+		if (in_new_tab) {
+			window.open(mobile_dashboard_url(row.mobile), "_blank");
+			return;
+		}
+		frappe.set_route(MOBILE_DASHBOARD, { mobile: row.mobile });
+	}
+
+	// a Duty row is one SOP of the member's: the Duty Reporting list on what
+	// they have reported against it, filtered by both -- their Employee as User,
+	// and the SOP. route_options cannot ride along into a fresh document, so a
+	// new browser tab is sent them as ?user=&sop=, which the list reads too.
+	// either way the list's own default filter, on the logged-in user's
+	// Employee, stands aside for the User asked for (see
+	// public/js/user_employee_default_filter.js).
+	function open_duty_reporting(row, in_new_tab) {
+		const filters = { user: row.user, sop: row.sop };
+		if (in_new_tab) {
+			const list_url = frappe.router.make_url([frappe.router.slug(DUTY_REPORTING)]);
+			window.open(`${list_url}?${new URLSearchParams(filters)}`, "_blank");
+			return;
+		}
+		frappe.set_route("List", DUTY_REPORTING, filters);
+	}
 
 	/* ==================================================================== markup */
 
@@ -548,7 +650,7 @@
 	}
 
 	// each tab carries a count of its rows once they are in (see set_tab), and
-	// its pane the Show Closed box above the table (see setup_show_closed)
+	// its pane its boxes above the table (see setup_filters)
 	function render_tabcard() {
 		const buttons = TABS.map(
 			(tab, i) => `
@@ -562,7 +664,7 @@
 		const panes = TABS.map(
 			(tab, i) => `
 			<div class="logicx-mbd-tabpane${i === 0 ? "" : " hidden"}" data-pane="${tab.key}">
-				<div class="logicx-mbd-show-closed"></div>
+				<div class="logicx-mbd-filters">${render_filters(tab)}</div>
 				<div class="logicx-mbd-card-body"></div>
 			</div>`
 		).join("");
@@ -572,6 +674,18 @@
 				<div class="logicx-mbd-tabnav">${buttons}</div>
 				${panes}
 			</div>`;
+	}
+
+	// a place for each of the tab's boxes; a Link or Select is a box that reads
+	// from its placeholder, a Check keeps its label beside it
+	function render_filters(tab) {
+		return tab.filters
+			.map(
+				(filter) => `
+				<div class="logicx-mbd-filter${filter.fieldtype === "Check" ? "" : " is-box"}"
+					data-filter="${filter.key}"></div>`
+			)
+			.join("");
 	}
 
 	function note_html(text, is_error) {
@@ -627,7 +741,7 @@
 	}
 
 	// every value is escaped on its way in: the rows are whatever was typed
-	// into the Enquiries they come from
+	// into the Enquiries and SOPs they come from
 	function format_cell(value, col) {
 		if (value === null || value === undefined || value === "") return "";
 		if (col.type === "Date") return frappe.utils.escape_html(frappe.datetime.str_to_user(value));
@@ -707,10 +821,11 @@
 			display: none;
 		}
 
-		/* the box reads plainly from its placeholder, so its label is dropped
-		   from the layout. it stays in the markup, off-screen, so the input
-		   keeps an accessible name. */
-		.logicx-mbd-search .control-label {
+		/* the member box, and a tab's Link or Select, read plainly from their
+		   placeholders, so their labels are dropped from the layout. they stay
+		   in the markup, off-screen, so each input keeps an accessible name. */
+		.logicx-mbd-search .control-label,
+		.logicx-mbd-filter.is-box .control-label {
 			position: absolute;
 			width: 1px;
 			height: 1px;
@@ -802,21 +917,32 @@
 			padding-top: var(--padding-md);
 		}
 
-		/* the Show Closed box, just above the table. frappe's control markup
-		   ships its own margins and an empty help line, which have nothing to
-		   space here: the box's own padding does that. */
-		.logicx-mbd-show-closed {
+		/* a tab's boxes, just above its table, in a row that wraps on a narrow
+		   screen. frappe's control markup ships its own margins and an empty
+		   help line, which have nothing to space here: the row's own padding
+		   and gap do that. */
+		.logicx-mbd-filters {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: var(--margin-sm) var(--margin-md);
 			padding-bottom: var(--padding-sm);
 		}
 
-		.logicx-mbd-show-closed .frappe-control,
-		.logicx-mbd-show-closed .form-group,
-		.logicx-mbd-show-closed .checkbox {
+		.logicx-mbd-filters .frappe-control,
+		.logicx-mbd-filters .form-group,
+		.logicx-mbd-filters .checkbox {
 			margin: 0;
 		}
 
-		.logicx-mbd-show-closed .help-box {
+		.logicx-mbd-filters .help-box {
 			display: none;
+		}
+
+		/* a Link or Select, wide enough for a Department's name */
+		.logicx-mbd-filter.is-box {
+			flex: 0 1 220px;
+			min-width: 160px;
 		}
 
 		/* the datatable brings its own padding, so its body has none, and is
@@ -832,7 +958,7 @@
 			border: none;
 		}
 
-		/* every body row opens the Mobile Dashboard on its number (see open_row) */
+		/* every body row opens what its tab opens (see open_row) */
 		.logicx-mbd-card-body .dt-row[data-row-index] {
 			cursor: pointer;
 		}

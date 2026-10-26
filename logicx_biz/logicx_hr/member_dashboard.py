@@ -6,13 +6,17 @@ which two pages build:
 - the Member Self Dashboard (page/member_self_dashboard), on the member looking
   at it: the Employee whose User is the one logged in.
 
-`get_tab` names the member and lists the Enquiries one of the dashboard's tabs
-holds for them -- Jobs, the ones assigned to them, or Leads, the ones they
-created -- newest first, with the closed ones (a Status in the Closed group)
-left out until the tab's "Show Closed" box is ticked.
+`get_tab` names the member and lists what one of the dashboard's tabs holds
+for them:
 
-The Enquiries are read through `frappe.get_list`, so a user sees only what
-their own permissions allow, whoever the member is.
+- Jobs, the Enquiries assigned to them, or Leads, the ones they created --
+  newest first, with the closed ones (a Status in the Closed group) left out
+  until the tab's "Show Closed" box is ticked;
+- Duty, the SOPs assigned to them as Duties -- by Index, narrowed by the tab's
+  Department and Frequency boxes.
+
+The rows are read through `frappe.get_list`, so a user sees only what their own
+permissions allow, whoever the member is.
 """
 
 import frappe
@@ -24,7 +28,7 @@ from frappe.utils import escape_html
 # none, and is answered for the logged-in user's own Employee.
 PAGE_ROLES = ("System Manager", "TM Admin")
 
-# which Enquiries each tab lists: the ones whose field named here is the
+# which Enquiries Jobs and Leads list: the ones whose field named here is the
 # member. keyed as the page's TABS are.
 TAB_FIELDS = {
 	# the work handed to the member
@@ -39,8 +43,14 @@ TAB_FIELDS = {
 # patches/create_enquiry_statuses.py), and any put in it since
 CLOSED_GROUP = "Closed"
 
-# newest first, on both tabs
+# newest first, on Jobs and Leads
 ORDER_BY = "creation desc"
+
+# the tab that lists the member's Duties: the ones whose User is the member
+DUTY_TAB = "duty"
+
+# by Index, the order the member's Duties are numbered in
+DUTY_ORDER_BY = "index asc"
 
 # the most rows a tab lists. one more is read, so the page can tell a tab cut
 # short here from one that happens to hold exactly this many.
@@ -64,18 +74,40 @@ ENQUIRY_FIELDS = (
 	"mobile",
 )
 
+# what the Duty tab reads, as ENQUIRY_FIELDS is read. SOP Name, Department and
+# Frequency are the SOP's, fetched onto the Duty.
+DUTY_FIELDS = (
+	"name",
+	"index",
+	"sop_name",
+	"department",
+	"frequency",
+	# no columns of their own, but where a click on the row goes: the Duty
+	# Reporting list, filtered by both
+	"user",
+	"sop",
+)
+
 
 @frappe.whitelist()
-def get_tab(tab: str, show_closed: bool = False, member: str | None = None) -> dict:
-	"""The member, and the Enquiries `tab` lists for them.
+def get_tab(
+	tab: str,
+	show_closed: bool = False,
+	member: str | None = None,
+	department: str | None = None,
+	frequency: str | None = None,
+) -> dict:
+	"""The member, and the rows `tab` lists for them.
 
 	The member is `member`, an Employee ID, when one is named -- by PAGE_ROLES
 	only -- and the Employee linked to the logged-in User when none is.
 	`employee` is None, and nothing else is read, when there is no such
-	Employee. Otherwise `rows` holds the tab's Enquiries -- the closed ones only
-	with `show_closed` -- and `more` says they were cut at ROW_LIMIT.
+	Employee. Otherwise `rows` holds the tab's rows -- for Jobs and Leads the
+	Enquiries, the closed ones only with `show_closed`; for Duty the Duties, only
+	those of `department` and `frequency` when given -- and `more` says they
+	were cut at ROW_LIMIT. Each tab reads only its own boxes' arguments.
 	"""
-	if tab not in TAB_FIELDS:
+	if tab not in TAB_FIELDS and tab != DUTY_TAB:
 		frappe.throw(_("Unknown tab: {0}").format(escape_html(tab)))
 
 	if member:
@@ -86,7 +118,21 @@ def get_tab(tab: str, show_closed: bool = False, member: str | None = None) -> d
 	if not employee:
 		return {"employee": None}
 
-	filters = {TAB_FIELDS[tab]: employee.name}
+	if tab == DUTY_TAB:
+		rows = _duties(employee.name, department, frequency)
+	else:
+		rows = _enquiries(tab, employee.name, show_closed)
+	return {
+		"employee": employee.name,
+		"employee_name": employee.employee_name or employee.name,
+		"rows": rows[:ROW_LIMIT],
+		"more": len(rows) > ROW_LIMIT,
+	}
+
+
+def _enquiries(tab: str, employee: str, show_closed: bool) -> list:
+	"""Up to ROW_LIMIT + 1 of the Enquiries Jobs or Leads lists for `employee`."""
+	filters = {TAB_FIELDS[tab]: employee}
 	if not show_closed:
 		closed = _closed_statuses()
 		# no Status in the group, nothing to leave out
@@ -100,12 +146,28 @@ def get_tab(tab: str, show_closed: bool = False, member: str | None = None) -> d
 		order_by=ORDER_BY,
 		limit=ROW_LIMIT + 1,
 	)
-	return {
-		"employee": employee.name,
-		"employee_name": employee.employee_name or employee.name,
-		"rows": _enquiry_view(rows[:ROW_LIMIT]),
-		"more": len(rows) > ROW_LIMIT,
-	}
+	return _enquiry_view(rows)
+
+
+def _duties(employee: str, department: str | None, frequency: str | None) -> list:
+	"""Up to ROW_LIMIT + 1 of `employee`'s Duties, narrowed to `department` and
+	`frequency` when given. Each is matched on the Duty's own copy of its SOP's.
+	"""
+	filters = {"user": employee}
+	department = (department or "").strip()
+	frequency = (frequency or "").strip()
+	if department:
+		filters["department"] = department
+	if frequency:
+		filters["frequency"] = frequency
+
+	return frappe.get_list(
+		"Duty",
+		filters=filters,
+		fields=list(DUTY_FIELDS),
+		order_by=DUTY_ORDER_BY,
+		limit=ROW_LIMIT + 1,
+	)
 
 
 def _current_employee() -> frappe._dict | None:
