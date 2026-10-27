@@ -55,8 +55,8 @@
 			"in_filter": 1
 		},
 		{
-			"label": "Check Status",
-			"fieldname": "check_status",
+			"label": "Check-State",
+			"fieldname": "check_state",
 			"fieldtype": "Select",
 			"options": "Check-In\nCheck-Out",
 			"default": "Check-In",

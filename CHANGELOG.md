@@ -15,15 +15,15 @@ data for it: what the model sync does, and what each patch does.
 
 ### Database Changes
 
-- **New `check_status` column on `tabJob Location`** (Select: Check-In /
+- **New `check_state` column on `tabJob Location`** (Select: Check-In /
   Check-Out, default Check-In). The sync adds it with that default, so the
   existing Job Locations read Check-In.
 
 ### Added
 
-- **Job Location: Check Status** -- Check-In or Check-Out, mandatory, just
+- **Job Location: Check-State** -- Check-In or Check-Out, mandatory, just
   after Employee. A new Job Location starts at Check-In, as does one created
-  over REST without `check_status`.
+  over REST without `check_state`.
 
 ## [0.1.101] - 2026-10-26
 
