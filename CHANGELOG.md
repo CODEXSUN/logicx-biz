@@ -11,6 +11,20 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.102] - 2026-10-27
+
+### Database Changes
+
+- **New `check_status` column on `tabJob Location`** (Select: Check-In /
+  Check-Out, default Check-In). The sync adds it with that default, so the
+  existing Job Locations read Check-In.
+
+### Added
+
+- **Job Location: Check Status** -- Check-In or Check-Out, mandatory, just
+  after Employee. A new Job Location starts at Check-In, as does one created
+  over REST without `check_status`.
+
 ## [0.1.101] - 2026-10-26
 
 ### Database Changes

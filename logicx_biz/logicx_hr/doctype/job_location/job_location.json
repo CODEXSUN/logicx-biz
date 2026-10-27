@@ -55,6 +55,14 @@
 			"in_filter": 1
 		},
 		{
+			"label": "Check Status",
+			"fieldname": "check_status",
+			"fieldtype": "Select",
+			"options": "Check-In\nCheck-Out",
+			"default": "Check-In",
+			"reqd": 1
+		},
+		{
 			"fieldname": "column_break_1",
 			"fieldtype": "Column Break"
 		},
