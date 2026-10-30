@@ -199,6 +199,30 @@
 			"link_type": "Report",
 			"link_to": "Enquiry Owner wise Status",
 			"child": 1
+		},
+		{
+			"idx": 27,
+			"label": "Enquiry Role Report",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Enquiry Role Report",
+			"child": 1
+		},
+		{
+			"idx": 28,
+			"label": "Enquiry Role Monthly Report",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Enquiry Role Monthly Report",
+			"child": 1
+		},
+		{
+			"idx": 29,
+			"label": "Enquiry Role Daily Report",
+			"type": "Link",
+			"link_type": "Report",
+			"link_to": "Enquiry Role Daily Report",
+			"child": 1
 		}
 	]
 }

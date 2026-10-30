@@ -1,0 +1,98 @@
+{
+	"doctype": "DocType",
+	"name": "Enquiry Daily Role",
+	"module": "LogicX HR",
+	"autoname": "EDR.#",
+	"is_submittable": 0,
+	"title_field": "enquiry",
+	"sort_field": "date",
+	"sort_order": "DESC",
+	"grid_page_length": 50,
+	"fields": [
+		{
+			"label": "Enquiry",
+			"fieldname": "enquiry",
+			"fieldtype": "Link",
+			"options": "Enquiry",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Date",
+			"fieldname": "date",
+			"fieldtype": "Date",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"fieldname": "column_break_1",
+			"fieldtype": "Column Break"
+		},
+		{
+			"label": "Role",
+			"fieldname": "role",
+			"fieldtype": "Select",
+			"options": "Lead Creator\nJob Assignee",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		},
+		{
+			"label": "Member",
+			"fieldname": "member",
+			"fieldtype": "Link",
+			"options": "Employee",
+			"reqd": 1,
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"in_filter": 1
+		}
+	],
+	"permissions": [
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM User",
+			"read": 1,
+			"create": 0,
+			"write": 0,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 0,
+			"print": 1,
+			"share": 0,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		},
+		{
+			"if_owner": 0,
+			"permlevel": 0,
+			"role": "TM Admin",
+			"read": 1,
+			"create": 0,
+			"write": 0,
+			"delete": 0,
+			"select": 1,
+			"report": 1,
+			"export": 1,
+			"email": 0,
+			"print": 1,
+			"share": 0,
+			"import": 0,
+			"mask": 0,
+			"submit": 0,
+			"cancel": 0,
+			"amend": 0
+		}
+	]
+}

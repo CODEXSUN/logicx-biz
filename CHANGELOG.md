@@ -11,6 +11,37 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.103] - 2026-10-30
+
+### Database Changes
+
+- **New table `tabEnquiry Daily Role`** (Enquiry, Date, Role, Member), with a
+  unique index `unique_enquiry_date_role` on Enquiry + Date + Role.
+- **Patch `fill_enquiry_daily_roles`** (post_model_sync) fills it from the
+  existing Enquiries: on each Enquiry's Date, a Lead Creator row for its Lead
+  By and a Job Assignee row for its current Assigned To; an empty one gives no
+  row. Rows already there are left alone, so it is safe to run again.
+
+### Added
+
+- **Enquiry Daily Role** -- an Enquiry's Member per Date and Role, Role being
+  **Lead Creator** or **Job Assignee**. Kept by the Enquiry, not by hand: each
+  insert or save merges Lead By (`user_employee`) as Lead Creator on the
+  Enquiry's Date, and Assigned To (`assigned_to_employee`) as Job Assignee on
+  the day of the save. That date's row is added for a new member, moved to a
+  changed one, and deleted when the field is emptied; a Job Assignee row of an
+  earlier day stays as it was. Deleting the Enquiry deletes all its rows. TM
+  User and TM Admin may read and report on it, not create, edit or delete it.
+- **Enquiry Role Report** -- Jobs and Leads per Year and Month, optionally for
+  one Member.
+- **Enquiry Role Monthly Report** -- Jobs and Leads per Date of a Year and
+  Month (both required, this month by default), optionally for one Member.
+- **Enquiry Role Daily Report** -- for a Date (required, today by default),
+  optionally one Member: a row per Employee and Enquiry, the Enquiry under
+  **Job** when the Employee is its Job Assignee, under **Lead** when its Lead
+  Creator.
+- All three reports in the LogicX HR sidebar, under Reports.
+
 ## [0.1.102] - 2026-10-27
 
 ### Database Changes

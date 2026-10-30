@@ -27,3 +27,4 @@ logicx_biz.patches.set_empty_enquiry_status_to_new
 logicx_biz.patches.rename_sop_item_field_to_sop
 logicx_biz.patches.create_enquiry_status_duplicate
 logicx_biz.patches.delete_member_self_dashboard_page
+logicx_biz.patches.fill_enquiry_daily_roles
