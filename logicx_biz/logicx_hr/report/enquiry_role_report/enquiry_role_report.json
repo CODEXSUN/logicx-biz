@@ -6,7 +6,7 @@
 	"module": "LogicX HR",
 	"ref_doctype": "Enquiry Daily Role",
 	"is_standard": "Yes",
-	"add_total_row": 1,
+	"add_total_row": 0,
 	"prepared_report": 0,
 	"letter_head": null,
 	"columns": [],

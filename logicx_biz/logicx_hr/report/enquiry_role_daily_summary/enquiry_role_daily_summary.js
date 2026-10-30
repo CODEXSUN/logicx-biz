@@ -1,4 +1,4 @@
-frappe.query_reports["Enquiry Role Monthly Report"] = {
+frappe.query_reports["Enquiry Role Daily Summary"] = {
 	filters: [
 		{
 			fieldname: "year",

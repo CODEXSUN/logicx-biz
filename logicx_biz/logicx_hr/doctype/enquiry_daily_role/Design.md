@@ -27,15 +27,18 @@ Enquiry:
 	on delete:
 		delete 'Enquiry Daily Role' where Enquiry = this.name
 
-add report 'Enquiry Role Report'
+add report 'Enquiry Role Monthly Summary'
 	filter: Member (Linke:Employee, optional)
 	columns: Year | Month | Jobs | Leads
 
-add report 'Enquiry Role Monthly Report'
+add report 'Enquiry Role Daily Summary'
 	filter: Year (required, default:Today.Year) | Month (required, default:Today.Month) | Member (Linke:Employee, optional)
 	columns: Date | Jobs | Leads
 
-add report 'Enquiry Role Daily Report'
-	filter: Date (required, default:Today) | Member (Linke:Employee, optional)
-	columns: Employee | Job | Lead  (show Enquiry id/name in Job or Lead base on Role 'Job Assignee' or 'Lead Creator' respectively
+add report 'Enquiry Role Report'
+	filter: Date (default:Today) | Member (Linke:Employee)
+			* Make either Date OR Member is required. Do not fetch if both are not set.
+	columns: Date | Member | Job | Assigned To | Lead | Lead By | List in | Status | Title
+	            * show Enquiry id/name in Job or Lead base on Role 'Job Assignee' or 'Lead Creator' respectively.
+	            * show 'Assigned To' or 'Lead By' base on Role 'Job Assignee' or 'Lead Creator' respectively.
 ```

@@ -1,7 +1,7 @@
 {
 	"doctype": "Report",
-	"name": "Enquiry Role Monthly Report",
-	"report_name": "Enquiry Role Monthly Report",
+	"name": "Enquiry Role Daily Summary",
+	"report_name": "Enquiry Role Daily Summary",
 	"report_type": "Script Report",
 	"module": "LogicX HR",
 	"ref_doctype": "Enquiry Daily Role",

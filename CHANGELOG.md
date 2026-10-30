@@ -32,14 +32,16 @@ data for it: what the model sync does, and what each patch does.
   changed one, and deleted when the field is emptied; a Job Assignee row of an
   earlier day stays as it was. Deleting the Enquiry deletes all its rows. TM
   User and TM Admin may read and report on it, not create, edit or delete it.
-- **Enquiry Role Report** -- Jobs and Leads per Year and Month, optionally for
-  one Member.
-- **Enquiry Role Monthly Report** -- Jobs and Leads per Date of a Year and
+- **Enquiry Role Monthly Summary** -- Jobs and Leads per Year and Month,
+  optionally for one Member.
+- **Enquiry Role Daily Summary** -- Jobs and Leads per Date of a Year and
   Month (both required, this month by default), optionally for one Member.
-- **Enquiry Role Daily Report** -- for a Date (required, today by default),
-  optionally one Member: a row per Employee and Enquiry, the Enquiry under
-  **Job** when the Employee is its Job Assignee, under **Lead** when its Lead
-  Creator.
+- **Enquiry Role Report** -- a row per Date, Member and Enquiry, for a Date
+  (today by default), a Member, or both: with neither, both turn mandatory and
+  nothing is fetched. Columns Date, Member, Job, Assigned To, Lead, Lead By,
+  List in, Status and Title. The Enquiry goes under **Job**, with its Assigned
+  To, when the Member is its Job Assignee, and under **Lead**, with its Lead
+  By, when its Lead Creator; List in, Status and Title are the Enquiry's.
 - All three reports in the LogicX HR sidebar, under Reports.
 
 ## [0.1.102] - 2026-10-27
