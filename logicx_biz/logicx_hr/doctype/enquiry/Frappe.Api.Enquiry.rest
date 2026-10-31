@@ -190,6 +190,46 @@ Authorization: token {{token}}
 
 
 
+### Enquiry with its Job Activity, newest first (0.1.104; logicx-front's Enquiry page).
+GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.enquiry_view.get_enquiry?name=Q58
+Authorization: token {{token}}
+
+# {
+#   "data": {
+#     "enquiry": {
+#       "name": "Q58",
+#       "date": "2026-10-30",
+#       "title": "Laptop not booting",
+#       "customer": "CUST-00007",
+#       "group": "Stores",
+#       "user_employee": "HR-EMP-00006",
+#       "assigned_to_employee": "HR-EMP-00003",
+#       "status": "Open",
+#       "mobile": "9876543210",
+#       "customer_name": "Acme Traders",
+#       "created_by_name": "Karthik D",
+#       "assigned_to_name": "Ravi K",
+#       "details": "Customer says it stopped after an update.\nCall before visiting."
+#     },
+#     "activity": {
+#       "rows": [
+#         {
+#           "name": "JOBACT231",
+#           "creation": "2026-10-31 10:05:12.345678",
+#           "owner": "karthik@techmedia.in",
+#           "job_activity_type": "Job Comments",
+#           "text": "Called, will visit at 4.",
+#           "owner_name": "Karthik D"
+#         }
+#       ],
+#       "more": false
+#     }
+#   }
+# }
+# An Enquiry that does not exist, or that the user may not read: 404, DoesNotExistError.
+
+
+
 ### Create Enquiry
 POST {{baseUrl}}/api/v2/document/Enquiry
 Authorization: token {{token}}

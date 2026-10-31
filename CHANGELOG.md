@@ -11,6 +11,22 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.104] - 2026-10-31
+
+### Added
+
+- **`enquiry_view.get_enquiry`** (`name`) -- one Enquiry and the activity
+  posted on it, for logicx-front's Enquiry page (`/crm/enquiry/<Q#>`). The
+  Enquiry comes as Jobs and Leads list it (Customer, Lead By and Assigned To by
+  name, and its Mobile), with its Enquiry Details as `details`, plain text line
+  for line. Its **Job Activity** comes newest first, up to 500 with `more` set
+  past that: each line with its details as `text`, who posted it by name as
+  `owner_name`, and what posted it as `job_activity_type` (Job Comments, Job
+  Execution, Job Estimate, Job Location, Job Attachment, or empty for one
+  entered by hand). Read with the user's own permissions: an Enquiry the user
+  may not read answers 404 (DoesNotExistError), as one that does not exist.
+  The page posts its comments as Job Comments over REST, as before.
+
 ## [0.1.103] - 2026-10-30
 
 ### Database Changes
