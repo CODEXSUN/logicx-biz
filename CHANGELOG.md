@@ -15,13 +15,18 @@ data for it: what the model sync does, and what each patch does.
 
 ### Changed
 
-- **`enquiry_view.get_enquiry` answers `execution` too** -- the logged-in
-  user's own Running Job Execution on the Enquiry (`get_current_employee`),
-  for the Enquiry page's Check-In and Check-Out: its `name`, `date`,
-  `start_time` and `site`, and the Employee's name as `employee_name`. The
-  newest, should there be more than one. `null` when there is none, when no
-  Employee is linked to the user, or when the user may not read Job
-  Executions. Read through `frappe.get_list`, with the user's permissions.
+- **`enquiry_view.get_enquiry` answers `execution` and `others` too** -- who
+  is checked in on the Enquiry, for the Enquiry page's Check-In and
+  Check-Out, its list of who else is checked in, and its warning of parallel
+  check-ins. `execution` is the logged-in user's own Running Job Execution on
+  it (`get_current_employee`): its `name`, `date`, `start_time` and `site`,
+  and the Employee's name as `employee_name`; the newest, should there be
+  more than one; `null` when there is none, or when no Employee is linked to
+  the user. `others` holds other Employees' Running Job Executions on it,
+  each with its `employee` besides: `rows`, newest first, and `more`, which
+  says they were cut at 500 -- every one, when no Employee is linked to the
+  user. Both are empty when the user may not read Job Executions. Read
+  through `frappe.get_list`, with the user's permissions.
 
 ## [0.1.105] - 2026-11-02
 

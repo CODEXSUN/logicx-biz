@@ -191,8 +191,8 @@ Authorization: token {{token}}
 
 
 ### Enquiry with its Job Activity, newest first (0.1.104; logicx-front's Enquiry page),
-	# and the logged-in user's own Running Job Execution on it (0.1.106): null when there is none,
-	# or when no Employee is linked to the user.
+	# and its Running Job Executions (0.1.106): the logged-in user's own as "execution" (null when
+	# there is none, or when no Employee is linked to the user), and other Employees' in "others".
 GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.enquiry_view.get_enquiry?name=Q58
 Authorization: token {{token}}
 
@@ -232,6 +232,19 @@ Authorization: token {{token}}
 #       "start_time": "9:05:12.345678",
 #       "site": "On-site",
 #       "employee_name": "Ravi K"
+#     },
+#     "others": {
+#       "rows": [
+#         {
+#           "name": "JOBEXE9",
+#           "date": "2026-11-02",
+#           "start_time": "10:41:03.120004",
+#           "site": "In-house",
+#           "employee": "HR-EMP-00006",
+#           "employee_name": "Karthik D"
+#         }
+#       ],
+#       "more": false
 #     }
 #   }
 # }
