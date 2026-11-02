@@ -35,14 +35,21 @@ data for it: what the model sync does, and what each patch does.
     from the unsaved document it is called on (Job Type, Job ID and
     Employee), through `/api/v2/method/run_doc_method` with `"__islocal": 1`.
     Date and Start Time are the server's today and now, Site In-house unless
-    sent, and Status **Running**. Refused on one that exists already.
+    sent, and Status **Running**. Refused on one that exists already. The
+    Employee must be the logged-in user's own (`get_current_employee`), and is
+    taken as that when left out; another one, or a user with no Employee, is
+    refused (PermissionError, 403). Refused too while that Employee has a
+    Running Job Execution on the same Job Type + Job ID -- stop or cancel it
+    first. Running ones on other jobs do not count, so an employee can work
+    several jobs at once.
   - `stop_execution(action_details)` -- Stop Date and Stop Time the server's
     today and now, Status **Completed**.
   - `cancel_execution(cancel_details)` -- Stop Date and Stop Time cleared, so
     no Hours or Cost, Status **Cancelled**.
 
-  Stop and cancel take only a Running Job Execution, at
-  `/api/v2/document/Job Execution/<name>/method/...`, and refuse empty details
+  Stop and cancel take only a Running Job Execution, and only from the
+  Employee who started it (anyone else: PermissionError, 403), at
+  `/api/v2/document/Job Execution/<name>/method/...`. They refuse empty details
   ("Action Details is required." / "Cancel Details is required."), saving
   nothing. Each answers with the saved Job Execution in `docs`.
   `Frappe.Api.JobExecution.rest` has the examples, and its list reads the new

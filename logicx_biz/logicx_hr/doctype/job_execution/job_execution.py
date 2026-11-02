@@ -6,6 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cstr, flt, formatdate, format_time, get_time, get_timedelta, getdate, nowdate, nowtime
 
+from logicx_biz.logicx_hr.doctype.enquiry.enquiry import get_current_employee
 from logicx_biz.logicx_hr.doctype.job_activity.job_activity import add_job_activity
 
 STATUS_MESSAGE_TEMPLATES = {
@@ -49,9 +50,31 @@ class JobExecution(Document):
 		"""Start the job now: Running from the server's today / now.
 
 		Called on the unsaved document (Job Type, Job ID and Employee filled in), which is created here.
+		The Employee must be the logged-in user's own, with no Running Job Execution on the same job;
+		other jobs may run alongside.
 		"""
 		if not self.is_new():
 			frappe.throw(_("Job Execution {0} has already been started.").format(self.name))
+
+		current_employee = get_current_employee_id()
+		self.employee = self.employee or current_employee
+		if self.employee != current_employee:
+			frappe.throw(
+				_("You can only start a Job Execution for yourself ({0}).").format(current_employee),
+				frappe.PermissionError,
+			)
+
+		running = frappe.db.get_value(
+			"Job Execution",
+			{"employee": self.employee, "job_type": self.job_type, "job_id": self.job_id, "status": "Running"},
+			"name",
+		)
+		if running:
+			frappe.throw(
+				_("You have already started {0} {1} (Job Execution {2}). Stop or cancel it first.").format(
+					_(self.job_type), self.job_id, running
+				)
+			)
 
 		self.date = nowdate()
 		self.start_time = nowtime()
@@ -82,8 +105,14 @@ class JobExecution(Document):
 		self.save()
 
 	def check_running(self):
+		"""Stop and cancel: only a Running Job Execution, and only by the Employee who started it."""
 		if self.is_new() or self.status != "Running":
 			frappe.throw(_("Only a Running Job Execution can be stopped or cancelled."))
+		if self.employee != get_current_employee_id():
+			frappe.throw(
+				_("Only {0}, who started this Job Execution, can stop or cancel it.").format(self.employee),
+				frappe.PermissionError,
+			)
 
 	def on_update(self):
 		if self.has_value_changed("status"):
@@ -110,6 +139,14 @@ class JobExecution(Document):
 
 def combine_datetime(date, time) -> datetime:
 	return datetime.combine(getdate(date), get_time(time))
+
+
+def get_current_employee_id() -> str:
+	"""The logged-in user's Employee; a PermissionError when no Employee is linked to them."""
+	employee = get_current_employee()
+	if not employee:
+		frappe.throw(_("No Employee is linked to user {0}.").format(frappe.session.user), frappe.PermissionError)
+	return employee.name
 
 
 def get_required_text(value, label: str) -> str:
