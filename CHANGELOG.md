@@ -11,6 +11,56 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.105] - 2026-11-02
+
+### Database Changes
+
+- **New `tabJob Execution` columns** `site` (Select: In-house / On-site /
+  Remote, default In-house), `latitude` and `longitude` (Float, 7 decimals,
+  stored as `decimal(21,9)`), `stop_date` (Date), and `action_details` and
+  `cancel_details` (Long Text). The sync adds `site` with its default, so the
+  existing Job Executions read In-house, with coordinates 0. No patch: their
+  Hours stay as they are until each is saved again.
+
+### Added
+
+- **Job Execution: Site, Latitude, Longitude, Stop Date, Action Details and
+  Cancel Details**. The fields now run Job Type, Job ID, Enquiry, Employee,
+  Date, Start Time, Site, Latitude, Longitude, Stop Date, Stop Time, Hours,
+  Action Details, Cancel Details, Employee Cost Per Hour, Total Cost and
+  Status.
+- **Start, stop and cancel a job over REST** -- three whitelisted methods on
+  Job Execution, POST only, each setting the Status:
+  - `start_execution(site, latitude, longitude)` creates the Job Execution
+    from the unsaved document it is called on (Job Type, Job ID and
+    Employee), through `/api/v2/method/run_doc_method` with `"__islocal": 1`.
+    Date and Start Time are the server's today and now, Site In-house unless
+    sent, and Status **Running**. Refused on one that exists already.
+  - `stop_execution(action_details)` -- Stop Date and Stop Time the server's
+    today and now, Status **Completed**.
+  - `cancel_execution(cancel_details)` -- Stop Date and Stop Time cleared, so
+    no Hours or Cost, Status **Cancelled**.
+
+  Stop and cancel take only a Running Job Execution, at
+  `/api/v2/document/Job Execution/<name>/method/...`, and refuse empty details
+  ("Action Details is required." / "Cancel Details is required."), saving
+  nothing. Each answers with the saved Job Execution in `docs`.
+  `Frappe.Api.JobExecution.rest` has the examples, and its list reads the new
+  fields.
+
+### Changed
+
+- **Job Execution: Hours run from Date + Start Time to Stop Date + Stop
+  Time**, and a stop before the start is refused. Without a Stop Date, as
+  before, a Stop Time earlier than the Start Time is on the next day.
+- **Hours are rounded to the half hour** (0.5, 1, 1.5, ...), to the nearest
+  one, except that any job from 1 to 44 minutes is 0.5: 1h 14m is 1, 1h 15m is
+  1.5, and under a minute 0. The form rounds as the save does, and Total Cost
+  follows.
+- **Date moves after Employee** on the Job Execution form.
+- The **"Job Stopped / Job Cancelled by ..." Job Activity** gives the Stop
+  Date (today, for a cancel) instead of the start Date.
+
 ## [0.1.104] - 2026-10-31
 
 ### Added

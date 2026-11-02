@@ -45,14 +45,6 @@
 			"in_filter": 1
 		},
 		{
-			"label": "Date",
-			"fieldname": "date",
-			"fieldtype": "Date",
-			"default": "Today",
-			"reqd": 1,
-			"in_list_view": 1
-		},
-		{
 			"label": "Employee",
 			"fieldname": "employee",
 			"fieldtype": "Link",
@@ -63,11 +55,47 @@
 			"in_filter": 1
 		},
 		{
+			"label": "Date",
+			"fieldname": "date",
+			"fieldtype": "Date",
+			"default": "Today",
+			"reqd": 1,
+			"in_list_view": 1
+		},
+		{
 			"label": "Start Time",
 			"fieldname": "start_time",
 			"fieldtype": "Time",
 			"reqd": 1,
 			"in_list_view": 1
+		},
+		{
+			"label": "Site",
+			"fieldname": "site",
+			"fieldtype": "Select",
+			"options": "In-house\nOn-site\nRemote",
+			"default": "In-house",
+			"reqd": 0
+		},
+		{
+			"label": "Latitude",
+			"fieldname": "latitude",
+			"fieldtype": "Float",
+			"precision": "7",
+			"reqd": 0
+		},
+		{
+			"label": "Longitude",
+			"fieldname": "longitude",
+			"fieldtype": "Float",
+			"precision": "7",
+			"reqd": 0
+		},
+		{
+			"label": "Stop Date",
+			"fieldname": "stop_date",
+			"fieldtype": "Date",
+			"reqd": 0
 		},
 		{
 			"label": "Stop Time",
@@ -85,6 +113,18 @@
 			"reqd": 0,
 			"default": "0.0",
 			"in_list_view": 1
+		},
+		{
+			"label": "Action Details",
+			"fieldname": "action_details",
+			"fieldtype": "Long Text",
+			"reqd": 0
+		},
+		{
+			"label": "Cancel Details",
+			"fieldname": "cancel_details",
+			"fieldtype": "Long Text",
+			"reqd": 0
 		},
 		{
 			"label": "Employee Cost Per Hour",

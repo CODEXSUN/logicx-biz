@@ -3,7 +3,15 @@
 
 frappe.ui.form.on('Job Execution', {
 
+	date: function (frm) {
+		calc_hours(frm);
+	},
+
 	start_time: function (frm) {
+		calc_hours(frm);
+	},
+
+	stop_date: function (frm) {
 		calc_hours(frm);
 	},
 
@@ -25,11 +33,20 @@ function calc_hours(frm) {
 	if (frm.doc.start_time && frm.doc.stop_time) {
 		let start = moment(frm.doc.start_time, 'HH:mm:ss');
 		let stop = moment(frm.doc.stop_time, 'HH:mm:ss');
-		if (stop.isBefore(start)) {
+		if (frm.doc.date && frm.doc.stop_date) {
+			start = moment(`${frm.doc.date} ${frm.doc.start_time}`, 'YYYY-MM-DD HH:mm:ss');
+			stop = moment(`${frm.doc.stop_date} ${frm.doc.stop_time}`, 'YYYY-MM-DD HH:mm:ss');
+		} else if (stop.isBefore(start)) {
+			// no Stop Date: a Stop Time before the Start Time is taken as the next day
 			stop.add(1, 'days');
 		}
-		let hours = moment.duration(stop.diff(start)).asHours();
-		frm.set_value('hours', flt(hours, 2));
+		let minutes = stop.diff(start, 'minutes', true);
+		// to the nearest half hour (0.5, 1, 1.5, ...), except that 1m to 44m is 0.5, as the server does
+		let hours = Math.round(minutes / 30) / 2;
+		if (!hours && minutes >= 1) {
+			hours = 0.5;
+		}
+		frm.set_value('hours', hours);
 	}
 }
 

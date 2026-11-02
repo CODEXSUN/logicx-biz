@@ -20,12 +20,19 @@ Content-Type: application/json
 		"job_type",
 		"job_id",
 		"employee",
+		"date",
 		"start_time",
+		"site",
+		"latitude",
+		"longitude",
+		"stop_date",
 		"stop_time",
 		"status",
 		"employee_cost_per_hour",
 		"hours",
-		"total_cost"
+		"total_cost",
+		"action_details",
+		"cancel_details"
 	]
 }
 
@@ -39,40 +46,57 @@ Authorization: token {{token}}
 
 
 
-### On Start Button Click
-POST {{baseUrl}}/api/v2/document/Job Execution
+### On Start Button Click: start_execution(site, latitude, longitude)
+	# Creates the Job Execution from "document"; "__islocal": 1 marks it as new (not yet saved).
+	# "date" / "start_time" are the server's today / now, and "status" becomes "Running".
+	# "site" defaults to "In-house". The new Job Execution comes back in "docs".
+POST {{baseUrl}}/api/v2/method/run_doc_method
 Authorization: token {{token}}
 Content-Type: application/json
 
 {
-  "job_type": "Enquiry",
-  "job_id": "ENQ109",
-  "employee": "HR-EMP-00003",
-  "start_time": "16:06:00"
+  "method": "start_execution",
+  "document": {
+    "doctype": "Job Execution",
+    "__islocal": 1,
+    "job_type": "Enquiry",
+    "job_id": "ENQ109",
+    "employee": "HR-EMP-00003"
+  },
+  "kwargs": {
+    "site": "On-site",
+    "latitude": 13.0826802,
+    "longitude": 80.2707184
+  }
 }
 
 
 
-### On Stop Button Click
-PUT {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1
+### On Stop Button Click: stop_execution(action_details)
+	# "stop_date" / "stop_time" are the server's today / now, and "status" becomes "Completed".
+	# "hours" is rounded to the nearest half hour (0.5, 1, 1.5, ...), except that 1 to 44 minutes is 0.5.
+	# "action_details" is required. Only a "Running" Job Execution can be stopped.
+	# The updated Job Execution comes back in "docs".
+POST {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1/method/stop_execution
 Authorization: token {{token}}
 Content-Type: application/json
 
 {
-  "stop_time": "17:12:00",
-  "status": "Completed"
+  "action_details": "Work done details"
 }
 
 
 
-### On Cancel Button Click
-PUT {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1
+### On Cancel Button Click: cancel_execution(cancel_details)
+	# "stop_date" / "stop_time" are cleared (so no hours / cost), and "status" becomes "Cancelled".
+	# "cancel_details" is required. Only a "Running" Job Execution can be cancelled.
+	# The updated Job Execution comes back in "docs".
+POST {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1/method/cancel_execution
 Authorization: token {{token}}
 Content-Type: application/json
 
 {
-  "stop_time": null,
-  "status": "Cancelled"
+  "cancel_details": "Reason for cancelling"
 }
 
 
