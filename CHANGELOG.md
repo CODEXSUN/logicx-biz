@@ -11,6 +11,18 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.106] - 2026-11-02
+
+### Changed
+
+- **`enquiry_view.get_enquiry` answers `execution` too** -- the logged-in
+  user's own Running Job Execution on the Enquiry (`get_current_employee`),
+  for the Enquiry page's Check-In and Check-Out: its `name`, `date`,
+  `start_time` and `site`, and the Employee's name as `employee_name`. The
+  newest, should there be more than one. `null` when there is none, when no
+  Employee is linked to the user, or when the user may not read Job
+  Executions. Read through `frappe.get_list`, with the user's permissions.
+
 ## [0.1.105] - 2026-11-02
 
 ### Database Changes
