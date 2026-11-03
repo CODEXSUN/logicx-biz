@@ -11,6 +11,22 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.109] - 2026-11-03
+
+### Database Changes
+
+- **Patch `post_missing_job_comments_to_job_activity`** (post_model_sync)
+  copies into Job Activity the Job Comments rows that
+  `copy_job_comments_to_job_activity` (0.1.74) missed, as that patch copies
+  them: same Job Type, Job ID, text, owner and timestamps, pointing back at the
+  row. That patch took a row as copied when a Job Activity on its job had the
+  same creation time, but comments migrated from an Enquiry's Messages mostly
+  share the Enquiry's creation time, so only the first on each Enquiry was
+  copied. Now a row counts as posted when a Job Activity on its job points back
+  at it. Comments on a Mobile alone and empty comments are not copied, and
+  only Job Comments rows are looked at. Each job given rows has its Job
+  Summary's Activity Count recounted. Safe to run again.
+
 ## [0.1.108] - 2026-11-03
 
 ### Added

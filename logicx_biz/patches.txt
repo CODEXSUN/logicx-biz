@@ -29,3 +29,4 @@ logicx_biz.patches.create_enquiry_status_duplicate
 logicx_biz.patches.delete_member_self_dashboard_page
 logicx_biz.patches.fill_enquiry_daily_roles
 logicx_biz.patches.fill_job_summaries
+logicx_biz.patches.post_missing_job_comments_to_job_activity
