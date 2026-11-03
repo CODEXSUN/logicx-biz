@@ -11,6 +11,32 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.108] - 2026-11-03
+
+### Added
+
+- **`enquiry_view.get_enquiry_list(tab)`** -- the logged-in user's open Jobs
+  (`tab` "jobs", by Assigned To) or Leads ("leads", by Lead By), for
+  logicx-front's Jobs and Leads lists and CRM dashboard, in place of
+  `member_dashboard.get_tab`, which stays as it is for My Dashboard. It answers
+  as `get_tab` does (`employee`, `employee_name`, `rows` newest first, `more`
+  past 500; `employee` null when no Employee is linked to the user), without
+  `member` and `show_closed`, and each row has its Status's `status_group`
+  and its Job Summary's `comment_count`, `activity_count`,
+  `execution_completed_count` and `execution_running_count` besides, 0 when it
+  has no Job Summary. One query, Enquiry LEFT JOIN Enquiry Status LEFT JOIN
+  Job Summary, without the user's permissions on each Enquiry: a user who may
+  read Enquiries at all gets every open one their Employee is on;
+  PermissionError when they may not.
+
+### Changed
+
+- **`enquiry_view.get_enquiry`'s `enquiry` has the same `status_group` and
+  counts**, read with the same query. As the query applies no permissions,
+  the user's permission on the Enquiry is checked on it
+  (`frappe.has_permission`), so an Enquiry they may not read is still
+  DoesNotExistError, as one that does not exist.
+
 ## [0.1.107] - 2026-11-03
 
 ### Database Changes
