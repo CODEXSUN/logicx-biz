@@ -3,8 +3,11 @@ from frappe import _
 from frappe.model.document import Document
 
 from logicx_biz.logicx_hr.doctype.job_activity.job_activity import add_job_activity
+from logicx_biz.logicx_hr.doctype.job_summary.job_summary import update_job_summary
 
 TRIGGER_FIELDS = ("job_type", "job_id", "comment")
+# the fields its count in Job Summary goes by
+SUMMARY_FIELDS = ("job_type", "job_id")
 
 
 class JobComments(Document):
@@ -40,6 +43,11 @@ class JobComments(Document):
 	def on_update(self):
 		if any(self.has_value_changed(fieldname) for fieldname in TRIGGER_FIELDS):
 			self.post_job_activity()
+		if any(self.has_value_changed(fieldname) for fieldname in SUMMARY_FIELDS):
+			update_job_summary(self)
+
+	def after_delete(self):
+		update_job_summary(self)
 
 	def post_job_activity(self):
 		# a comment on a Mobile alone has no job, and so no timeline to post to

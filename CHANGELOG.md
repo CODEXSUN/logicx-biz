@@ -11,6 +11,31 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.107] - 2026-11-03
+
+### Database Changes
+
+- **New table `tabJob Summary`** (Job Type, Job ID, Comment Count, Activity
+  Count, Execution Completed Count, Execution Running Count), with a unique
+  index `unique_job_type_job_id` on Job Type + Job ID.
+- **Patch `fill_job_summaries`** (post_model_sync) fills it from the existing
+  Job Comments, Job Activity and Job Executions: a Job Summary for each job
+  with any of them. A Job Summary already there is recounted, and deleted when
+  its counts all come to 0, so it is safe to run again.
+
+### Added
+
+- **Job Summary** -- a job's counts, one per Job Type + Job ID: its Job
+  Comments, its Job Activity, and its Job Executions Completed and Running (a
+  Cancelled one counts in neither). Kept by those three doctypes, not by hand:
+  each insert, delete, and save that changes Job Type, Job ID or a Job
+  Execution's Status recounts that doctype's rows on the job -- on both jobs,
+  when a row moves to another. A job's Job Summary is inserted with its first
+  row and deleted when its counts all come to 0. Job Comments on a Mobile alone
+  have no job, and are not counted. TM User and TM Admin may read and report on
+  it, not create, edit or delete it, and it never holds up deleting the job
+  (`ignore_links_on_delete`).
+
 ## [0.1.106] - 2026-11-02
 
 ### Changed

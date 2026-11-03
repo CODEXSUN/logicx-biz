@@ -9,6 +9,7 @@ job is (an Enquiry, a Task, a Customer, ...), and **Job ID**, the record itself.
 | **Job Type** | LogicX HR | One row = one kind of job, named after the DocType it stands for. |
 | **Job Attachment**, **Job Comments**, **Job Estimate**, **Job Execution**, **Job Location** | LogicX HR | Name their job through `job_type` and `job_id`. |
 | **Job Activity** | LogicX HR | The job's timeline, against the same `job_type` / `job_id`. The five doctypes above post to it (see [../job_activity_type/DESIGN.md](../job_activity_type/DESIGN.md)). |
+| **Job Summary** | LogicX HR | One row per `job_type` + `job_id`: the job's counts of Job Comments, Job Activity and Job Executions Completed and Running, kept by those three (see [../job_summary/Design.md](../job_summary/Design.md)). |
 
 ## How it works
 

@@ -329,6 +329,9 @@ doc_events = {
 # -----------------------------------------------------------
 
 # ignore_links_on_delete = ["Communication", "ToDo"]
+# a Job Summary, which no role may delete, only counts a job's rows, so it never holds up
+# deleting the job: only the job's Job Comments, Job Activity and Job Execution rows do
+ignore_links_on_delete = ["Job Summary"]
 
 # Request Events
 # ----------------

@@ -8,6 +8,10 @@ from frappe.utils import cstr, flt, formatdate, format_time, get_time, get_timed
 
 from logicx_biz.logicx_hr.doctype.enquiry.enquiry import get_current_employee
 from logicx_biz.logicx_hr.doctype.job_activity.job_activity import add_job_activity
+from logicx_biz.logicx_hr.doctype.job_summary.job_summary import update_job_summary
+
+# the fields its counts in Job Summary go by: Completed and Running per job
+SUMMARY_FIELDS = ("job_type", "job_id", "status")
 
 STATUS_MESSAGE_TEMPLATES = {
 	"Running": "Job Started by {employee} at {date} {time}",
@@ -117,6 +121,11 @@ class JobExecution(Document):
 	def on_update(self):
 		if self.has_value_changed("status"):
 			self.post_job_activity()
+		if any(self.has_value_changed(fieldname) for fieldname in SUMMARY_FIELDS):
+			update_job_summary(self)
+
+	def after_delete(self):
+		update_job_summary(self)
 
 	def post_job_activity(self):
 		template = STATUS_MESSAGE_TEMPLATES.get(self.status)

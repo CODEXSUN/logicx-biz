@@ -193,7 +193,7 @@ Authorization: token {{token}}
 ### Enquiry with its Job Activity, newest first (0.1.104; logicx-front's Enquiry page),
 	# and its Running Job Executions (0.1.106): the logged-in user's own as "execution" (null when
 	# there is none, or when no Employee is linked to the user), and other Employees' in "others".
-GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.enquiry_view.get_enquiry?name=Q58
+GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.enquiry_view.get_enquiry?name=ENQ400
 Authorization: token {{token}}
 
 # {
@@ -238,7 +238,7 @@ Authorization: token {{token}}
 #         {
 #           "name": "JOBEXE9",
 #           "date": "2026-11-02",
-#           "start_time": "10:41:03.120004",
+#           "start_time": "10:41:3.120004",
 #           "site": "In-house",
 #           "employee": "HR-EMP-00006",
 #           "employee_name": "Karthik D"
