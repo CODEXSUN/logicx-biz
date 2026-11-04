@@ -617,14 +617,14 @@
 	}
 
 	// a Duty row is one SOP of the member's: the Duty Reporting list on what
-	// they have reported against it, filtered by both -- their Employee as User,
-	// and the SOP. route_options cannot ride along into a fresh document, so a
-	// new browser tab is sent them as ?user=&sop=, which the list reads too.
+	// they have reported against it, filtered by both -- their Employee, and
+	// the SOP. route_options cannot ride along into a fresh document, so a
+	// new browser tab is sent them as ?employee=&sop=, which the list reads too.
 	// either way the list's own default filter, on the logged-in user's
-	// Employee, stands aside for the User asked for (see
+	// Employee, stands aside for the Employee asked for (see
 	// public/js/user_employee_default_filter.js).
 	function open_duty_reporting(row, in_new_tab) {
-		const filters = { user: row.user, sop: row.sop };
+		const filters = { employee: row.employee, sop: row.sop };
 		if (in_new_tab) {
 			const list_url = frappe.router.make_url([frappe.router.slug(DUTY_REPORTING)]);
 			window.open(`${list_url}?${new URLSearchParams(filters)}`, "_blank");

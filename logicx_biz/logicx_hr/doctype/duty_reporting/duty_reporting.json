@@ -28,8 +28,8 @@
 			"in_list_view": 1
 		},
 		{
-			"label": "User",
-			"fieldname": "user",
+			"label": "Employee",
+			"fieldname": "employee",
 			"fieldtype": "Link",
 			"options": "Employee",
 			"reqd": 1,

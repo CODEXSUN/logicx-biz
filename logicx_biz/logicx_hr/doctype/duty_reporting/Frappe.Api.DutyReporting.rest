@@ -26,7 +26,7 @@ Content-Type: application/json
 
 {
     "sop": "SOP-9",
-    "user": "HR-EMP-00014",
+    "employee": "HR-EMP-00014",
     "date": "HR-EMP-00014",
     "date": "2026-07-11",
     "sop_name": "A03   Accounts ",

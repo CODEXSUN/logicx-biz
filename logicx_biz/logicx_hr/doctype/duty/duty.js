@@ -11,7 +11,7 @@ frappe.ui.form.on("Duty", {
 				frm.add_custom_button("Duty Reporting", () => {
 					frappe.new_doc("Duty Reporting", {
 						sop: frm.doc.sop,
-						user: frm.doc.user
+						employee: frm.doc.employee
 					});
 				});
 			}

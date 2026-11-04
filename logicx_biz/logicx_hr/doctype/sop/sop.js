@@ -14,7 +14,7 @@ frappe.ui.form.on("SOP", {
 							let current_employee = employee_doc.name;
 							frappe.new_doc("Duty Reporting", {
 								sop: frm.doc.name,
-								user: current_employee
+								employee: current_employee
 							});
 						}
 					}

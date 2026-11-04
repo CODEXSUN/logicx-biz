@@ -2,8 +2,8 @@ const EMPLOYEE_FILTER_FIELD_BY_DOCTYPE = {
 	"Enquiry": "assigned_to_employee",
 	"Notice": "employee",
 	"Staff Request": "employee",
-	"Duty": "user",
-	"Duty Reporting": "user",
+	"Duty": "employee",
+	"Duty Reporting": "employee",
 };
 
 frappe.listview_settings = frappe.listview_settings || {};

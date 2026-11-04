@@ -11,6 +11,27 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.111] - 2026-11-04
+
+### Database Changes
+
+- **`employee` column replaces `user`** (Link → Employee) on `tabDuty` and
+  `tabDuty Reporting`. Patch `rename_duty_user_field_to_employee`
+  (post_model_sync) copies each row's `user` into it, and points saved reports,
+  list view columns, user settings and property setters at it. The old `user`
+  column is left behind, unused.
+
+### Changed
+
+- **Duty and Duty Reporting's User field is now Employee** (`employee`). The
+  Duty and Duty Reporting lists' default filter on the logged-in user's
+  Employee, the Member Dashboard's Duty tab and its row click, and the Duty
+  Reporting buttons on Duty and SOP all use it. API clients send and read
+  `employee`. Duty's duplicate check now reads "This SOP is already assigned
+  to this Employee."
+- **New Duties are named `Duty.<n>`**, not `ASSIGN.<n>`. Duties already saved
+  keep their names.
+
 ## [0.1.110] - 2026-11-04
 
 ### Changed

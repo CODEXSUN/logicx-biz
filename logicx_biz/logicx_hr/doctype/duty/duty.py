@@ -11,9 +11,9 @@ class Duty(Document):
 			"Duty",
 			{
 				"sop": self.sop,
-				"user": self.user,
+				"employee": self.employee,
 				"name": ["!=", self.name]
 			}
 		)
 		if exists:
-			frappe.throw("This SOP is already assigned to this User.")
+			frappe.throw("This SOP is already assigned to this Employee.")

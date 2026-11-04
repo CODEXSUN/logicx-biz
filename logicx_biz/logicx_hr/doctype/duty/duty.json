@@ -2,7 +2,7 @@
 	"doctype": "DocType",
 	"name": "Duty",
 	"module": "LogicX HR",
-	"autoname": "ASSIGN.#",
+	"autoname": "Duty.#",
 	"track_changes": 1,
 	"track_views": 1,
 	"is_submittable": 0,
@@ -28,8 +28,8 @@
 			"in_list_view": 1
 		},
 		{
-			"label": "User",
-			"fieldname": "user",
+			"label": "Employee",
+			"fieldname": "employee",
 			"fieldtype": "Link",
 			"options": "Employee",
 			"reqd": 1,

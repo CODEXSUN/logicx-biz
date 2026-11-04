@@ -84,7 +84,7 @@ DUTY_FIELDS = (
 	"frequency",
 	# no columns of their own, but where a click on the row goes: the Duty
 	# Reporting list, filtered by both
-	"user",
+	"employee",
 	"sop",
 )
 
@@ -153,7 +153,7 @@ def _duties(employee: str, department: str | None, frequency: str | None) -> lis
 	"""Up to ROW_LIMIT + 1 of `employee`'s Duties, narrowed to `department` and
 	`frequency` when given. Each is matched on the Duty's own copy of its SOP's.
 	"""
-	filters = {"user": employee}
+	filters = {"employee": employee}
 	department = (department or "").strip()
 	frequency = (frequency or "").strip()
 	if department:
