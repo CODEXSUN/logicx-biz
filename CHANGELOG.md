@@ -11,6 +11,24 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.110] - 2026-11-04
+
+### Changed
+
+- **Job Execution posts its Job Activity from start, stop and cancel**, not
+  on every save that changes Status, so a status set on the form posts
+  nothing. The text, plain, a line per line, no longer names the Employee (the row's
+  owner gives that):
+  - Running (`start_execution`): `Checked-in`.
+  - Cancelled (`cancel_execution`): `CANCELLED the last check-in.`, then the
+    Cancel Details.
+  - Completed (`stop_execution`): `Action Hours : 1:30` (Hours as h:mm),
+    `Started      : <Date> <Start Time>`, `Location     : <Google Maps link>`
+    to Latitude and Longitude, as Job Location links its pin (left out
+    without a location), then the Action Details.
+
+  Rows posted before stay as they are.
+
 ## [0.1.109] - 2026-11-03
 
 ### Database Changes

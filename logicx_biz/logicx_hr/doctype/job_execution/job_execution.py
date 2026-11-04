@@ -8,16 +8,11 @@ from frappe.utils import cstr, flt, formatdate, format_time, get_time, get_timed
 
 from logicx_biz.logicx_hr.doctype.enquiry.enquiry import get_current_employee
 from logicx_biz.logicx_hr.doctype.job_activity.job_activity import add_job_activity
+from logicx_biz.logicx_hr.doctype.job_location.job_location import GOOGLE_MAPS_URL
 from logicx_biz.logicx_hr.doctype.job_summary.job_summary import update_job_summary
 
 # the fields its counts in Job Summary go by: Completed and Running per job
 SUMMARY_FIELDS = ("job_type", "job_id", "status")
-
-STATUS_MESSAGE_TEMPLATES = {
-	"Running": "Job Started by {employee} at {date} {time}",
-	"Completed": "Job Stopped by {employee} at {date} {time}",
-	"Cancelled": "Job Cancelled by {employee} at {date} {time}",
-}
 
 
 class JobExecution(Document):
@@ -87,6 +82,7 @@ class JobExecution(Document):
 		self.longitude = flt(longitude, self.precision("longitude"))
 		self.status = "Running"
 		self.save()
+		self.post_job_activity()
 
 	@frappe.whitelist(methods=["POST"])
 	def stop_execution(self, action_details=None):
@@ -97,6 +93,7 @@ class JobExecution(Document):
 		self.action_details = get_required_text(action_details, "Action Details")
 		self.status = "Completed"
 		self.save()
+		self.post_job_activity()
 
 	@frappe.whitelist(methods=["POST"])
 	def cancel_execution(self, cancel_details=None):
@@ -107,6 +104,7 @@ class JobExecution(Document):
 		self.cancel_details = get_required_text(cancel_details, "Cancel Details")
 		self.status = "Cancelled"
 		self.save()
+		self.post_job_activity()
 
 	def check_running(self):
 		"""Stop and cancel: only a Running Job Execution, and only by the Employee who started it."""
@@ -119,8 +117,6 @@ class JobExecution(Document):
 			)
 
 	def on_update(self):
-		if self.has_value_changed("status"):
-			self.post_job_activity()
 		if any(self.has_value_changed(fieldname) for fieldname in SUMMARY_FIELDS):
 			update_job_summary(self)
 
@@ -128,26 +124,43 @@ class JobExecution(Document):
 		update_job_summary(self)
 
 	def post_job_activity(self):
-		template = STATUS_MESSAGE_TEMPLATES.get(self.status)
-		if not template or not self.job_id:
-			return
+		"""Post the status's Job Activity on the job.
 
-		employee_name = frappe.get_cached_value("Employee", self.employee, "employee_name") or self.employee
+		Posted by start / stop / cancel, not on save, so a status set on the form posts nothing.
+		"""
 		if self.status == "Running":
-			event_date, event_time = self.date, self.start_time
+			activity_details = "Checked-in"
+		elif self.status == "Cancelled":
+			activity_details = f"CANCELLED the last check-in.\n{self.cancel_details}"
 		else:
-			event_date, event_time = self.stop_date or nowdate(), self.stop_time or nowtime()
+			lines = [
+				f"Action Hours : {format_hours(self.hours)}",
+				f"Started      : {formatdate(self.date)}  {format_time(self.start_time, 'h:mm a')}",
+			]
+			# Float columns are NOT NULL DEFAULT 0, so a location that was never sent is 0, 0
+			if self.latitude or self.longitude:
+				lines.append(f"Location     : {self.get_maps_url()}")
+			lines.append(self.action_details)
+			activity_details = "\n".join(lines)
 
-		activity_details = template.format(
-			employee=employee_name,
-			date=formatdate(event_date),
-			time=format_time(event_time, "hh:mm a"),
-		)
 		add_job_activity(self.job_type, self.job_id, activity_details, self.doctype, self.name)
+
+	def get_maps_url(self) -> str:
+		# fixed-point, so a value close to 0 never turns into "1e-05"
+		return GOOGLE_MAPS_URL.format(
+			latitude=f"{flt(self.latitude):.{self.precision('latitude')}f}",
+			longitude=f"{flt(self.longitude):.{self.precision('longitude')}f}",
+		)
 
 
 def combine_datetime(date, time) -> datetime:
 	return datetime.combine(getdate(date), get_time(time))
+
+
+def format_hours(hours) -> str:
+	"""Hours as h:mm: 1.5 -> "1:30"."""
+	minutes = round(flt(hours) * 60)
+	return f"{minutes // 60}:{minutes % 60:02d}"
 
 
 def get_current_employee_id() -> str:

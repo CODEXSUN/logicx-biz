@@ -53,6 +53,7 @@ Authorization: token {{token}}
 	# "employee" must be the logged-in user's own Employee (left out, it is taken as that); another is refused (403).
 	# Refused while this employee has a "Running" Job Execution on the same job: stop or cancel that first.
 	# Running Job Executions on other jobs are fine.
+	# Posts "Checked-in" to the job's Job Activity.
 POST {{baseUrl}}/api/v2/method/run_doc_method
 Authorization: token {{token}}
 Content-Type: application/json
@@ -80,6 +81,8 @@ Content-Type: application/json
 	# "hours" is rounded to the nearest half hour (0.5, 1, 1.5, ...), except that 1 to 44 minutes is 0.5.
 	# "action_details" is required. Only a "Running" Job Execution can be stopped,
 	# and only by the employee who started it (anyone else: 403).
+	# Posts to the job's Job Activity: "Action Hours : 1:30", "Started      : <Date> <Start Time>",
+	# "Location     : <Google Maps link>" (left out without a location), then the action details.
 	# The updated Job Execution comes back in "docs".
 POST {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1/method/stop_execution
 Authorization: token {{token}}
@@ -95,6 +98,7 @@ Content-Type: application/json
 	# "stop_date" / "stop_time" are cleared (so no hours / cost), and "status" becomes "Cancelled".
 	# "cancel_details" is required. Only a "Running" Job Execution can be cancelled,
 	# and only by the employee who started it (anyone else: 403).
+	# Posts "CANCELLED the last check-in." and the cancel details to the job's Job Activity.
 	# The updated Job Execution comes back in "docs".
 POST {{baseUrl}}/api/v2/document/Job Execution/JOBEXE1/method/cancel_execution
 Authorization: token {{token}}

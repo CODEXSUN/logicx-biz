@@ -47,12 +47,13 @@ Permissions, as on Job Type:
 ### Default Job Activity Types
 
 Seeded by the `create_job_activity_types` patch, in this order. Each one's controller posts a Job
-Activity from `on_update` when one of its trigger fields changes:
+Activity from `on_update` when one of its trigger fields changes, except Job Execution's, which
+posts from its start / stop / cancel methods:
 
 | Job Activity Type | Job Activity ID looks like | Posts when | Activity Details |
 |-------------------|----------------------------|------------|------------------|
 | Job Comments | `JOBCOM5` | `job_type`, `job_id` or `comment` changes | The comment, as written |
-| Job Execution | `JOBEXE7` | `status` changes to Running, Completed or Cancelled | "Job Started / Stopped / Cancelled by {employee} at {date} {time}" |
+| Job Execution | `JOBEXE7` | `start_execution`, `stop_execution` or `cancel_execution` runs | See [Job Execution](#job-execution) |
 | Job Location | `JOBLOC3` | `job_type`, `job_id`, `latitude` or `longitude` changes | "Location captured by {employee} at {date} {time}: {url}" |
 | Job Estimate | `ESTIMATE4` | `item_name`, `supplier` or `date` changes | "Estimate for {item} is received from {supplier} on {date}" |
 | Job Attachment | `JOBATT2` | `job_type`, `job_id` or `document` changes, and `document` is set | "Photo / Document attached by {employee} at {date} {time}: {url}" |
@@ -61,6 +62,31 @@ On insert, Frappe treats every field as changed, so every new record posts its r
 that changes a trigger field posts another one.
 
 All five are LogicX HR doctypes, so the patch has no type to skip.
+
+### Job Execution
+
+A Job Execution posts a row each time it is started, stopped or cancelled, plain text, a line per
+line:
+
+| Status | Posted by | Activity Details |
+|--------|-----------|------------------|
+| Running | `start_execution` | `Checked-in` |
+| Cancelled | `cancel_execution` | `CANCELLED the last check-in.`, then the Cancel Details |
+| Completed | `stop_execution` | The lines below, then the Action Details |
+
+```
+Action Hours : 1:30
+Started      : 02-11-2026 5:07 PM
+Location     : https://www.google.com/maps/search/?api=1&query=13.0826802%2C80.2707184
+Action one is done
+Action two is done
+```
+
+Action Hours are Hours as h:mm. Started is Date and Start Time, the date in the system's format.
+Location is a Google Maps link to Latitude and Longitude, as Job Location links its pin; without
+a location (0, 0) the line is left out.
+
+A save on the form, whatever it changes, posts nothing.
 
 ## The Job Activity fields
 
@@ -87,7 +113,8 @@ Permissions:
 
 `add_job_activity(job_type, job_id, activity_details, job_activity_type, job_activity_id)` in
 `job_activity.py` inserts the row, ignoring permissions. Each of the five doctypes calls it from its
-`post_job_activity()`, passing its own `job_type` / `job_id` and then `self.doctype` / `self.name`:
+`post_job_activity()`, passing its own `job_type` / `job_id` and then `self.doctype` / `self.name`.
+The row's owner is the user who saved, which is how a reader tells who posted it:
 
 ```python
 add_job_activity(self.job_type, self.job_id, activity_details, self.doctype, self.name)
