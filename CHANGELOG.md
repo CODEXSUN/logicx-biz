@@ -11,6 +11,26 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.112] - 2026-11-04
+
+### Database Changes
+
+- **Patch `replace_duty_job_type_with_duty_reporting`** (post_model_sync)
+  creates the "Duty Reporting" Job Type at the "Duty" one's idx, so it takes
+  Duty's place in the picker. The "Duty" Job Type is deleted on a site with no
+  Job Activity, Comments, Estimate, Execution, Location, Attachment or Summary
+  rows against it; otherwise it is kept, out of the picker, and the patch
+  prints how many rows there are.
+
+### Changed
+
+- **Duty Reporting replaces Duty as a default Job Type**: the Job Type picker
+  on the six job doctypes lists Enquiry, Duty Reporting, Task, Customer and
+  Supplier, and a fresh install seeds those five.
+- **The Activity button is on the Duty Reporting form**, no longer on Duty's.
+- **New Duty Reportings are named `DT<n>`**, not `REPORTING<n>`. Duty
+  Reportings already saved keep their names.
+
 ## [0.1.111] - 2026-11-04
 
 ### Database Changes

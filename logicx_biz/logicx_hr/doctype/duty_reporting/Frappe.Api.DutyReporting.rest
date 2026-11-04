@@ -15,7 +15,7 @@ Content-Type: application/json
 
 ### Read Duty Reporting by ID.
 
-GET {{baseUrl}}/api/v2/document/Duty Reporting/REPORTING222
+GET {{baseUrl}}/api/v2/document/Duty Reporting/DT7
 Authorization: token {{token}}
 
 
