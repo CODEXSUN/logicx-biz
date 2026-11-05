@@ -37,8 +37,9 @@ Content-Type: application/json
 }
 
 
-### The logged-in user's Duties, by Index (0.1.116; logicx-front's Duties list), each with today's
-	# date and the Job Summary counts of its Duty Reporting dated today (0 without one).
+### The logged-in user's Duties, by Index (logicx-front's Duties list), each with its SOP's Frequency,
+	# the first day of its current calendar period (a Daily Duty's is today) as "date", and the Job
+	# Summary counts of its Duty Reporting in that period (0 without one).
 	# {"employee": null} when no Employee is linked.
 GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.duty_view.get_duty_list
 Authorization: token {{token}}
@@ -52,7 +53,8 @@ Authorization: token {{token}}
 #         "name": "Duty12",
 #         "sop": "SOP-9",
 #         "sop_name": "A03 Accounts",
-#         "date": "2026-11-05",
+#         "frequency": "Monthly",
+#         "date": "2026-11-01",
 #         "comment_count": 2,
 #         "activity_count": 5,
 #         "execution_completed_count": 1,
@@ -64,9 +66,10 @@ Authorization: token {{token}}
 # }
 
 
-### The Duty's Duty Reporting dated today, made now when there is none (0.1.116; logicx-front's Duty
-	# Reporting page). POST only, as it may write. Its "activity", "execution" and "others" are as
-	# enquiry_view.get_enquiry has them. 404 for a Duty that isn't the logged-in user's own Employee's.
+### The Duty's Duty Reporting in its current calendar period, made now, dated the period's first day,
+	# when there is none (logicx-front's Duty Reporting page). POST only, as it may write. Its
+	# "activity", "execution" and "others" are as enquiry_view.get_enquiry has them. 404 for a Duty
+	# that isn't the logged-in user's own Employee's.
 POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.duty_view.get_duty_reporting
 Authorization: token {{token}}
 Content-Type: application/json
@@ -80,7 +83,8 @@ Content-Type: application/json
 #     "reporting": {
 #       "name": "DT7",
 #       "duty": "Duty12",
-#       "date": "2026-11-05",
+#       "frequency": "Monthly",
+#       "date": "2026-11-01",
 #       "sop_name": "A03 Accounts",
 #       "steps": "Share Credit Invoice Copy through Mail\nAlong with total outstanding",
 #       "comment_count": 2,

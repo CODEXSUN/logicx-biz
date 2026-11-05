@@ -11,6 +11,18 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.117] - 2026-11-05
+
+### Changed
+
+- **`duty_view`** -- a Duty now has one Duty Reporting per calendar period of its
+  SOP's Frequency, not one per day: a week (from System Settings' First Day of the
+  Week), a month or a year. Daily, or any other Frequency, is still a day.
+  `get_duty_reporting` finds the one of that SOP and Employee dated anywhere in the
+  period, the oldest when there are several, and makes it, dated the period's first
+  day, when there is none. `get_duty_list` counts that same one. Both now send
+  `frequency`, the SOP's own, and send the period's first day as `date`.
+
 ## [0.1.116] - 2026-11-05
 
 ### Added
