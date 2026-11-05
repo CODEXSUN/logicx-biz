@@ -11,6 +11,17 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.115] - 2026-11-05
+
+### Changed
+
+- **`enquiry_view.get_enquiry` answers `employee` too** -- the logged-in
+  user's Employee ID, as `get_enquiry_list` answers it; `null` when no
+  Employee is linked to the user. logicx-front's Enquiry page shows "by me"
+  or "to me" where it is the Enquiry's `user_employee` (Lead By) or
+  `assigned_to_employee` (Assigned To). The Employee is looked up once, for
+  this and for `execution` and `others`, which are as before.
+
 ## [0.1.114] - 2026-11-05
 
 ### Database Changes

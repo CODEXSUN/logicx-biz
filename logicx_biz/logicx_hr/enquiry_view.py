@@ -126,7 +126,11 @@ def get_enquiry(name: str) -> dict:
 	`more`, which says they were cut at ROW_LIMIT. `execution` is the user's
 	own Running Job Execution on it, or None, and `others` holds other
 	Employees' -- `rows`, newest first, and `more` -- each with its Employee's
-	name as `employee_name` (see _running_executions).
+	name as `employee_name` (see _running_executions). `employee` is the user's
+	Employee ID, or None when no Employee is linked to the user: the page shows
+	"by me" or "to me" where it is the Enquiry's `user_employee` or
+	`assigned_to_employee`, as Jobs and Leads do with get_enquiry_list's
+	`employee`.
 
 	DoesNotExistError when there is no such Enquiry, or the user may not read it.
 	"""
@@ -138,8 +142,10 @@ def get_enquiry(name: str) -> dict:
 
 	enquiry = _enquiry_view(rows)[0]
 	enquiry.details = _multiline_text(enquiry.pop("enquiry_details", None))
-	execution, others = _running_executions(enquiry.name)
+	employee = get_current_employee()
+	execution, others = _running_executions(enquiry.name, employee)
 	return {
+		"employee": employee.name if employee else None,
 		"enquiry": enquiry,
 		"activity": _tab(_activity(enquiry.name)),
 		"execution": execution,
@@ -196,14 +202,15 @@ def _activity(enquiry: str) -> list:
 	return rows
 
 
-def _running_executions(enquiry: str) -> tuple[dict | None, list]:
+def _running_executions(enquiry: str, employee) -> tuple[dict | None, list]:
 	"""Who is checked in on `enquiry`: its Running Job Executions, each with its
 	Employee's name as `employee_name`.
 
-	The logged-in user's own -- the one start_execution refuses a second of;
-	the newest, should the desk have made more than one -- or None; and up to
-	ROW_LIMIT + 1 of other Employees', newest first, with their `employee`.
-	With no Employee linked to the user, every one is another's. (None, [])
+	`employee` is the logged-in user's Employee (get_current_employee), or None.
+	Their own -- the one start_execution refuses a second of; the newest,
+	should the desk have made more than one -- or None; and up to ROW_LIMIT + 1
+	of other Employees', newest first, with their `employee`. With no
+	Employee linked to the user (`employee` None), every one is another's. (None, [])
 	when the user may not read Job Executions: the page is still shown, and
 	Check-In gets Frappe's answer.
 	"""
@@ -211,7 +218,6 @@ def _running_executions(enquiry: str) -> tuple[dict | None, list]:
 		return None, []
 
 	running = {"job_type": ENQUIRY_JOB_TYPE, "job_id": enquiry, "status": "Running"}
-	employee = get_current_employee()
 
 	execution = None
 	if employee:

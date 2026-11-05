@@ -231,11 +231,13 @@ Authorization: token {{token}}
 	# and its Running Job Executions (0.1.106): the logged-in user's own as "execution" (null when
 	# there is none, or when no Employee is linked to the user), and other Employees' in "others".
 	# Its Status Group and Job Summary counts too, as get_enquiry_list has them (0.1.108).
+	# And the user's Employee ID as "employee" (null when none is linked), as get_enquiry_list has it (0.1.114).
 GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.enquiry_view.get_enquiry?name=ENQ400
 Authorization: token {{token}}
 
 # {
 #   "data": {
+#     "employee": "HR-EMP-00003",
 #     "enquiry": {
 #       "name": "Q58",
 #       "date": "2026-10-30",
