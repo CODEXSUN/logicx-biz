@@ -143,11 +143,11 @@ def get_enquiry(name: str) -> dict:
 	enquiry = _enquiry_view(rows)[0]
 	enquiry.details = _multiline_text(enquiry.pop("enquiry_details", None))
 	employee = get_current_employee()
-	execution, others = _running_executions(enquiry.name, employee)
+	execution, others = _running_executions(ENQUIRY_JOB_TYPE, enquiry.name, employee)
 	return {
 		"employee": employee.name if employee else None,
 		"enquiry": enquiry,
-		"activity": _tab(_activity(enquiry.name)),
+		"activity": _tab(_activity(ENQUIRY_JOB_TYPE, enquiry.name)),
 		"execution": execution,
 		"others": _tab(others),
 	}
@@ -184,14 +184,14 @@ def _enquiries(fields: tuple, where, limit: int) -> list:
 	)
 
 
-def _activity(enquiry: str) -> list:
-	"""Up to ROW_LIMIT + 1 of the Job Activity rows posted on `enquiry`, newest
+def _activity(job_type: str, job_id: str) -> list:
+	"""Up to ROW_LIMIT + 1 of the Job Activity rows posted on the job, newest
 	first, each with its details as text, a line per line written, and who
 	posted it by name.
 	"""
 	rows = frappe.get_list(
 		"Job Activity",
-		filters={"job_type": ENQUIRY_JOB_TYPE, "job_id": enquiry},
+		filters={"job_type": job_type, "job_id": job_id},
 		fields=list(JOB_ACTIVITY_FIELDS),
 		order_by=ORDER_BY,
 		limit=ROW_LIMIT + 1,
@@ -202,8 +202,8 @@ def _activity(enquiry: str) -> list:
 	return rows
 
 
-def _running_executions(enquiry: str, employee) -> tuple[dict | None, list]:
-	"""Who is checked in on `enquiry`: its Running Job Executions, each with its
+def _running_executions(job_type: str, job_id: str, employee) -> tuple[dict | None, list]:
+	"""Who is checked in on the job: its Running Job Executions, each with its
 	Employee's name as `employee_name`.
 
 	`employee` is the logged-in user's Employee (get_current_employee), or None.
@@ -217,7 +217,7 @@ def _running_executions(enquiry: str, employee) -> tuple[dict | None, list]:
 	if not frappe.has_permission("Job Execution"):
 		return None, []
 
-	running = {"job_type": ENQUIRY_JOB_TYPE, "job_id": enquiry, "status": "Running"}
+	running = {"job_type": job_type, "job_id": job_id, "status": "Running"}
 
 	execution = None
 	if employee:

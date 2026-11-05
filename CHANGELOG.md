@@ -11,6 +11,24 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.116] - 2026-11-05
+
+### Added
+
+- **`duty_view.get_duty_list()`** -- the logged-in user's Duties, by Index, for
+  logicx-front's Duties list. It answers as `enquiry_view.get_enquiry_list` does
+  (`employee`, `employee_name`, `rows`, `more`; `{"employee": null}` when no
+  Employee is linked to the user). Each row has `date`, today as Frappe has it,
+  and the Job Summary counts of its Duty Reporting dated today, 0 without one.
+- **`duty_view.get_duty_reporting(name)`**, POST only -- the Duty `name`'s Duty
+  Reporting dated today, for logicx-front's Duty Reporting page. It finds the one
+  of that SOP, Employee and date, the oldest when there are several, and makes it
+  when there is none, with Actions set to `see comments.`, as that field is still
+  required and no longer used. It answers with `reporting`, `activity`, `execution`
+  and `others`, as `get_enquiry` does for an Enquiry. A Duty that isn't the
+  logged-in user's own Employee's answers as one that doesn't exist, and nothing is
+  made.
+
 ## [0.1.115] - 2026-11-05
 
 ### Changed

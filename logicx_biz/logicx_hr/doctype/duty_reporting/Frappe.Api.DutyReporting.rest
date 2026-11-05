@@ -37,4 +37,62 @@ Content-Type: application/json
 }
 
 
+### The logged-in user's Duties, by Index (0.1.116; logicx-front's Duties list), each with today's
+	# date and the Job Summary counts of its Duty Reporting dated today (0 without one).
+	# {"employee": null} when no Employee is linked.
+GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.duty_view.get_duty_list
+Authorization: token {{token}}
+
+# {
+#   "data": {
+#     "employee": "HR-EMP-00014",
+#     "employee_name": "Ravi K",
+#     "rows": [
+#       {
+#         "name": "Duty12",
+#         "sop": "SOP-9",
+#         "sop_name": "A03 Accounts",
+#         "date": "2026-11-05",
+#         "comment_count": 2,
+#         "activity_count": 5,
+#         "execution_completed_count": 1,
+#         "execution_running_count": 0
+#       }
+#     ],
+#     "more": false
+#   }
+# }
+
+
+### The Duty's Duty Reporting dated today, made now when there is none (0.1.116; logicx-front's Duty
+	# Reporting page). POST only, as it may write. Its "activity", "execution" and "others" are as
+	# enquiry_view.get_enquiry has them. 404 for a Duty that isn't the logged-in user's own Employee's.
+POST {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.duty_view.get_duty_reporting
+Authorization: token {{token}}
+Content-Type: application/json
+
+{
+    "name": "Duty12"
+}
+
+# {
+#   "data": {
+#     "reporting": {
+#       "name": "DT7",
+#       "duty": "Duty12",
+#       "date": "2026-11-05",
+#       "sop_name": "A03 Accounts",
+#       "steps": "Share Credit Invoice Copy through Mail\nAlong with total outstanding",
+#       "comment_count": 2,
+#       "activity_count": 5,
+#       "execution_completed_count": 1,
+#       "execution_running_count": 0
+#     },
+#     "activity": { "rows": [], "more": false },
+#     "execution": null,
+#     "others": { "rows": [], "more": false }
+#   }
+# }
+
+
 ###
