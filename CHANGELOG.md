@@ -11,6 +11,18 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.114] - 2026-11-05
+
+### Database Changes
+
+- **Patch `copy_duty_reporting_actions_to_job_comments`** (post_model_sync)
+  copies each Duty Reporting's Actions into a new Job Comments row against that
+  Duty Reporting, as logicx-front doesn't use or show Actions. Each copy keeps
+  the Duty Reporting's owner and timestamps, is posted to Job Activity pointing
+  back at the row, and is counted on the job's Job Summary. The Duty Reporting
+  rows stay as they are, Actions included. A Duty Reporting whose Actions are
+  already a comment on it is skipped, so it is safe to run again.
+
 ## [0.1.112] - 2026-11-04
 
 ### Database Changes
