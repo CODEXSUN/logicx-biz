@@ -134,7 +134,11 @@ def new_payment_entry(payment_type: str, party_type: str, party: str):
 	pe.party_type = party_type
 	pe.party = party
 	pe.party_bank_account = get_party_bank_account(party_type, party)
-	pe.bank_account = get_default_company_bank_account(pe.company, party_type, party, ignore_permissions=False)
+	# the check ERPNext's own ignore_permissions=False makes, done here because
+	# that argument only exists from ERPNext v16.27.0
+	bank_account = get_default_company_bank_account(pe.company, party_type, party)
+	if bank_account and frappe.has_permission("Bank Account", "select", bank_account):
+		pe.bank_account = bank_account
 
 	# the bank side from the company bank account, then the party's side with
 	# its name and contact, then the rate each side converts at
