@@ -13,7 +13,7 @@ def get_columns():
 			"label": _("Customer"),
 			"fieldname": "party",
 			"fieldtype": "Link",
-			"options": "Customer ID",
+			"options": "Customer",
 			"width": 100,
 		},
 		{

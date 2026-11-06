@@ -13,7 +13,7 @@ def get_columns():
 			"label": _("Supplier"),
 			"fieldname": "party",
 			"fieldtype": "Link",
-			"options": "Supplier ID",
+			"options": "Supplier",
 			"width": 100,
 		},
 		{
