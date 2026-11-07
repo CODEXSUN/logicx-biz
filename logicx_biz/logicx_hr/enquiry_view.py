@@ -5,6 +5,8 @@ the CRM dashboard's counts of them), and the Enquiry page (/crm/enquiry/<Q#>).
 member_dashboard.get_tab does for My Dashboard, each Enquiry with its Status
 Group and its Job Summary's counts besides.
 
+`get_assignable_employees` lists who the page's Assign To dialog offers.
+
 `get_enquiry` reads one Enquiry, the activity posted on it, and who is checked
 in on it, in one call:
 
@@ -73,6 +75,31 @@ JOB_ACTIVITY_FIELDS = (
 # what the page reads of a Running Job Execution: its ID, which Check-Out
 # stops, and when and where it started. a tuple, as above.
 RUNNING_EXECUTION_FIELDS = ("name", "date", "start_time", "site")
+
+# what the page's Assign To dialog reads of an Employee. a tuple, as above.
+ASSIGNABLE_EMPLOYEE_FIELDS = ("name", "employee_name")
+
+
+@frappe.whitelist()
+def get_assignable_employees() -> dict:
+	"""The active Employees an Enquiry can be assigned to, by name, A to Z.
+
+	`rows` holds each one's `name` and `employee_name`, and `more` says they were
+	cut at ROW_LIMIT. PermissionError for a user who may not write Enquiries.
+
+	Through get_all, so whatever the user may read of Employee: a user limited to
+	their own Employee must still be able to assign an Enquiry to someone else.
+	"""
+	frappe.has_permission("Enquiry", "write", throw=True)
+	return _tab(
+		frappe.get_all(
+			"Employee",
+			filters={"status": "Active"},
+			fields=list(ASSIGNABLE_EMPLOYEE_FIELDS),
+			order_by="employee_name asc",
+			limit=ROW_LIMIT + 1,
+		)
+	)
 
 
 @frappe.whitelist()

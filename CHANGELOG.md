@@ -11,6 +11,16 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.119] - 2026-11-07
+
+### Added
+
+- **`enquiry_view.get_assignable_employees()`** -- the active Employees by name, A
+  to Z, for logicx-front's Assign To dialog: `rows`, each with `name` and
+  `employee_name`, and `more`, at most 500. It needs write permission on Enquiry
+  (`PermissionError` without it), and lists every active Employee whatever the
+  user may read of Employee.
+
 ## [0.1.117] - 2026-11-05
 
 ### Changed

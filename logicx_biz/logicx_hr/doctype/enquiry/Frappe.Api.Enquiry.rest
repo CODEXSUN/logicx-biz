@@ -297,6 +297,24 @@ Authorization: token {{token}}
 
 
 
+### The active Employees an Enquiry can be assigned to, by name (0.1.119; logicx-front's
+	# Assign To dialog). Needs write permission on Enquiry, not read permission on Employee.
+GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_hr.enquiry_view.get_assignable_employees
+Authorization: token {{token}}
+
+# {
+#   "data": {
+#     "rows": [
+#       { "name": "HR-EMP-00006", "employee_name": "Karthik D" },
+#       { "name": "HR-EMP-00003", "employee_name": "Ravi K" }
+#     ],
+#     "more": false
+#   }
+# }
+# A user who may not write Enquiries: 403, PermissionError.
+
+
+
 ### Create Enquiry
 POST {{baseUrl}}/api/v2/document/Enquiry
 Authorization: token {{token}}
