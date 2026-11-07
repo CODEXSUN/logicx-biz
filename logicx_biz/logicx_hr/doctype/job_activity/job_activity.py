@@ -1,6 +1,7 @@
 import frappe
 from frappe.model.document import Document
 
+from logicx_biz.logicx_hr.doctype.enquiry.enquiry import open_on_job_activity
 from logicx_biz.logicx_hr.doctype.job_summary.job_summary import update_job_summary
 
 # the fields its count in Job Summary goes by
@@ -9,8 +10,11 @@ SUMMARY_FIELDS = ("job_type", "job_id")
 
 class JobActivity(Document):
 	def on_update(self):
+		# on insert too, when every field counts as changed
 		if any(self.has_value_changed(fieldname) for fieldname in SUMMARY_FIELDS):
 			update_job_summary(self)
+			if self.job_type == "Enquiry":
+				open_on_job_activity(self.job_id)
 
 	def after_delete(self):
 		update_job_summary(self)

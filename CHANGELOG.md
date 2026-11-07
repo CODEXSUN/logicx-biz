@@ -11,6 +11,25 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.120] - 2026-11-07
+
+### Database Changes
+
+- **Patch `set_new_enquiries_with_job_activity_to_open`** (post_model_sync) sets
+  each Enquiry on New with at least one Job Activity to Open. Enquiries on Re-open
+  stay as they are. One plain UPDATE, so `modified` and the version history are
+  left alone, and it is safe to run again.
+
+### Changed
+
+- **A Job Activity opens its Enquiry** -- an Enquiry on New or Re-open goes to Open
+  when a Job Activity is added to it, whether Job Comments, Job Execution, Job
+  Location, Job Estimate or Job Attachment posted it, it was entered by hand, or it
+  was moved there from another job. Any other Status stays, and deleting the row
+  doesn't move the Status back. The Enquiry's `modified` changes and its timeline
+  shows the change, by the user who added the row. The Enquiry's validation and
+  `on_update` don't run, so its Enquiry Daily Role rows stay as they are.
+
 ## [0.1.119] - 2026-11-07
 
 ### Added

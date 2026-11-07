@@ -125,6 +125,20 @@ It posts nothing while `job_type`, `job_id` or `activity_details` is empty.
 Renaming a source record keeps its rows pointing at it, as Frappe's rename also updates Dynamic
 Links.
 
+## An Enquiry's Status
+
+A Job Activity added to an Enquiry on **New** or **Re-open** moves it to **Open**, whatever posted
+the row, a row entered by hand included: `JobActivity.on_update` calls `open_on_job_activity()` in
+`enquiry.py`. A row moved onto such an Enquiry from another job counts as added. Other Statuses and
+other Job Types are left alone, and deleting the row doesn't move the Status back.
+
+It writes the Status with `db_set`, not a save, so posting activity can't fail on the Enquiry's own
+validation and doesn't touch its Enquiry Daily Role rows. `modified` still changes, so a form open
+on the old Status can't overwrite it, and a Version row puts the change on the Enquiry's timeline.
+
+The `set_new_enquiries_with_job_activity_to_open` patch brings existing Enquiries into line: New
+with a Job Activity goes to Open, and Re-open stays as it is.
+
 ## Deleting a source record
 
 Frappe's link check on delete follows Dynamic Links too. A Job Comments, Job Execution, Job
