@@ -1,7 +1,7 @@
 """Stamp a batch from the voucher that created it, as it is created.
 
 Two things are copied off that voucher: `vendor` -- "from whom we purchased" --
-and the pricing typed on the item row (MRP, MOP, the selling price band).
+and the pricing typed on the item row (MRP, MOP, Web Price, the selling price band).
 
 `vendor` is read-only, so nothing in the UI can fill it. ERPNext creates
 batches from stock transactions (erpnext.stock.serial_batch_bundle passes only
@@ -56,7 +56,7 @@ def get_voucher_supplier(reference_doctype: str | None, reference_name: str | No
 
 # Purchase pricing carried from a voucher item row onto the batch it creates.
 # Both sides use these same fieldnames, so one tuple drives the copy.
-PRICING_FIELDS = ("mrp", "mop", "min_selling_price", "max_selling_price")
+PRICING_FIELDS = ("mrp", "mop", "web_price", "min_selling_price", "max_selling_price")
 
 # Vouchers that price a batch as it arrives, and the child table holding the
 # price. Stock Entry / Subcontracting Receipt rows have no purchase price to

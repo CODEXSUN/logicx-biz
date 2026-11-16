@@ -50,11 +50,20 @@
 	},
 	{
 		"doctype": "Custom Field",
+		"name": "Batch-web_price",
+		"dt": "Batch",
+		"fieldname": "web_price",
+		"label": "Web Price",
+		"fieldtype": "Currency",
+		"insert_after": "mop"
+	},
+	{
+		"doctype": "Custom Field",
 		"name": "Batch-pricing_column",
 		"dt": "Batch",
 		"fieldname": "pricing_column",
 		"fieldtype": "Column Break",
-		"insert_after": "mop"
+		"insert_after": "web_price"
 	},
 	{
 		"doctype": "Custom Field",
@@ -106,12 +115,21 @@
 	},
 	{
 		"doctype": "Custom Field",
+		"name": "Purchase Receipt Item-web_price",
+		"dt": "Purchase Receipt Item",
+		"fieldname": "web_price",
+		"label": "Web Price",
+		"fieldtype": "Currency",
+		"insert_after": "mop"
+	},
+	{
+		"doctype": "Custom Field",
 		"name": "Purchase Receipt Item-min_selling_price",
 		"dt": "Purchase Receipt Item",
 		"fieldname": "min_selling_price",
 		"label": "Min Selling Price",
 		"fieldtype": "Currency",
-		"insert_after": "mop"
+		"insert_after": "web_price"
 	},
 	{
 		"doctype": "Custom Field",
@@ -142,12 +160,21 @@
 	},
 	{
 		"doctype": "Custom Field",
+		"name": "Purchase Invoice Item-web_price",
+		"dt": "Purchase Invoice Item",
+		"fieldname": "web_price",
+		"label": "Web Price",
+		"fieldtype": "Currency",
+		"insert_after": "mop"
+	},
+	{
+		"doctype": "Custom Field",
 		"name": "Purchase Invoice Item-min_selling_price",
 		"dt": "Purchase Invoice Item",
 		"fieldname": "min_selling_price",
 		"label": "Min Selling Price",
 		"fieldtype": "Currency",
-		"insert_after": "mop"
+		"insert_after": "web_price"
 	},
 	{
 		"doctype": "Custom Field",
