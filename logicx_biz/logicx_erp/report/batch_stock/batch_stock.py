@@ -286,6 +286,8 @@ def get_data(filters):
 	# Newest batch first; rows with no batch record have no creation to sort by,
 	# so they are put after every batch explicitly (where NULLs fall under DESC
 	# differs between MariaDB and Postgres) and ordered by item among themselves.
+	# stock_uom has no column: it is sent for logicx-front's Batches pages, which
+	# show each quantity with its unit, and the desk report leaves it out.
 	query = f"""
 		SELECT
 			stk.vendor AS vendor,
@@ -294,6 +296,7 @@ def get_data(filters):
 			it.brand AS brand,
 			it.name AS item_code,
 			it.item_name AS item_name,
+			it.stock_uom AS stock_uom,
 			stk.batch_no AS batch_no,
 			NULLIF(stk.inward_qty, 0) AS inward_qty,
 			stk.balance_qty AS balance_qty,
