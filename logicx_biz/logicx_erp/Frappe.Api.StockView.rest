@@ -1,5 +1,6 @@
 ### The submitted Purchase Receipts that list an Item, newest first (0.1.124;
-	# logicx-front's Vendor Stock Explorer, GRN tab). One row per voucher line of
+	# logicx-front's Vendor Stock Explorer, GRN tab), with the supplier's own
+	# delivery note number, `supplier_delivery_note`. One row per voucher line of
 	# the Item, at most 100; `more` says there were more.
 GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_erp.stock_view.get_item_vouchers
 	?voucher_type=Purchase Receipt
@@ -12,6 +13,7 @@ Authorization: token {{token}}
 #       {
 #         "name": "MAT-PRE-2026-00412",
 #         "posting_date": "2026-11-07",
+#         "supplier_delivery_note": "AT/DC/0931",
 #         "supplier": "SUP-0012",
 #         "supplier_name": "Acme Traders",
 #         "qty": 23.0,

@@ -24,8 +24,8 @@ ROW_LIMIT = 100
 # the list it is given in place, which on a shared one would carry into the next
 # request.
 VOUCHER_FIELDS = {
-	# GRN
-	"Purchase Receipt": ("posting_date", "supplier", "supplier_name"),
+	# GRN: the supplier's own delivery note number (DC), as typed on the receipt
+	"Purchase Receipt": ("posting_date", "supplier_delivery_note", "supplier", "supplier_name"),
 	# Purc: the supplier's own invoice number and date, as typed on the invoice
 	"Purchase Invoice": ("posting_date", "bill_no", "bill_date", "supplier", "supplier_name"),
 	# Sale
