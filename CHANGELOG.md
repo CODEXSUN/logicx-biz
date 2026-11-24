@@ -11,6 +11,29 @@ a number make one build, dated by its last commit. A version opens with
 **Database Changes** when `bench migrate` changes tables, columns, indexes or
 data for it: what the model sync does, and what each patch does.
 
+## [0.1.124] - 2026-11-23
+
+### Added
+
+- **`stock_view.get_item_vouchers(voucher_type, item_code)`** -- the submitted
+  Purchase Receipts, Purchase Invoices, Sales Invoices or Delivery Notes that
+  list an Item, newest first, for logicx-front's Vendor Stock Explorer: `rows`,
+  one per voucher line of the Item, and `more`, at most 100. Each row has the
+  voucher's `name` and `posting_date`; its `supplier` and `supplier_name`
+  (with `bill_no` and `bill_date` on a Purchase Invoice) or its `customer` and
+  `customer_name`; and the line's `item_name`, `qty`, `uom`, `rate` and
+  `amount`, as on the voucher. Returns are listed, with a negative qty; drafts
+  and cancelled vouchers are not. Read through `get_list`, so with the user's
+  permissions: `PermissionError` without read permission on the voucher type,
+  and the vouchers their User Permissions hide are left out. Any other voucher
+  type is refused.
+
+### Changed
+
+- **Vendor Stock and Batch Stock search the Item ID** -- each word of their
+  Search filter may now match the Item ID too, so searching for an item's code
+  finds it. The filter's placeholder names it.
+
 ## [0.1.120] - 2026-11-07
 
 ### Database Changes

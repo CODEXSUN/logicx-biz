@@ -132,12 +132,13 @@ def get_data(filters):
 		conditions.append("it.name = %(item_code)s")
 		params["item_code"] = filters["item_code"]
 
-	# every word must match, but each word may match any of the six fields
+	# every word must match, but each word may match any of the seven fields
 	for idx, word in enumerate(filters.get("search_text", "").split(), start=1):
 		key = f"search_word_{idx}"
 		conditions.append(
 			f"""(stk.vendor LIKE %({key})s
 				OR sup.supplier_name LIKE %({key})s
+				OR it.name LIKE %({key})s
 				OR it.item_name LIKE %({key})s
 				OR it.item_group LIKE %({key})s
 				OR it.brand LIKE %({key})s

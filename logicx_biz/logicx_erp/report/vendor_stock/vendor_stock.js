@@ -21,7 +21,7 @@
 				fieldname: "search_text",
 				label: __("Search"),
 				fieldtype: "Data",
-				placeholder: __("Vendor | Name | Group | Brand | Description"),
+				placeholder: __("Vendor | Item ID | Name | Group | Brand | Description"),
 				on_change: () => {}, // a no-op on_change makes the query-report page skip its own refresh for this filter; apply_search_on_enter() runs it on Enter instead of on every keystroke
 			},
 			{

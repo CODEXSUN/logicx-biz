@@ -1,0 +1,124 @@
+### The submitted Purchase Receipts that list an Item, newest first (0.1.124;
+	# logicx-front's Vendor Stock Explorer, GRN tab). One row per voucher line of
+	# the Item, at most 100; `more` says there were more.
+GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_erp.stock_view.get_item_vouchers
+	?voucher_type=Purchase Receipt
+	&item_code=P3170
+Authorization: token {{token}}
+
+# {
+#   "data": {
+#     "rows": [
+#       {
+#         "name": "MAT-PRE-2026-00412",
+#         "posting_date": "2026-11-07",
+#         "supplier": "SUP-0012",
+#         "supplier_name": "Acme Traders",
+#         "item_name": "Copper 5/8 & 3/8 Pipe Charges",
+#         "qty": 23.0,
+#         "uom": "Nos",
+#         "rate": 2100.0,
+#         "amount": 48300.0
+#       }
+#     ],
+#     "more": false
+#   }
+# }
+# A user who may not read Purchase Receipts: 403, PermissionError.
+
+
+
+
+### The submitted Purchase Invoices that list an Item (Purc tab): the supplier's
+	# own invoice number and date too, `bill_no` and `bill_date`.
+GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_erp.stock_view.get_item_vouchers
+	?voucher_type=Purchase Invoice
+	&item_code=P3170
+Authorization: token {{token}}
+
+# {
+#   "data": {
+#     "rows": [
+#       {
+#         "name": "ACC-PINV-2026-00388",
+#         "posting_date": "2026-11-08",
+#         "bill_no": "AT/2526/1187",
+#         "bill_date": "2026-11-06",
+#         "supplier": "SUP-0012",
+#         "supplier_name": "Acme Traders",
+#         "item_name": "Copper 5/8 & 3/8 Pipe Charges",
+#         "qty": 23.0,
+#         "uom": "Nos",
+#         "rate": 2100.0,
+#         "amount": 48300.0
+#       }
+#     ],
+#     "more": false
+#   }
+# }
+
+
+
+
+### The submitted Sales Invoices that list an Item (Sale tab). A return is listed
+	# too, with a negative qty and amount.
+GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_erp.stock_view.get_item_vouchers
+	?voucher_type=Sales Invoice
+	&item_code=P3170
+Authorization: token {{token}}
+
+# {
+#   "data": {
+#     "rows": [
+#       {
+#         "name": "ACC-SINV-2026-01544",
+#         "posting_date": "2026-11-12",
+#         "customer": "CUST-00731",
+#         "customer_name": "Sri Balaji Cool Point",
+#         "item_name": "Copper 5/8 & 3/8 Pipe Charges",
+#         "qty": 2.0,
+#         "uom": "Nos",
+#         "rate": 2400.0,
+#         "amount": 4800.0
+#       }
+#     ],
+#     "more": false
+#   }
+# }
+
+
+
+
+### The submitted Delivery Notes that list an Item (DC tab).
+GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_erp.stock_view.get_item_vouchers
+	?voucher_type=Delivery Note
+	&item_code=P3170
+Authorization: token {{token}}
+
+# {
+#   "data": {
+#     "rows": [
+#       {
+#         "name": "MAT-DN-2026-00219",
+#         "posting_date": "2026-11-10",
+#         "customer": "CUST-00731",
+#         "customer_name": "Sri Balaji Cool Point",
+#         "item_name": "Copper 5/8 & 3/8 Pipe Charges",
+#         "qty": 2.0,
+#         "uom": "Nos",
+#         "rate": 2400.0,
+#         "amount": 4800.0
+#       }
+#     ],
+#     "more": false
+#   }
+# }
+
+
+
+
+### Any other voucher type: 417, ValidationError "Unknown voucher type: Stock Entry".
+GET {{baseUrl}}/api/v2/method/logicx_biz.logicx_erp.stock_view.get_item_vouchers
+	?voucher_type=Stock Entry
+	&item_code=P3170
+Authorization: token {{token}}

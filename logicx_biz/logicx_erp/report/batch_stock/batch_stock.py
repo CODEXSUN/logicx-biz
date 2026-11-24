@@ -248,12 +248,13 @@ def get_data(filters):
 		conditions.append("stk.batch_no = %(batch_no)s")
 		params["batch_no"] = filters["batch_no"]
 
-	# every word must match, but each word may match any of the seven fields
+	# every word must match, but each word may match any of the eight fields
 	for idx, word in enumerate(filters.get("search_text", "").split(), start=1):
 		key = f"search_word_{idx}"
 		conditions.append(
 			f"""(stk.vendor LIKE %({key})s
 				OR sup.supplier_name LIKE %({key})s
+				OR it.name LIKE %({key})s
 				OR it.item_name LIKE %({key})s
 				OR it.item_group LIKE %({key})s
 				OR it.brand LIKE %({key})s
