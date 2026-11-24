@@ -37,7 +37,7 @@ VOUCHER_FIELDS = {
 # what each row sends of the voucher's line, as on the voucher: the quantity in
 # the line's UOM, and the rate and amount before tax. each of the four vouchers
 # keeps its lines in a table named `items`, of the doctype "<voucher> Item".
-LINE_FIELDS = ("item_name", "qty", "uom", "rate", "amount")
+LINE_FIELDS = ("qty", "uom", "rate", "amount")
 
 
 @frappe.whitelist()

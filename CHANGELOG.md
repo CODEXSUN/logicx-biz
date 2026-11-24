@@ -21,8 +21,8 @@ data for it: what the model sync does, and what each patch does.
   one per voucher line of the Item, and `more`, at most 100. Each row has the
   voucher's `name` and `posting_date`; its `supplier` and `supplier_name`
   (with `bill_no` and `bill_date` on a Purchase Invoice) or its `customer` and
-  `customer_name`; and the line's `item_name`, `qty`, `uom`, `rate` and
-  `amount`, as on the voucher. Returns are listed, with a negative qty; drafts
+  `customer_name`; and the line's `qty`, `uom`, `rate` and `amount`, as on
+  the voucher. Returns are listed, with a negative qty; drafts
   and cancelled vouchers are not. Read through `get_list`, so with the user's
   permissions: `PermissionError` without read permission on the voucher type,
   and the vouchers their User Permissions hide are left out. Any other voucher
